@@ -104,21 +104,17 @@ This is one way to run your app — you can also build it directly from Android 
 cd backend
 npm install
 cp .env.example .env
-# Add MongoDB URI, Stripe key, and email config to .env
+Add MongoDB URI, Stripe key, and email config to .env
 npm run dev
 
-# Environment Variables:Copy backend/.env.example to backend/.env and fill in:env
+# Environment Variables:
+Copy backend/.env.example to backend/.env and fill in:env.
 
-STRIPE_SECRET_KEY=your_stripe_test_key
-MONGODB_URI=your_mongodb_connection_string
-EMAIL_SERVICE=your_email_service
-EMAIL_USER=your_email_user
-EMAIL_PASS=your_email_password
-
-# Contact
-Connect with me on LinkedIn https://www.linkedin.com/in/flash-mnisi-013096112/ or email (flashmnisi@gmail.com) for opportunities or feedback!
-
-
+- STRIPE_SECRET_KEY=your_stripe_test_key.
+- MONGODB_URI=your_mongodb_connection_string.
+- EMAIL_SERVICE=your_email_service.
+- EMAIL_USER=your_email_user.
+- EMAIL_PASS=your_email_password.
 
 ## Step 3: Modify your app
 
@@ -147,7 +143,8 @@ Optimize product list rendering with lazy loading
 
 # Contributing
 Contributions are welcome! Please open an issue or submit a pull request.
-
+# Contact
+Connect with me on LinkedIn https://www.linkedin.com/in/flash-mnisi-013096112/ or email (flashmnisi@gmail.com) for opportunities or feedback!
 # Learn More
 
 To learn more about React Native, take a look at the following resources:

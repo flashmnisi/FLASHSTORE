@@ -1,3 +1,28 @@
+# FlashStore 🛒
+
+FlashStore is a full-stack e-commerce mobile app built with **React Native**, **TypeScript**, **Node.js**, **Express**, **MongoDB**, and **Zod**. It offers a seamless shopping experience with features like product browsing, search, filtering, secure payments, and user management.
+
+## 🚀 Features
+- **User Authentication**: Sign up, log in, and reset passwords via OTP sent through email.
+- **Product Browsing**: Explore products by categories, trends, and super deals. Sort by price and filter by category.
+- **Search & Navigation**: Intuitive search screen and address management for smooth user experience.
+- **Payments**: Secure checkout with Stripe or cash on delivery.
+- **Profile Management**: Update addresses, view orders, and log out or delete accounts.
+- **Responsive UI**: Built with React Native for cross-platform compatibility (iOS & Android).
+
+## 🛠️ Tech Stack
+- **Frontend**: React Native, JavaScript, TypeScript, Redux (for state management)
+- **Backend**: Node.js, Express, MongoDB, Zod (for schema validation), REST API
+- **Integrations**: Stripe for payments, Nodemailer for OTP emails
+
+## 📸 Screenshots
+[Insert screenshots or mockup images here, e.g., Home, Search, Profile screens]
+
+## 🏗️ Installation
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-username/FlashStore.git
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started

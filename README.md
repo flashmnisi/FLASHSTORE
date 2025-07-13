@@ -99,6 +99,27 @@ If everything is set up correctly, you should see your new app running in the An
 
 This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
+# Backend Setup:bash
+
+cd backend
+npm install
+cp .env.example .env
+# Add MongoDB URI, Stripe key, and email config to .env
+npm run dev
+
+# Environment Variables:Copy backend/.env.example to backend/.env and fill in:env
+
+STRIPE_SECRET_KEY=your_stripe_test_key
+MONGODB_URI=your_mongodb_connection_string
+EMAIL_SERVICE=your_email_service
+EMAIL_USER=your_email_user
+EMAIL_PASS=your_email_password
+
+# Contact
+Connect with me on LinkedIn https://www.linkedin.com/in/flash-mnisi-013096112/ or email (flashmnisi@gmail.com) for opportunities or feedback!
+
+
+
 ## Step 3: Modify your app
 
 Now that you have successfully run the app, let's make changes!
@@ -119,9 +140,13 @@ You've successfully run and modified your React Native App. :partying_face:
 - If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
 - If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
 
-# Troubleshooting
+# Future ImprovementsAdd 
+push notifications for order updates
+Implement AI-based product recommendations
+Optimize product list rendering with lazy loading
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+# Contributing
+Contributions are welcome! Please open an issue or submit a pull request.
 
 # Learn More
 

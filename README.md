@@ -27,7 +27,7 @@ FlashStore is a full-stack e-commerce mobile app built with **React Native**, **
     <img src="https://github.com/flashmnisi/FLASHSTORE/blob/c8bd577617d49cef438200618f2cbc4950f84cc1/categoryDetails.png" width="200"/>
   <img src="https://github.com/flashmnisi/FLASHSTORE/blob/c8bd577617d49cef438200618f2cbc4950f84cc1/paymentSelection.png" width="200"/>
   <img src="https://github.com/flashmnisi/FLASHSTORE/blob/9e7dda0ddd221ad82b0c872eddc4a7ae61f41323/CardPayment.png" width="200"/>
-    <img src="https://github.com/flashmnisi/FLASHSTORE/blob/9e7dda0ddd221ad82b0c872eddc4a7ae61f41323/DeliveryOption.png" width="200"/>
+    <img src="https://github.com/flashmnisi/FLASHSTORE/blob/9e7dda0ddd221ad82b0c872eddc4a7ae61f41323/CashPayment.png" width="200"/>
    <img src="https://github.com/flashmnisi/FLASHSTORE/blob/9e7dda0ddd221ad82b0c872eddc4a7ae61f41323/DeliveryOption.png" width="200"/>    <img src="https://github.com/flashmnisi/FLASHSTORE/blob/9e7dda0ddd221ad82b0c872eddc4a7ae61f41323/CashPayment.png" width="200"/>
 </p>
 ## 🏗️ Installation

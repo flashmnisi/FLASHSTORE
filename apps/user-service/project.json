@@ -1,0 +1,67 @@
+{
+  "name": "@org/user-service",
+  "projectType": "application",
+  "sourceRoot": "apps/user-service/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "dependsOn": ["^build"],
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/user-service",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/user-service/src/main.ts",
+        "tsConfig": "apps/user-service/tsconfig.app.json",
+        "assets": ["apps/user-service/src/assets"],
+        "generatePackageJson": false,
+        "esbuildOptions": {
+          "sourcemap": true
+        }
+      },
+      "configurations": {
+        "development": {
+          "sourcemap": true
+        },
+        "production": {
+          "sourcemap": false,
+          "minify": true
+        }
+      }
+    },
+
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@org/user-service:build",
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/user-service:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/user-service:build:production"
+        }
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  },
+   "dependencies": {
+    "express": "^4.21.2"
+  }
+}

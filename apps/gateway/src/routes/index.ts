@@ -1,0 +1,147 @@
+import { Router } from 'express';
+import { createServiceProxy } from '../services/proxy';
+import { publish } from '@org/shared-kafka';
+import { generateToken } from '@org/shared-auth';
+import logger from '@org/shared-logger';
+import { authMiddleware } from '../middlewares/auth';
+
+const router = Router();
+
+// Welcome message at /api
+router.get('/', (req, res) => {
+  res.json({
+    message: '🚀 Welcome to Flashstore API Gateway',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      login: 'POST /api/auth/login',
+      publishEvent: 'POST /api/events/publish',
+      protected: 'GET /api/profile (requires token)',
+      services: [
+        '/api/users',
+        '/api/catalog',
+        '/api/cart',
+        '/api/orders',
+        '/api/payments',
+        '/api/notifications'
+      ]
+    }
+  });
+});
+
+// Health check
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'flashstore-gateway',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ====================== LOGIN ROUTE ======================
+router.post('/auth/login', (req, res) => {
+  const { email, userId = 1 } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email is required'
+    });
+  }
+
+  const token = generateToken({
+    userId: Number(userId),
+    email,
+    role: 'user'
+  });
+
+  logger.info(
+    { email, userId: Number(userId) },
+    'User logged in'
+  );
+
+  res.json({
+    success: true,
+    message: 'Login successful',
+    token,
+    user: { userId: Number(userId), email }
+  });
+});
+
+// ====================== EVENT PUBLISH ======================
+router.post('/events/publish', async (req, res) => {
+  try {
+    const { event, data = {}, topic = 'flashstore.events' } = req.body;
+
+    if (!event) {
+      return res.status(400).json({
+        success: false,
+        error: 'event field is required'
+      });
+    }
+
+    const key = data.userId 
+      ? String(data.userId) 
+      : (data.orderId ? String(data.orderId) : undefined);
+
+    await publish({
+      topic,
+      message: {
+        event,
+        data,
+        service: 'gateway',
+        timestamp: new Date().toISOString(),
+        source: 'api'
+      },
+      key
+    });
+
+    logger.info(
+      { event, topic, userId: data.userId },
+      `Event published: ${event}`
+    );
+
+    return res.json({
+      success: true,
+      message: 'Event successfully published to Kafka',
+      event,
+      topic
+    });
+
+  } catch (error: any) {
+    logger.error(
+      { 
+        error: error.message,
+        event: req.body?.event 
+      },
+      'Failed to publish event'
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to publish event',
+      details: error.message
+    });
+  }
+});
+
+// ====================== PROTECTED ROUTE EXAMPLE ======================
+router.get('/profile', authMiddleware, (req, res) => {
+  const user = (req as any).user;
+
+  res.json({
+    message: 'Protected profile data',
+    user
+  });
+});
+
+// ====================== PROXY ROUTES ======================
+router.use('/users', createServiceProxy('user', '/users'));
+router.use('/catalog', createServiceProxy('catalog', '/catalog'));
+router.use('/cart', createServiceProxy('cart', '/cart'));
+router.use('/orders', createServiceProxy('order', '/orders'));
+router.use('/payments', createServiceProxy('payment', '/payments'));
+router.use('/notifications', createServiceProxy('notification', '/notifications'));
+
+export default router;

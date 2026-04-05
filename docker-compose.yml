@@ -1,0 +1,113 @@
+version: '3.9'
+
+networks:
+  flashstore-net:
+    driver: bridge
+
+services:
+  # ==================== KAFKA ====================
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: flashstore-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"          # Important
+    networks:
+      - flashstore-net
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  # ==================== KAFKA UI ====================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: flashstore-kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: flashstore
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: ""
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net          
+
+  # ==================== GATEWAY ====================
+  gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/gateway.Dockerfile
+    container_name: flashstore-gateway
+    environment:
+      NODE_ENV: production
+      KAFKA_BROKERS: kafka:9092
+      PORT: 3000
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  # ==================== USER SERVICE ====================
+  user-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/user-service.Dockerfile
+    container_name: flashstore-user-service
+    environment:
+      NODE_ENV: production
+      KAFKA_BROKERS: kafka:9092
+      PORT: 3001
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  # ==================== NGINX ====================
+  nginx:
+    image: nginx:stable-alpine
+    container_name: flashstore-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway
+    networks:
+      - flashstore-net
+   # ==================== MONGO ====================    
+  mongo:
+    image: mongo:7
+    container_name: flashstore-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: flashstore
+    networks:
+      - flashstore-net
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:      

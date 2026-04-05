@@ -2,5 +2,78 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": []
+  "references": [
+    {
+      "path": "./apps/gateway-e2e"
+    },
+    {
+      "path": "./apps/gateway"
+    },
+    {
+      "path": "./apps/user-service-e2e"
+    },
+    {
+      "path": "./apps/user-service"
+    },
+    {
+      "path": "./apps/notification-service-e2e"
+    },
+    {
+      "path": "./apps/notification-service"
+    },
+    {
+      "path": "./apps/catalog-service-e2e"
+    },
+    {
+      "path": "./apps/catalog-service"
+    },
+    {
+      "path": "./apps/cart-service-e2e"
+    },
+    {
+      "path": "./apps/cart-service"
+    },
+    {
+      "path": "./apps/order-service-e2e"
+    },
+    {
+      "path": "./apps/order-service"
+    },
+    {
+      "path": "./apps/payment-service-e2e"
+    },
+    {
+      "path": "./apps/payment-service"
+    },
+    {
+      "path": "./apps/analitic-service-e2e"
+    },
+    {
+      "path": "./apps/analitic-service"
+    },
+    {
+      "path": "./libs/shared-types"
+    },
+    {
+      "path": "./libs/shared-kafka"
+    },
+    {
+      "path": "./libs/shared-utils"
+    },
+    {
+      "path": "./libs/shared-auth"
+    },
+    {
+      "path": "./libs/shared-config"
+    },
+    {
+      "path": "./libs/shared-db"
+    },
+    {
+      "path": "./libs/shared-logger"
+    },
+    {
+      "path": "./libs/shared-auth"
+    }
+  ]
 }

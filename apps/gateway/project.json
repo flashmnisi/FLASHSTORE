@@ -1,0 +1,69 @@
+{
+  "name": "@org/gateway",
+  "version": "0.0.1",
+  "private": true,
+  "sourceRoot": "apps/gateway/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+       "dependsOn": ["^build"],
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/gateway",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/gateway/src/main.ts",
+        "tsConfig": "apps/gateway/tsconfig.app.json",
+        "assets": ["apps/gateway/src/assets"],
+        "generatePackageJson": false,
+        "esbuildOptions": {
+          "sourcemap": true
+        }
+      },
+      "configurations": {
+        "development": {
+          "sourcemap": true
+        },
+        "production": {
+          "sourcemap": false,
+          "minify": true
+        }
+      }
+    },
+
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@org/gateway:build",
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/gateway:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/gateway:build:production"
+        }
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -48,7 +48,9 @@
         "apps/cart-service-e2e/**/*",
         "apps/order-service-e2e/**/*",
         "apps/payment-service-e2e/**/*",
-        "apps/analitic-service-e2e/**/*"
+        "apps/analitic-service-e2e/**/*",
+        "apps/analytic-service-e2e/**/*",
+        "apps/analytics-e2e/**/*"
       ]
     }
   ],

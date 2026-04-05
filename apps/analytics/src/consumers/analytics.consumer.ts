@@ -1,0 +1,28 @@
+import { createConsumer, runConsumer } from '@org/shared-kafka';
+import logger from '@org/shared-logger';
+import { analyticsService } from '../services/analytics.service';
+
+export const startAnalyticsConsumer = async () => {
+  try {
+    const consumer = createConsumer({
+      groupId: 'analytics-service-group',
+      topics: ['flashstore.events']
+    });
+
+    await runConsumer(consumer, {
+      groupId: 'analytics-service-group',
+      topics: ['flashstore.events']
+    }, async (message) => {
+      logger.info(
+        { event: message.event, service: message.service },
+        'Analytics service received event'
+      );
+
+      await analyticsService.storeEvent(message);
+    });
+
+    logger.info('👥 Analytics consumer started successfully');
+  } catch (error: any) {
+    logger.error({ error: error.message }, 'Failed to start analytics consumer');
+  }
+};

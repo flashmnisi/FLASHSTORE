@@ -6,17 +6,24 @@ export class AnalyticsService {
     try {
       const event = new AnalyticsEvent({
         event: eventData.event,
-        userId: eventData.userId,
-        service: eventData.service,
-        metadata: eventData.metadata || {},
+        userId: eventData.userId || eventData.data?.userId,
+        service: eventData.service || eventData.source || 'unknown',
+        metadata: eventData.metadata || eventData.data || {},
         ip: eventData.ip,
         userAgent: eventData.userAgent,
       });
 
       await event.save();
-      logger.info({ event: eventData.event, userId: eventData.userId }, 'Analytics event stored');
+
+      logger.info(
+        { event: eventData.event, userId: eventData.userId },
+        'Analytics event stored successfully'
+      );
     } catch (error: any) {
-      logger.error({ error: error.message, event: eventData.event }, 'Failed to store analytics event');
+      logger.error(
+        { error: error.message, event: eventData.event },
+        'Failed to store analytics event'
+      );
     }
   }
 

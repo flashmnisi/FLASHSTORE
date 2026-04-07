@@ -36,6 +36,8 @@ export const publish = async (options: PublishOptions): Promise<void> => {
     };
 
     await prod.send(record);
+    console.log('producer:', producer);
+console.log('send:', producer?.send);
 
     console.log(`📤 Message published to ${options.topic}`, { key: options.key });
   } catch (error: any) {

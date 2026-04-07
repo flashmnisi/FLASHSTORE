@@ -24,7 +24,7 @@ COPY --from=builder /app/dist/apps/user-service ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3001
 ENV KAFKA_BROKERS=kafka:9092
 
 EXPOSE 3001

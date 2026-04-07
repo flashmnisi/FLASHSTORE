@@ -1,14 +1,14 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { createServiceProxy } from '../services/proxy';
 import { publish } from '@org/shared-kafka';
-import { generateToken } from '@org/shared-auth';
+import { generateAccessToken } from '@org/shared-auth';   // ← Fixed import
 import logger from '@org/shared-logger';
 import { authMiddleware } from '../middlewares/auth';
 
 const router = Router();
 
-// Welcome message at /api
-router.get('/', (req, res) => {
+// ====================== WELCOME ======================
+router.get('/', (req: Request, res: Response) => {
   res.json({
     message: '🚀 Welcome to Flashstore API Gateway',
     version: '1.0.0',
@@ -30,8 +30,8 @@ router.get('/', (req, res) => {
   });
 });
 
-// Health check
-router.get('/health', (req, res) => {
+// ====================== HEALTH CHECK ======================
+router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'flashstore-gateway',
@@ -40,7 +40,7 @@ router.get('/health', (req, res) => {
 });
 
 // ====================== LOGIN ROUTE ======================
-router.post('/auth/login', (req, res) => {
+router.post('/auth/login', (req: Request, res: Response) => {
   const { email, userId = 1 } = req.body;
 
   if (!email) {
@@ -50,27 +50,31 @@ router.post('/auth/login', (req, res) => {
     });
   }
 
-  const token = generateToken({
-    userId: Number(userId),
+  // Use generateAccessToken instead of generateToken
+  const token = generateAccessToken({
+    userId: String(userId),
     email,
     role: 'user'
   });
 
   logger.info(
     { email, userId: Number(userId) },
-    'User logged in'
+    'User logged in successfully'
   );
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Login successful',
     token,
-    user: { userId: Number(userId), email }
+    user: { 
+      userId: Number(userId), 
+      email 
+    }
   });
 });
 
 // ====================== EVENT PUBLISH ======================
-router.post('/events/publish', async (req, res) => {
+router.post('/events/publish', async (req: Request, res: Response) => {
   try {
     const { event, data = {}, topic = 'flashstore.events' } = req.body;
 
@@ -126,11 +130,11 @@ router.post('/events/publish', async (req, res) => {
   }
 });
 
-// ====================== PROTECTED ROUTE EXAMPLE ======================
-router.get('/profile', authMiddleware, (req, res) => {
+// ====================== PROTECTED ROUTE ======================
+router.get('/profile', authMiddleware, (req: Request, res: Response) => {
   const user = (req as any).user;
 
-  res.json({
+  return res.json({
     message: 'Protected profile data',
     user
   });

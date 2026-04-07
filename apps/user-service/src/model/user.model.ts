@@ -70,24 +70,25 @@ const userSchema = new Schema(
     refreshToken: { type: String, select: false },
   },
   { timestamps: true }
-) as Schema<IUser>;
+);
 
-// Password hashing middleware - Most reliable pattern
-userSchema.pre('save', async function (next: any) {
+
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return next();
+    return; 
   }
 
   try {
+    console.log("🔑 Hashing password for:", this.email);
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt as string);
-    next();
-  } catch (error: any) {
-    next(error);
+    this.password = await bcrypt.hash(this.password, salt);
+    console.log("✅ Password hashed successfully");
+  } catch (err: any) {
+    console.error("❌ Hashing error:", err.message);
+    throw err; // Throwing an error stops the save process
   }
 });
 
-// Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };

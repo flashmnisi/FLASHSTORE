@@ -3,34 +3,31 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
-
+# Copy everything (same style as your gateway)
 COPY . .
 
-RUN npx nx build analytics-service --configuration=production
+# Install deps
+RUN npm ci
+
+# Build using Nx
+RUN npx nx build @org/analytics --configuration=production
 
 # ==================== RUNTIME STAGE ====================
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install only production deps
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Copy only built output
+COPY --from=builder /app/dist/apps/analytics ./dist
 
-# Copy built output
-COPY --from=builder /app/dist/apps/analytics-service ./dist/apps/analytics-service
+# Copy node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV=production
 ENV PORT=3007
 ENV KAFKA_BROKERS=kafka:9092
-ENV MONGO_URI=mongodb://mongo:27017/flashstore-analytics
+ENV MONGO_URI=mongodb://mongo:27017/flashstore
 
 EXPOSE 3007
-
-# Security
-RUN addgroup -S app && adduser -S app -G app
-USER app
 
 CMD ["node", "dist/main.js"]

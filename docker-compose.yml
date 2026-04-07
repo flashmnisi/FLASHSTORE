@@ -109,6 +109,26 @@ services:
       - flashstore-net
     restart: unless-stopped
 
+      # ==================== Order Service ====================
+  order-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/order-service.Dockerfile
+    container_name: flashstore-order-service
+    environment:
+      NODE_ENV: production
+      KAFKA_BROKERS: kafka:9092
+      PORT: 3004
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
   # ==================== Analytics Service ====================
   analytics-service:
     build:

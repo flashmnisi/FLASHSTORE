@@ -116,10 +116,6 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-// apps/user-service/src/controllers/user.controller.ts
-
-// ==================== PROTECTED ROUTES ====================
-
 export const getUserProfile = async (req: Request & { user?: any }, res: Response) => {
   try {
     if (!req.user?.userId) {

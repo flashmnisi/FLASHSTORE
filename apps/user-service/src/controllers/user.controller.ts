@@ -221,3 +221,123 @@ export const deleteUser = async (req: Request & { user?: any }, res: Response) =
     });
   }
 };
+
+export const getAddresses = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    const user = await userService.getProfile(req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Addresses retrieved successfully',
+      address: user.address || [],
+    });
+  } catch (error: any) {
+    logger.error(
+      { error: error.message, userId: req.user?.userId },
+      'Get addresses failed'
+    );
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const addAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    const user = await userService.addAddress(req.user.userId, req.body);
+
+    logger.info(
+      { userId: req.user.userId },
+      'Address added successfully'
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Address added successfully',
+      address: user.address,
+    });
+  } catch (error: any) {
+    logger.error(
+      { error: error.message, userId: req.user?.userId },
+      'Add address failed'
+    );
+
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to add address' 
+    });
+  }
+};
+
+export const updateAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { index } = req.params;
+    const addressIndex = parseInt(index, 10);
+
+    const user = await userService.updateAddress(req.user.userId, addressIndex, req.body);
+
+    logger.info(
+      { userId: req.user.userId, addressIndex },
+      'Address updated successfully'
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Address updated successfully',
+      address: user.address,
+    });
+  } catch (error: any) {
+    logger.error(
+      { error: error.message, userId: req.user?.userId },
+      'Update address failed'
+    );
+
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to update address' 
+    });
+  }
+};
+
+export const deleteAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { index } = req.params;
+    const addressIndex = parseInt(index, 10);
+
+    await userService.deleteAddress(req.user.userId, addressIndex);
+
+    logger.info(
+      { userId: req.user.userId, addressIndex },
+      'Address deleted successfully'
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Address deleted successfully',
+    });
+  } catch (error: any) {
+    logger.error(
+      { error: error.message, userId: req.user?.userId },
+      'Delete address failed'
+    );
+
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to delete address' 
+    });
+  }
+};

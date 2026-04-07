@@ -1,14 +1,31 @@
 import express from 'express';
+import dotenv from 'dotenv';
+import logger from '@org/shared-logger';
+import { connectDB } from './config/db';
+import orderRoutes from './routes/order.routes';
 
-const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 3004;
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3004;
 
-app.get('/', (req, res) => {
-  res.send({ message: 'Hello API' });
+app.use(express.json());
+
+app.use('/api/orders', orderRoutes);
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'order-service' });
 });
 
-app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
+const start = async () => {
+  await connectDB();
+
+  app.listen(PORT, () => {
+    logger.info(`🚀 Order Service running on http://localhost:${PORT}`);
+  });
+};
+
+start().catch((err) => {
+  logger.error({ error: err.message }, 'Failed to start order-service');
+  process.exit(1);
 });

@@ -161,6 +161,51 @@ services:
       - flashstore-net
     restart: unless-stopped
 
+    # ==================== PAYMENT SERVICE ====================
+  payment-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/payment-service.Dockerfile
+    container_name: flashstore-payment-service
+    environment:
+      NODE_ENV: production
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+      PORT: 3005
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    ports:
+      - "3005:3005"
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  # ==================== NOTIFICATION SERVICE ====================
+  notification-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/notification-service.Dockerfile
+    container_name: flashstore-notification-service
+    environment:
+      NODE_ENV: production
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+      PORT: 3006
+    ports:
+      - "3006:3006"
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
   # ==================== Analytics Service ====================
   analytics-service:
     build:

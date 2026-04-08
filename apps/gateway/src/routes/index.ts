@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { createServiceProxy } from '../services/proxy';
 import { publish } from '@org/shared-kafka';
-import { generateAccessToken } from '@org/shared-auth';   // ← Fixed import
+import { generateAccessToken } from '@org/shared-auth';
 import logger from '@org/shared-logger';
-import { authMiddleware } from '../middlewares/auth';
+import { protect } from '../middleware/auth.middleware';
+import { createServiceProxy } from '../services/proxy';
 
 const router = Router();
 
-// ====================== WELCOME ======================
+// ====================== WELCOME ROUTE ======================
 router.get('/', (req: Request, res: Response) => {
   res.json({
     message: '🚀 Welcome to Flashstore API Gateway',
@@ -17,7 +17,7 @@ router.get('/', (req: Request, res: Response) => {
       health: '/api/health',
       login: 'POST /api/auth/login',
       publishEvent: 'POST /api/events/publish',
-      protected: 'GET /api/profile (requires token)',
+      protectedProfile: 'GET /api/profile (requires Bearer token)',
       services: [
         '/api/users',
         '/api/catalog',
@@ -33,24 +33,24 @@ router.get('/', (req: Request, res: Response) => {
 // ====================== HEALTH CHECK ======================
 router.get('/health', (req: Request, res: Response) => {
   res.json({
+    success: true,
     status: 'healthy',
     service: 'flashstore-gateway',
     timestamp: new Date().toISOString()
   });
 });
 
-// ====================== LOGIN ROUTE ======================
+// ====================== LOGIN ROUTE (for testing) ======================
 router.post('/auth/login', (req: Request, res: Response) => {
   const { email, userId = 1 } = req.body;
 
   if (!email) {
     return res.status(400).json({
       success: false,
-      error: 'Email is required'
+      message: 'Email is required'
     });
   }
 
-  // Use generateAccessToken instead of generateToken
   const token = generateAccessToken({
     userId: String(userId),
     email,
@@ -65,7 +65,7 @@ router.post('/auth/login', (req: Request, res: Response) => {
   return res.json({
     success: true,
     message: 'Login successful',
-    token,
+    accessToken: token,
     user: { 
       userId: Number(userId), 
       email 
@@ -73,7 +73,7 @@ router.post('/auth/login', (req: Request, res: Response) => {
   });
 });
 
-// ====================== EVENT PUBLISH ======================
+// ====================== KAFKA EVENT PUBLISH ======================
 router.post('/events/publish', async (req: Request, res: Response) => {
   try {
     const { event, data = {}, topic = 'flashstore.events' } = req.body;
@@ -81,7 +81,7 @@ router.post('/events/publish', async (req: Request, res: Response) => {
     if (!event) {
       return res.status(400).json({
         success: false,
-        error: 'event field is required'
+        message: 'event field is required'
       });
     }
 
@@ -119,28 +119,30 @@ router.post('/events/publish', async (req: Request, res: Response) => {
         error: error.message,
         event: req.body?.event 
       },
-      'Failed to publish event'
+      'Failed to publish event from gateway'
     );
 
     return res.status(500).json({
       success: false,
-      error: 'Failed to publish event',
+      message: 'Failed to publish event',
       details: error.message
     });
   }
 });
 
-// ====================== PROTECTED ROUTE ======================
-router.get('/profile', authMiddleware, (req: Request, res: Response) => {
+// ====================== PROTECTED EXAMPLE ROUTE ======================
+router.get('/profile', protect, (req: Request, res: Response) => {
   const user = (req as any).user;
 
   return res.json({
+    success: true,
     message: 'Protected profile data',
     user
   });
 });
 
-// ====================== PROXY ROUTES ======================
+// ====================== MICROSERVICE PROXY ROUTES ======================
+// All proxies are mounted under /api
 router.use('/users', createServiceProxy('user', '/users'));
 router.use('/catalog', createServiceProxy('catalog', '/catalog'));
 router.use('/cart', createServiceProxy('cart', '/cart'));

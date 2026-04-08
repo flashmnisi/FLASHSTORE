@@ -1,14 +1,18 @@
-import express from 'express';
+import dotenv from 'dotenv';
+import logger from '@org/shared-logger';
+import { connectDB } from './config/db';
+import app from './app';
+import env from './config/env';
 
-const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 3005;
+dotenv.config();
 
-const app = express();
+const PORT = env.PORT;
 
-app.get('/', (req, res) => {
-  res.send({ message: 'Hello API' });
-});
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    logger.info(`🚀 Payment Service running on http://localhost:${PORT}`);
+  });
+};
 
-app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
-});
+startServer();

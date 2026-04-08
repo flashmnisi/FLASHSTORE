@@ -1,5 +1,6 @@
 import { publish } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
+import { TOPICS, EVENT_TYPES } from '../../constant/topics';
 
 /**
  * Publish event when a new user is registered
@@ -7,22 +8,21 @@ import logger from '@org/shared-logger';
 export const publishUserRegisteredEvent = async (user: any) => {
   try {
     await publish({
-      topic: 'flashstore.events',
+      topic: TOPICS.USERS,                    // ← Updated to use constant
       message: {
-        event: 'user.registered',
+        event: EVENT_TYPES.USER_REGISTERED,    // ← Updated to use constant
         data: {
           userId: user._id,
           email: user.email,
           name: user.name,
           role: user.role || 'user',
-          timestamp: new Date().toISOString(),
         },
         source: 'user-service',
+        timestamp: new Date().toISOString(),
       },
       key: String(user._id),
     });
 
-    // ✅ Fixed: object first, then message
     logger.info(
       { 
         userId: user._id, 
@@ -47,9 +47,9 @@ export const publishUserRegisteredEvent = async (user: any) => {
 export const publishUserUpdatedEvent = async (user: any) => {
   try {
     await publish({
-      topic: 'flashstore.events',
+      topic: TOPICS.USERS,
       message: {
-        event: 'user.updated',
+        event: EVENT_TYPES.USER_UPDATED,
         data: {
           userId: user._id,
           email: user.email,
@@ -82,9 +82,9 @@ export const publishUserUpdatedEvent = async (user: any) => {
 export const publishUserDeletedEvent = async (userId: string) => {
   try {
     await publish({
-      topic: 'flashstore.events',
+      topic: TOPICS.USERS,
       message: {
-        event: 'user.deleted',
+        event: EVENT_TYPES.USER_DELETED,   // Better constant
         data: {
           userId,
           timestamp: new Date().toISOString(),

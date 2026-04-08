@@ -1,41 +1,47 @@
-import express from 'express';
 import dotenv from 'dotenv';
 import logger from '@org/shared-logger';
 
-import { initKafka } from './config/kafka';
-import userRoutes from './routes/user.routes';
 import { connectDB } from './config/db';
+import app from './app';
+import { startOrderConsumer } from './events/consumers/order.consumer';
+import env from './config/env';
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = env.PORT || 3001;
 
-app.use(express.json());
+const startServer = async () => {
+  try {
+    // 1. Connect to MongoDB
+    await connectDB();
 
-// Initialize connections
-const initializeServices = async () => {
-  await connectDB();
-  await initKafka();
+    // 2. Start Kafka consumer (order events)
+    await startOrderConsumer();
+
+    // 3. Start the Express server
+    app.listen(PORT, () => {
+      logger.info(`🚀 User Service running on http://localhost:${PORT}`);
+    });
+
+  } catch (error: any) {
+    logger.error(
+      { error: error.message },
+      '❌ Failed to start User Service'
+    );
+    process.exit(1);
+  }
 };
 
-initializeServices().catch((err) => {
-  logger.error('Failed to initialize services', err);
-  process.exit(1);
+// Start everything
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received. Shutting down User Service gracefully...');
+  process.exit(0);
 });
 
-// Routes
-app.use('/users', userRoutes);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'user-service',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.listen(PORT, () => {
-  logger.info(`🚀 User Service running on http://localhost:${PORT}`);
+process.on('SIGINT', () => {
+  logger.info('SIGINT received. Shutting down User Service gracefully...');
+  process.exit(0);
 });

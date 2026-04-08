@@ -1,0 +1,67 @@
+{
+  "name": "@org/cart-service",
+  "projectType": "application",
+  "sourceRoot": "apps/cart-service/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "dependsOn": ["^build"],
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/cart-service",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/cart-service/src/main.ts",
+        "tsConfig": "apps/cart-service/tsconfig.app.json",
+        "assets": ["apps/cart-service/src/assets"],
+        "generatePackageJson": false,
+        "esbuildOptions": {
+          "sourcemap": true
+        }
+      },
+      "configurations": {
+        "development": {
+          "sourcemap": true
+        },
+        "production": {
+          "sourcemap": false,
+          "minify": true
+        }
+      }
+    },
+
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@org/cart-service:build",
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/cart-service:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/cart-service:build:production"
+        }
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  },
+   "dependencies": {
+    "express": "^4.21.2"
+  }
+}

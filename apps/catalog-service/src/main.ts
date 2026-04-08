@@ -1,14 +1,28 @@
-import express from 'express';
+import dotenv from 'dotenv';
+import logger from '@org/shared-logger';
+import { connectDB } from './config/db';
+import app from './app';
 
-const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 3002;
+dotenv.config();
 
-const app = express();
+const PORT = process.env.PORT || 3002;
 
-app.get('/', (req, res) => {
-  res.send({ message: 'Hello API' });
-});
+const startServer = async () => {
+  try {
+    
+    await connectDB();
 
-app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
-});
+    // Start the server
+    app.listen(PORT, () => {
+      logger.info(`🚀 Catalog Service running on http://localhost:${PORT}`);
+    });
+  } catch (error: any) {
+    logger.error(
+      { error: error.message },
+      'Failed to start Catalog Service'
+    );
+    process.exit(1);
+  }
+};
+
+startServer();

@@ -1,9 +1,11 @@
+// apps/order-service/src/modules/order/order.dto.ts
 import { z } from 'zod';
 
 export const createOrderSchema = z.object({
   orderItems: z.array(z.object({
-    product: z.string().min(1, 'Product ID is required'),
-    qty: z.number().int().min(1, 'Quantity must be at least 1'),
+    product: z.string().min(1, 'Product ID is required'),    
+    qty: z.number().int().min(1, 'Quantity must be at least 1'), 
+    price: z.number().min(0, 'Price is required'),            
   })).min(1, 'At least one item is required'),
 
   shippingAddress: z.object({
@@ -18,11 +20,11 @@ export const createOrderSchema = z.object({
   }),
 
   paymentMethod: z.enum(['cash', 'card', 'paypal']),
-  itemsPrice: z.number().min(0),
-  shippingPrice: z.number().min(0),
-  totalPrice: z.number().min(0),
+  itemsPrice: z.number().min(0, 'Items price is required'),
+  shippingPrice: z.number().min(0, 'Shipping price is required'),
+  totalPrice: z.number().min(0, 'Total price is required'),
   deliveryOption: z.string().optional(),
-  paymentData: z.object({}).optional(), 
+  paymentData: z.object({}).optional().default({}),
 });
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;

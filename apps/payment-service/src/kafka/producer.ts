@@ -1,6 +1,6 @@
 import { publish } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
-import { TOPICS, PAYMENT_EVENTS } from '../constants/topics';
+import { TOPICS } from '../constant/topics';
 
 export const publishPaymentEvent = async (eventType: string, data: any) => {
   try {

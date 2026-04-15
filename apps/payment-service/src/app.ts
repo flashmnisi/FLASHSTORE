@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import paymentRoutes from './modules/payment/payment.routes';
+import paymentRoutes from './routes/payment.routes';
 
 const app = express();
 

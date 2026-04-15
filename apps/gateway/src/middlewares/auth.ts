@@ -1,46 +1,52 @@
 import { Request, Response, NextFunction } from 'express';
 import { extractToken, verifyToken, type JwtPayload } from '@org/shared-auth';
-// import logger from '@flashstore/shared-logger';  
+import logger from '@org/shared-logger';
 
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export interface AuthRequest extends Request {
+  user?: JwtPayload;
+}
+
+export const protect = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
-    const token = extractToken(req.headers.authorization as string);
+    const token = extractToken(req.headers.authorization || '');
 
     if (!token) {
+      logger.warn('Authorization token required');
       res.status(401).json({
         success: false,
         message: 'Authorization token required',
       });
-      return;                    // ← Important: early return
+      return;
     }
 
     const decoded = verifyToken(token);
 
-    // Attach user info to request object
-    (req as any).user = decoded;
+    // Attach user info to request
+    req.user = decoded;
 
-    next();                      // ← Only call next() on success
+    logger.info({ userId: decoded.userId }, 'Authenticated user');
+
+    next();
   } catch (error: any) {
-    console.warn('Authentication failed:', error.message); // temporary until logger is ready
-
+    logger.warn({ error: error.message }, 'Authentication failed');
     res.status(401).json({
       success: false,
       message: 'Invalid or expired token',
     });
-    return;                      // ← Important: early return
   }
 };
 
-// Optional: Role guard middleware
+// 🔒 Role-based access
 export const requireRole = (allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const user = (req as any).user as JwtPayload | undefined;
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    const user = req.user;
 
-    if (!user || !allowedRoles.includes(user.role || '')) {
+    if (!user?.role || !allowedRoles.includes(user.role)) {
+      logger.warn(
+        { userRole: user?.role, requiredRoles: allowedRoles },
+        'Insufficient permissions'
+      );
+
       res.status(403).json({
         success: false,
         message: 'Insufficient permissions',

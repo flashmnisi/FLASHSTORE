@@ -1,0 +1,67 @@
+{
+  "name": "@org/notification-service",
+  "projectType": "application",
+  "sourceRoot": "apps/notification-service/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "dependsOn": ["^build"],
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/notification-service",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/notification-service/src/main.ts",
+        "tsConfig": "apps/notification-service/tsconfig.app.json",
+        "assets": ["apps/notification-service/src/assets"],
+        "generatePackageJson": false,
+        "esbuildOptions": {
+          "sourcemap": true
+        }
+      },
+      "configurations": {
+        "development": {
+          "sourcemap": true
+        },
+        "production": {
+          "sourcemap": false,
+          "minify": true
+        }
+      }
+    },
+
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@org/notification-service:build",
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/notification-service:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/notification-service:build:production"
+        }
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  },
+   "dependencies": {
+    "express": "^4.21.2"
+  }
+}

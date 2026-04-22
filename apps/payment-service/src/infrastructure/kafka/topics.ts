@@ -1,17 +1,14 @@
 // apps/payment-service/src/infrastructure/kafka/topics.ts
 
-import { TOPICS, EVENTS } from '@org/shared-kafka';
+export const EVENTS = {
+  USER_REGISTERED: 'user.registered',
 
-export const PAYMENT_TOPICS = {
-  PAYMENTS: TOPICS.PAYMENTS,
-  ORDERS: TOPICS.ORDERS,
-} as const;
+  ORDER_CREATED: 'order.created',
+  ORDER_STATUS_UPDATED: 'order.status.updated',
 
-export const PAYMENT_EVENTS = {
-  PAYMENT_INITIATED: 'payment.initiated',
-  PAYMENT_COMPLETED: 'payment.completed',
+  PAYMENT_INITIATED: 'payment.initiated',  
+  PAYMENT_COMPLETED: 'payment.completed',  
   PAYMENT_FAILED: 'payment.failed',
 
-  // External events we listen to
-  ORDER_CREATED: EVENTS.ORDER_CREATED,
+  NOTIFICATION_SENT: 'notification.sent',
 } as const;

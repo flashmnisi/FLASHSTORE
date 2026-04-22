@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import logger from '@org/shared-logger';
-import { connectDB } from './config/db';
+import { connectDB } from './config/database';
 import app from './app';
  // ← This line was missing
 import env from './config/env';

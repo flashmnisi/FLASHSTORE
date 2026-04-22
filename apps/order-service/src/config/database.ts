@@ -1,13 +1,26 @@
 import mongoose from 'mongoose';
-import logger from '@org/shared-logger';
 import env from './env';
+import logger from '../utils/logger';
 
-export const connectDB = async (): Promise<void> => {
+export const connectDatabase = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI);
-    logger.info('✅ Order Service connected to MongoDB');
+    mongoose.set('strictQuery', true);
+
+    await mongoose.connect(env.MONGO_URI, {
+      autoIndex: true,
+    });
+
+    logger.info('🟢 Order Service MongoDB connected');
   } catch (error: any) {
-    logger.error({ error: error.message }, '❌ MongoDB connection failed in order-service');
+    logger.error('🔴 MongoDB connection failed', {
+      error: error.message,
+    });
+
     process.exit(1);
   }
+};
+
+export const disconnectDatabase = async () => {
+  await mongoose.disconnect();
+  logger.info('MongoDB disconnected');
 };

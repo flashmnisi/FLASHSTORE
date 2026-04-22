@@ -1,12 +1,21 @@
 import dotenv from 'dotenv';
+import { z } from 'zod';
+
 dotenv.config();
 
-export const env = {
-  PORT: Number(process.env.PORT) || 3004,
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://mongo:27017/flashstore',
-  KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'kafka:9092',
-  JWT_SECRET: process.env.JWT_SECRET || 'your-jwt-secret-key-change-in-production',
-};
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+  PORT: z.string().default('3004'),
+
+  MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
+
+  KAFKA_BROKERS: z.string().default('kafka:9092'),
+  KAFKA_CLIENT_ID: z.string().default('order-service'),
+
+  JWT_SECRET: z.string().optional(),
+});
+
+const env = envSchema.parse(process.env);
 
 export default env;

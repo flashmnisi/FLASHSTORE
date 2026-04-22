@@ -1,41 +1,81 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken } from '@org/shared-auth';
-import logger from '@org/shared-logger';
+import { verifyAccessToken, extractToken, type JwtPayload } from '@org/shared-auth';
+import logger from '../utils/logger';
+
+export interface AuthRequest extends Request {
+  user?: JwtPayload;
+}
 
 export const protect = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): void => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = extractToken(req.headers.authorization || '');
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.warn('No token provided');
-      res.status(401).json({ 
-        success: false, 
-        message: 'Not authorized, no token provided' 
+    if (!token) {
+      logger.warn('Missing auth token', {
+        path: req.originalUrl,
+        ip: req.ip,
+        correlationId: (req as any).correlationId,
+      });
+
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
       });
       return;
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = verifyAccessToken(token);
 
-    // Attach user info to request for downstream handlers
-    (req as any).user = decoded;
+    req.user = decoded;
 
-    next(); // Proceed to the next middleware or route handler
-  } catch (error: any) {
-    logger.warn(
-      { error: error.message },
-      'Authentication failed'
-    );
-
-    res.status(401).json({ 
-      success: false, 
-      message: 'Not authorized, token failed' 
+    logger.info('User authenticated', {
+      userId: decoded.userId,
+      role: decoded.role,
+      correlationId: (req as any).correlationId,
     });
-    return;
+
+    next();
+  } catch (error: any) {
+    logger.warn('Auth failed', {
+      error: error.message,
+      correlationId: (req as any).correlationId,
+    });
+
+    res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token',
+    });
   }
+};
+
+/**
+ * Role-based guard
+ */
+export const requireRole = (roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+
+    if (!roles.includes(req.user.role)) {
+      logger.warn('Access denied', {
+        userId: req.user.userId,
+        role: req.user.role,
+        required: roles,
+      });
+
+      res.status(403).json({
+        success: false,
+        message: 'Forbidden',
+      });
+      return;
+    }
+
+    next();
+  };
 };

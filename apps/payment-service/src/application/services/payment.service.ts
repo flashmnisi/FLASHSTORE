@@ -4,6 +4,7 @@ import { IPaymentRepository } from '../interfaces/payment.repository';
 import { IPaymentProvider } from '../interfaces/payment.provider';
 import { PaymentProducer } from '../../infrastructure/kafka/producer';
 import { idempotencyService } from '@org/shared-kafka';
+import { Money } from '../../domain/value-objects/money.vo';
 import logger from '../../utils/logger';
 
 export class PaymentService {
@@ -14,89 +15,89 @@ export class PaymentService {
   ) {}
 
   /**
-   * 🔥 MAIN ENTRY: Process Payment (Saga Step)
+   * 🔥 PROCESS PAYMENT (Saga Step)
    */
   async processPayment(input: ProcessPaymentDto, context?: { correlationId?: string }) {
     const log = logger.withContext({
       correlationId: context?.correlationId,
-      service: 'payment-service',
     });
+
+    // =============================
+    // 1. Validate DTO
+    // =============================
+    const dto = processPaymentSchema.parse(input);
+
+    // =============================
+    // 2. Use Money VO (CRITICAL FIX)
+    // =============================
+    const money = new Money(dto.amount, dto.currency);
+
+    log.info('Processing payment', {
+      orderId: dto.orderId,
+      amount: money.getAmount(),
+      currency: money.getCurrency(),
+    });
+
+    // =============================
+    // 3. Idempotency (ORDER LEVEL)
+    // =============================
+    const existing = await this.repository.findByOrderId(dto.orderId);
+
+    if (existing) {
+      log.warn('Duplicate payment prevented', {
+        orderId: dto.orderId,
+        paymentId: existing.id,
+      });
+
+      return existing;
+    }
+
+    // =============================
+    // 4. Create Payment (processing state)
+    // =============================
+    const payment = new PaymentEntity(
+      '',
+      dto.orderId,
+      dto.userId,
+      money.getAmount(),
+      money.getCurrency(),
+      'processing', // 👈 better than pending
+      dto.paymentMethod,
+      undefined,
+      dto.metadata
+    );
+
+    const savedPayment = await this.repository.create(payment);
 
     try {
       // =============================
-      // 1. Validate DTO
+      // 5. Call Stripe (with retry)
       // =============================
-      const dto = processPaymentSchema.parse(input);
-
-      log.info('Processing payment request', {
-        orderId: dto.orderId,
-        userId: dto.userId,
-        amount: dto.amount,
-      });
-
-      // =============================
-      // 2. Idempotency (CRITICAL)
-      // =============================
-      const existingPayment = await this.repository.findByOrderId(dto.orderId);
-
-      if (existingPayment) {
-        log.warn('Duplicate payment prevented', {
+      const providerResult = await this.retryStripeCall(() =>
+        this.provider.createPaymentIntent({
+          amount: money.getAmount(),
+          currency: money.getCurrency(),
           orderId: dto.orderId,
-          paymentId: existingPayment.id,
-        });
-
-        return existingPayment;
-      }
-
-      // =============================
-      // 3. Create Payment Record
-      // =============================
-      const payment = new PaymentEntity(
-        '',
-        dto.orderId,
-        dto.userId,
-        dto.amount,
-        dto.currency,
-        'pending',
-        dto.paymentMethod,
-        undefined,
-        dto.metadata
+          userId: dto.userId,
+          metadata: dto.metadata,
+        })
       );
 
-      const savedPayment = await this.repository.create(payment);
-
       // =============================
-      // 4. Call Payment Provider (Stripe)
-      // =============================
-      const providerResult = await this.provider.createPaymentIntent({
-        amount: dto.amount,
-        currency: dto.currency,
-        orderId: dto.orderId,
-        userId: dto.userId,
-        metadata: dto.metadata,
-      });
-
-      // =============================
-      // 5. Update Payment with Provider Data
+      // 6. Update Payment
       // =============================
       savedPayment.stripePaymentIntentId = providerResult.paymentIntentId;
+      savedPayment.status = 'pending';
 
       await this.repository.update(savedPayment);
 
       // =============================
-      // 6. Publish Kafka Event (Saga Start)
+      // 7. Outbox instead of direct Kafka (CRITICAL)
       // =============================
-      await this.producer.paymentInitiated({
-        paymentId: savedPayment.id,
-        orderId: savedPayment.orderId,
-        userId: savedPayment.userId,
-        amount: savedPayment.amount,
-        currency: savedPayment.currency,
-      });
+      await this.producer.paymentInitiatedOutbox(savedPayment);
 
-      log.info('Payment initiated successfully', {
+      log.info('Payment initiated', {
         paymentId: savedPayment.id,
-        orderId: savedPayment.orderId,
       });
 
       return {
@@ -106,9 +107,15 @@ export class PaymentService {
       };
 
     } catch (error: any) {
-      log.error('Payment processing failed', {
+      // =============================
+      // 8. Mark as failed (compensation)
+      // =============================
+      savedPayment.status = 'failed';
+      await this.repository.update(savedPayment);
+
+      log.error('Payment failed', {
         error: error.message,
-        stack: error.stack,
+        paymentId: savedPayment.id,
       });
 
       throw error;
@@ -116,100 +123,92 @@ export class PaymentService {
   }
 
   /**
-   * 🔥 HANDLE STRIPE WEBHOOK (Saga Completion)
+   * 🔥 STRIPE WEBHOOK HANDLER (Saga Completion)
    */
   async handleWebhook(payload: string, signature: string, context?: { correlationId?: string }) {
     const log = logger.withContext({
       correlationId: context?.correlationId,
     });
 
-    try {
-      // =============================
-      // 1. Verify Webhook Signature
-      // =============================
-      const event = await this.provider.verifyWebhookSignature(payload, signature);
+    // =============================
+    // 1. Verify signature
+    // =============================
+    const event = await this.provider.verifyWebhookSignature(payload, signature);
 
-      log.info('Webhook received', {
-        type: event.eventType,
-      });
+    const paymentIntentId = event.data?.id;
 
-      const data = event.data;
-
-      const paymentIntentId = data?.id;
-
-      if (!paymentIntentId) {
-        log.warn('Webhook missing paymentIntentId');
-        return;
-      }
-
-      // =============================
-      // 2. Idempotency (EVENT LEVEL)
-      // =============================
-      const isDuplicate = await idempotencyService.isDuplicate(
-        event.eventType + ':' + paymentIntentId,
-        'payment-service'
-      );
-
-      if (isDuplicate) {
-        log.warn('Duplicate webhook ignored', {
-          paymentIntentId,
-        });
-        return;
-      }
-
-      // =============================
-      // 3. Find Payment
-      // =============================
-      const payment = await this.repository.findByStripePaymentIntentId(paymentIntentId);
-
-      if (!payment) {
-        log.error('Payment not found for webhook', { paymentIntentId });
-        return;
-      }
-
-      // =============================
-      // 4. Handle Events
-      // =============================
-      switch (event.eventType) {
-        case 'payment_intent.succeeded': {
-          payment.status = 'succeeded';
-          await this.repository.update(payment);
-
-          await this.producer.paymentCompleted({
-            paymentId: payment.id,
-            orderId: payment.orderId,
-            userId: payment.userId,
-            amount: payment.amount,
-            currency: payment.currency,
-          });
-
-          log.info('Payment succeeded', { paymentId: payment.id });
-          break;
-        }
-
-        case 'payment_intent.payment_failed': {
-          payment.status = 'failed';
-          await this.repository.update(payment);
-
-          await this.producer.paymentFailed({
-            paymentId: payment.id,
-            orderId: payment.orderId,
-            userId: payment.userId,
-          });
-
-          log.warn('Payment failed', { paymentId: payment.id });
-          break;
-        }
-
-        default:
-          log.info('Unhandled webhook event', { type: event.eventType });
-      }
-
-    } catch (error: any) {
-      log.error('Webhook handling failed', {
-        error: error.message,
-      });
-      throw error;
+    if (!paymentIntentId) {
+      log.warn('Missing paymentIntentId');
+      return;
     }
+
+    // =============================
+    // 2. Idempotency (EVENT LEVEL)
+    // =============================
+    const isDuplicate = await idempotencyService.isDuplicate(
+      `${event.eventType}:${paymentIntentId}`,
+      'payment-service'
+    );
+
+    if (isDuplicate) return;
+
+    // =============================
+    // 3. Find payment
+    // =============================
+    const payment = await this.repository.findByStripePaymentIntentId(paymentIntentId);
+
+    if (!payment) {
+      log.error('Payment not found', { paymentIntentId });
+      return;
+    }
+
+    // =============================
+    // 4. Handle events
+    // =============================
+    switch (event.eventType) {
+      case 'payment_intent.succeeded': {
+        payment.status = 'succeeded';
+        await this.repository.update(payment);
+
+        await this.producer.paymentCompletedOutbox(payment);
+
+        log.info('Payment succeeded', { paymentId: payment.id });
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        payment.status = 'failed';
+        await this.repository.update(payment);
+
+        await this.producer.paymentFailedOutbox(payment);
+
+        log.warn('Payment failed', { paymentId: payment.id });
+        break;
+      }
+
+      default:
+        log.info('Unhandled event', { type: event.eventType });
+    }
+  }
+
+  /**
+   * 🔁 Stripe Retry Strategy (Production-grade)
+   */
+  private async retryStripeCall<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+    let lastError;
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        lastError = err;
+
+        if (i < retries - 1) {
+          await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        }
+      }
+    }
+
+    throw lastError;
   }
 }

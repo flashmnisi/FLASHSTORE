@@ -8,12 +8,17 @@ const outboxSchema = new Schema(
     event: { type: String, required: true },
     payload: { type: Schema.Types.Mixed, required: true },
     key: String,
+
     status: {
       type: String,
-      enum: ['pending', 'processed', 'failed'],
+      enum: ['pending', 'processing', 'processed', 'failed'],
       default: 'pending',
     },
+
     retries: { type: Number, default: 0 },
+
+    nextRetryAt: { type: Date, default: Date.now }, // 🔥 backoff support
+    lockedAt: { type: Date },                       // 🔥 concurrency lock
   },
   { timestamps: true }
 );

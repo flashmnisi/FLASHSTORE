@@ -6,7 +6,11 @@ import { z } from 'zod';
 const positiveAmount = z
   .number()
   .positive('Amount must be greater than zero')
-  .max(1_000_000, 'Amount cannot exceed 1,000,000 ZAR');
+  .max(1_000_000, 'Amount too large')
+  .refine(val => Number.isFinite(val), 'Invalid amount')
+  .refine(val => Math.round(val * 100) === val * 100, {
+    message: 'Amount must have max 2 decimal places',
+  });
 
 const currency = z
   .enum(['ZAR', 'USD', 'EUR', 'GBP'])

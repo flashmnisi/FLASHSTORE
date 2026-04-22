@@ -50,7 +50,8 @@
         "apps/payment-service-e2e/**/*",
         "apps/analitic-service-e2e/**/*",
         "apps/analytic-service-e2e/**/*",
-        "apps/analytics-e2e/**/*"
+        "apps/analytics-e2e/**/*",
+        "apps/search-service-e2e/**/*"
       ]
     }
   ],

@@ -74,6 +74,12 @@
     },
     {
       "path": "./apps/analytics"
+    },
+    {
+      "path": "./apps/search-service-e2e"
+    },
+    {
+      "path": "./apps/search-service"
     }
   ]
 }

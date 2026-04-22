@@ -3,7 +3,20 @@ dotenv.config();
 
 export const env = {
   PORT: Number(process.env.PORT) || 3000,
-  KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'kafka:9092',
+  NODE_ENV: process.env.NODE_ENV || 'development',
+
+  // Security
+  INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || 'change-this-in-production',
+  ALLOWED_IPS: process.env.ALLOWED_IPS || '127.0.0.1,::1',
+
+  // JWT
+  JWT_SECRET: process.env.JWT_SECRET || 'super-secret-jwt-key-change-in-production',
+
+  // Redis (for rate limiting)
+  REDIS_URL: process.env.REDIS_URL || 'redis://redis:6379',
+
+  // Logging level
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 };
 
 export default env;

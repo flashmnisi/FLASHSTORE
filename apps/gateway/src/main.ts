@@ -1,15 +1,44 @@
 import dotenv from 'dotenv';
-import logger from '@org/shared-logger';
-import app from './app';
-import env from './config/env';
-
 dotenv.config();
 
-const PORT = env.PORT;
+import createServer from './core/server';
+import { bootstrap } from './core/bootstrap';
+import logger from '@org/shared-logger';
+import env from './config/env';
 
-app.listen(PORT, () => {
-  logger.info(`🚀 Gateway running on http://localhost:${PORT}`);
-});
+const startGateway = async () => {
+  try {
+    logger.info('🚀 Flashstore Gateway is starting...');
+
+    // 1. Bootstrap Phase - Initialize all core dependencies
+    await bootstrap();
+
+    // 2. Create Express application
+    const app = createServer();
+
+    // 3. Start the HTTP server
+    const PORT = env.PORT || 3000;
+
+    app.listen(PORT, () => {
+      logger.info(`✅ Flashstore Gateway is running successfully`);
+      logger.info(`   Listening on http://localhost:${PORT}`);
+      logger.info(`   Environment: ${env.NODE_ENV}`);
+      logger.info(`   Timestamp: ${new Date().toISOString()}`);
+    });
+
+  } catch (error: any) {
+    logger.error('❌ Failed to start Flashstore Gateway', {
+      error: error.message,
+      stack: error.stack,
+    });
+
+    // Graceful shutdown on fatal bootstrap error
+    process.exit(1);
+  }
+};
+
+// Start the gateway
+startGateway();
 
 // import express from 'express';
 // import cors from 'cors';

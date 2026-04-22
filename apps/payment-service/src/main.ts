@@ -1,18 +1,31 @@
-import dotenv from 'dotenv';
-import logger from '@org/shared-logger';
-import { connectDB } from './config/db';
 import app from './app';
+import mongoose from 'mongoose';
+import logger from './utils/logger';
 import env from './config/env';
+import { PaymentConsumer } from './infrastructure/kafka/consumer';
+import { startOutboxProcessor } from './infrastructure/outbox/outbox.processor';
 
-dotenv.config();
+const PORT = env.PORT || 3005;
 
-const PORT = env.PORT;
+async function bootstrap() {
+  try {
+    await mongoose.connect(env.MONGO_URI);
+    logger.info('MongoDB connected');
 
-const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    logger.info(`🚀 Payment Service running on http://localhost:${PORT}`);
-  });
-};
+    const consumer = new PaymentConsumer(paymentService);
 
-startServer();
+     await consumer.start();
+     await startOutboxProcessor();
+
+    app.listen(PORT, () => {
+      logger.info(`💳 Payment Service running on http://localhost:${PORT}`);
+    });
+  } catch (error: any) {
+    logger.error('Failed to start payment service', {
+      error: error.message,
+    });
+    process.exit(1);
+  }
+}
+
+bootstrap();

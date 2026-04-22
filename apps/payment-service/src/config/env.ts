@@ -1,12 +1,35 @@
+// apps/payment-service/src/config/env.ts
+
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const env = {
-  PORT: Number(process.env.PORT) || 3005,
+const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://mongo:27017/flashstore',
+  PORT: process.env.PORT || 3005,
+
+  // DB
+  MONGO_URI: process.env.MONGO_URI!,
+
+  // Kafka
   KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'kafka:9092',
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'aaajjjs122334567890-0987654',
+  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID || 'payment-service',
+
+  // Stripe
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY!,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET!,
+
+  // Security
+  INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || '',
 };
+
+function assertEnv(value: any, name: string) {
+  if (!value) {
+    throw new Error(`❌ Missing environment variable: ${name}`);
+  }
+}
+
+assertEnv(env.MONGO_URI, 'MONGO_URI');
+assertEnv(env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY');
+assertEnv(env.STRIPE_WEBHOOK_SECRET, 'STRIPE_WEBHOOK_SECRET');
 
 export default env;

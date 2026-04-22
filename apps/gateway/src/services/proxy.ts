@@ -1,52 +1,67 @@
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import logger from '@org/shared-logger';
+// import { createProxyMiddleware } from 'http-proxy-middleware';
+// import logger from '@org/shared-logger';
+// import { services } from '../config/services';
+// import { pathRewriteMap } from './path-rewrite';
+// import { forwardHeaders, sanitizeHeaders } from '../utils/header-utils';
 
-const serviceTargets = {
-  user: 'http://user-service:3001',
-  catalog: 'http://catalog-service:3002',
-  cart: 'http://cart-service:3003',
-  order: 'http://order-service:3004',
-  payment: 'http://payment-service:3005',
-  notification: 'http://notification-service:3006',
-};
+// export const createServiceProxy = (serviceName: keyof typeof services) => {
+//   const target = services[serviceName];
 
-export const createServiceProxy = (serviceName: keyof typeof serviceTargets) => {
-  const target = serviceTargets[serviceName];
+//   return createProxyMiddleware({
+//     target,
+//     changeOrigin: true,
+//     timeout: 180000,
+//     proxyTimeout: 180000,
 
-  return createProxyMiddleware({
-    target,
-    changeOrigin: true,
-    timeout: 180000,
-    proxyTimeout: 180000,
+//     pathRewrite: {
+//       [pathRewriteMap[serviceName]]: '',
+//     },
 
-    // Remove /api completely so user-service sees /register, /login, etc.
-    pathRewrite: {
-      '^/api': '',
-    },
+//     on: {
+//       proxyReq: (proxyReq, req: any) => {
+//         logger.info(`🔀 Proxy → ${serviceName} | ${req.method} ${req.url}`);
 
-    on: {
-      proxyReq: (proxyReq, req: any) => {
-        logger.info(`🔀 Proxy → ${serviceName} | ${req.method} ${req.url}`);
+//         // Forward important headers using utility
+//         const forwardedHeaders = forwardHeaders(req.headers);
+//         Object.entries(forwardedHeaders).forEach(([key, value]) => {
+//           proxyReq.setHeader(key, value);
+//         });
 
-        if (req.body) {
-          const bodyStr = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyStr));
-          proxyReq.write(bodyStr);
-        }
-      },
+//         // Forward user context (if authenticated)
+//         if (req.user) {
+//           proxyReq.setHeader('x-user-id', req.user.userId);
+//           proxyReq.setHeader('x-user-role', req.user.role);
+//           if (req.user.email) proxyReq.setHeader('x-user-email', req.user.email);
+//         }
 
-      proxyRes: (proxyRes, req) => {
-        logger.info(`Response ← ${serviceName} | ${proxyRes.statusCode}`);
-      },
+//         // Forward correlation ID
+//         if (req.correlationId) {
+//           proxyReq.setHeader('x-correlation-id', req.correlationId);
+//         }
 
-      error: (err, req, res: any) => {
-        logger.error(`Proxy error to ${serviceName}: ${err.message}`);
-        res.status(502).json({ success: false, message: `Cannot reach ${serviceName}` });
-      },
-    },
-  });
-};
+//         // Forward body safely
+//         if (req.body) {
+//           const bodyStr = JSON.stringify(req.body);
+//           proxyReq.setHeader('Content-Type', 'application/json');
+//           proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyStr));
+//           proxyReq.write(bodyStr);
+//         }
+//       },
+
+//       proxyRes: (proxyRes, req) => {
+//         logger.info(`Response ← ${serviceName} | ${proxyRes.statusCode} ${req.url}`);
+//       },
+
+//       error: (err, req, res: any) => {
+//         logger.error(`❌ Proxy error to ${serviceName}`, { error: err.message });
+//         res.status(502).json({
+//           success: false,
+//           message: `Service ${serviceName} is currently unavailable`,
+//         });
+//       },
+//     },
+//   });
+// };
 // import logger from '@org/shared-logger';
 // import { createProxyMiddleware } from 'http-proxy-middleware';
 

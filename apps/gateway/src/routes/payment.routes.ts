@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { createServiceProxy } from '../services/proxy';
+//import { createServiceProxy } from '../services/proxy';
 import { protect } from '../middlewares/auth';
+import { createServiceProxy } from '../services/proxy.factory';
 
 const router = Router();
 

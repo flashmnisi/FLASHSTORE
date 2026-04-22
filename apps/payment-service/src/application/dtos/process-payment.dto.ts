@@ -6,8 +6,8 @@ export const processPaymentSchema = z.object({
   userId: validators.userId,
   amount: validators.positiveAmount,
   currency: validators.currency,
-  paymentMethod: z.enum(['card']).default('card'),
-  metadata: z.record(z.any()).optional().default({}),
+   paymentMethod: z.enum(['card']).default('card'),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type ProcessPaymentDto = z.infer<typeof processPaymentSchema>;

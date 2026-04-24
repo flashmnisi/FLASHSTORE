@@ -80,6 +80,18 @@
     },
     {
       "path": "./apps/search-service"
+    },
+    {
+      "path": "./packages"
+    },
+    {
+      "path": "./shared-redis"
+    },
+    {
+      "path": "./shared-redis"
+    },
+    {
+      "path": "./libs/shared-redis"
     }
   ]
 }

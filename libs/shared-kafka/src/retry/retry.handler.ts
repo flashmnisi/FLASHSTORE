@@ -1,7 +1,7 @@
+import logger from 'src/utils/logger';
 import { publish } from '../client/producer';
-import logger from '@org/shared-logger';
+//import logger from '@org/shared-logger';
 import { DEFAULT_RETRY_POLICY } from './retry.policy';
-import { sendToDLQ } from 'src/dlq/dlq.handler';
 
 interface RetryOptions {
   topic: string;
@@ -18,22 +18,14 @@ export const handleRetry = async ({
 }: RetryOptions) => {
   const retryCount = parseInt(headers['x-retry-count'] || '0');
 
-  if (retryCount < policy.maxRetries) {
-    const nextRetry = retryCount + 1;
+  const nextRetry = retryCount + 1;
 
-    logger.warn(`🔁 Retrying message`, {
+  if (nextRetry <= policy.maxRetries) {
+    logger.warn('🔁 Sending message to retry queue', {
       topic,
       retryCount: nextRetry,
       maxRetries: policy.maxRetries,
     });
-
-    await sendToDLQ({
-  topic,
-  message,
-  key: message?.id,
-  headers,
-  error: 'Max retries exceeded',
-});
 
     await publish({
       topic: `${topic}.retry`,
@@ -45,17 +37,18 @@ export const handleRetry = async ({
       },
     });
 
-  } else {
-    logger.error(`💀 Sending message to DLQ`, {
-      topic,
-      retries: retryCount,
-    });
-
-    await publish({
-      topic: `${topic}.dlq`,
-      message,
-      key: message?.id,
-      headers,
-    });
+    return;
   }
+
+  logger.error('💀 Max retries exceeded → sending to DLQ', {
+    topic,
+    retryCount,
+  });
+
+  await publish({
+    topic: `${topic}.dlq`,
+    message,
+    key: message?.id,
+    headers,
+  });
 };

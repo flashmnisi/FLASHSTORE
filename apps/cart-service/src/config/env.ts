@@ -2,10 +2,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const env = {
-  PORT: Number(process.env.PORT) || 3003,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://mongo:27017/flashstore',
-  KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'kafka:9092',
-};
+  PORT: process.env.PORT || 4000,
 
-export default env;
+  MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/cart',
+
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+
+  KAFKA_BROKERS: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
+
+  ORDER_SERVICE_URL: process.env.ORDER_SERVICE_URL || 'http://localhost:5001',
+  PAYMENT_SERVICE_URL: process.env.PAYMENT_SERVICE_URL || 'http://localhost:5002',
+};

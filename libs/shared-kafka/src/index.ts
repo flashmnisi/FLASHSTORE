@@ -1,19 +1,32 @@
-// Kafka
-export * from './client/kafka';
+// ===============================
+// CORE KAFKA CLIENT
+// ===============================
+export * from './client/kafka.client';
 export * from './client/producer';
 export * from './client/consumer';
 
-// Topics
-export * from './config/topics';
+// ===============================
+// HIGH-LEVEL MESSAGING API (IMPORTANT)
+// ===============================
+//export * from './messaging/publish';
+export * from './messaging/subscribe';
 
-// Retry system
+// ===============================
+// RESILIENCE LAYER
+// ===============================
 export * from './retry/retry.handler';
 export * from './retry/retry.consumer';
 export * from './retry/retry.policy';
 
-// Idempotency
-export * from './idempotency/idempotency.service';
+export * from './resilience/dlq/dlq.publisher';
+export * from './resilience/dlq/dlq.consumer';
 
-// Utils
-export * from './utils/headers';
-export * from './utils/logger';
+// ===============================
+// IDENTITY + SAFETY
+// ===============================
+export * from './resilience/indempotency/idempotency.service';
+
+// ===============================
+// OBSERVABILITY UTILITIES
+// ===============================
+export * from './utils/header';

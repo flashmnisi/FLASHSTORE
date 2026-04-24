@@ -1,8 +1,8 @@
 import { Producer, ProducerRecord } from 'kafkajs';
-import { getKafka } from './kafka';
-import logger from '../utils/logger';
+import { getKafka } from './kafka.client';
+import logger from '@org/shared-logger';
 
-let producer: Producer;
+let producer: Producer | null = null;
 
 export const getProducer = async (): Promise<Producer> => {
   if (!producer) {
@@ -10,44 +10,39 @@ export const getProducer = async (): Promise<Producer> => {
 
     producer = kafka.producer({
       allowAutoTopicCreation: true,
-      idempotent: true, // 🔥 important
+      idempotent: true,
       maxInFlightRequests: 5,
       retry: { retries: 5 },
     });
 
     await producer.connect();
 
-    logger.info('🚀 Kafka Producer connected');
+    logger.info({}, '🚀 Kafka Producer connected successfully');
   }
 
   return producer;
 };
 
-interface PublishOptions {
+export const publish = async (options: {
   topic: string;
   message: any;
   key?: string;
   headers?: Record<string, string>;
-}
-
-export const publish = async ({
-  topic,
-  message,
-  key,
-  headers = {},
-}: PublishOptions): Promise<void> => {
+}): Promise<void> => {
   try {
     const prod = await getProducer();
 
     const record: ProducerRecord = {
-      topic,
+      topic: options.topic,
       messages: [
         {
-          key,
-          value: JSON.stringify(message),
+          key: options.key,
+          value: JSON.stringify(options.message),
           headers: {
-            ...headers,
-            'x-event-type': message.event || 'unknown',
+            ...options.headers,
+            'x-event-type': options.message?.event || 'unknown',
+            'x-service': 'shared-kafka',
+            'x-timestamp': new Date().toISOString(),
           },
         },
       ],
@@ -55,17 +50,25 @@ export const publish = async ({
 
     await prod.send(record);
 
-    logger.info(`📤 Event published`, {
-      topic,
-      key,
-      event: message.event,
-    });
+    // ✅ FIXED LOGGER
+    logger.info(
+      {
+        topic: options.topic,
+        key: options.key,
+        event: options.message?.event,
+      },
+      '📤 Event published'
+    );
 
   } catch (error: any) {
-    logger.error(`❌ Failed to publish`, {
-      topic,
-      error: error.message,
-    });
+    // ✅ FIXED LOGGER
+    logger.error(
+      {
+        topic: options.topic,
+        error: error.message,
+      },
+      '❌ Failed to publish event'
+    );
 
     throw error;
   }

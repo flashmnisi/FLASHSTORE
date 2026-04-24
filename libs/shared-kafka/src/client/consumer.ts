@@ -1,10 +1,10 @@
 import { Consumer } from 'kafkajs';
-import { getKafka } from './kafka';
-import logger from '../utils/logger';
-import { sendToDLQ } from '../dlq/dlq.handler';
-import { retryHandler } from '../retry/retry.handler';
-import { idempotencyService } from 'src/indepotency/indepotency.service';
-
+import { getKafka } from './kafka.client';
+import { sendToDLQ } from '../resilience/dlq/dlq.publisher';
+import { retryExecutor } from '../resilience/retry/retry.executor';
+import logger from '@org/shared-logger';
+import { idempotencyService } from 'src/resilience/indempotency/idempotency.service';
+//import { idempotencyService } from '../resilience/idempotency/idempotency.service';
 
 interface ConsumerConfig {
   groupId: string;
@@ -20,10 +20,13 @@ export const createConsumer = (config: ConsumerConfig): Consumer => {
     retry: { retries: 5 },
   });
 
-  logger.info(`👥 Consumer created`, {
-    groupId: config.groupId,
-    topics: config.topics,
-  });
+  logger.info(
+    {
+      groupId: config.groupId,
+      topics: config.topics,
+    },
+    '👥 Consumer created'
+  );
 
   return consumer;
 };
@@ -42,7 +45,6 @@ export const runConsumer = async (
   await consumer.run({
     eachMessage: async ({ topic, partition, message }) => {
       const raw = message.value?.toString();
-
       if (!raw) return;
 
       let parsed: any;
@@ -50,55 +52,75 @@ export const runConsumer = async (
       try {
         parsed = JSON.parse(raw);
       } catch {
-        logger.error(`Invalid JSON message`, { topic });
+        logger.error({ topic, raw }, 'Invalid JSON message');
         return;
       }
 
       const eventId =
-        parsed?.eventId ||
+        parsed?.metadata?.requestId ||
         idempotencyService.generateEventId(parsed?.data || {});
 
       try {
-        // 🔥 Idempotency check
+        // ✅ Idempotency check
         const isDuplicate = await idempotencyService.isDuplicate(
           eventId,
           config.serviceName
         );
 
-        if (isDuplicate) return;
+        if (isDuplicate) {
+          logger.info({ eventId }, 'Duplicate event skipped');
+          return;
+        }
 
-        logger.info(`📥 Processing event`, {
-          topic,
-          event: parsed.event,
-          eventId,
-        });
+        logger.info(
+          {
+            topic,
+            event: parsed.event,
+            eventId,
+          },
+          '📥 Processing event'
+        );
 
-        // 🔁 Retry wrapper
-        await retryHandler(async () => {
+        // ✅ Retry wrapper
+        await retryExecutor(async () => {
           await handler(parsed);
         });
 
-        await idempotencyService.markAsProcessed(eventId, config.serviceName);
+        // ✅ Mark as processed
+        await idempotencyService.markAsProcessed(
+          eventId,
+          config.serviceName
+        );
 
       } catch (error: any) {
-        logger.error(`❌ Event processing failed`, {
-          topic,
-          event: parsed.event,
-          error: error.message,
-        });
+        logger.error(
+          {
+            topic,
+            event: parsed?.event,
+            error: error.message,
+          },
+          '❌ Event processing failed'
+        );
 
-        // 💀 Send to DLQ
+        // ✅ Send to DLQ
         await sendToDLQ({
-          topic,
-          message: parsed,
-          key: message.key?.toString(),
-          error: error.message,
-        });
+  topic,
+  originalEvent: parsed,
+  error: error.message,
+  timestamp: new Date().toISOString(),
+  retryCount: parsed?.metadata?.retryCount ?? 0,
+  serviceName: config.serviceName,
+
+  correlationId: parsed?.metadata?.correlationId,
+  traceId: parsed?.metadata?.traceId,
+  eventId,
+});
       }
     },
   });
 
-  logger.info(`✅ Consumer running`, {
-    groupId: config.groupId,
-  });
+  logger.info(
+    { groupId: config.groupId },
+    '✅ Consumer running'
+  );
 };

@@ -1,4 +1,4 @@
-import { redis } from '@org/shared-redis';
+import { redis } from '../../../../../libs/shared-redis/src';
 
 export class TrendingService {
   async getTrending(limit = 10) {

@@ -1,18 +1,50 @@
+// apps/cart-service/src/app.ts
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import cartRoutes from './routes/cart.routes';
 
-const app = express();
+import cartRoutes from './presentation/routes/cart.routes';
+import { errorMiddleware } from './middlewares/error.middleware';
+import logger from './utils/logger';
 
+export const app = express();
+
+// =============================
+// 🔐 Core Middleware
+// =============================
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// =============================
+// 📦 Routes
+// =============================
 app.use('/api/cart', cartRoutes);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', service: 'cart-service' });
+// =============================
+// ❤️ Health Check
+// =============================
+app.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'cart-service',
+  });
 });
 
-export default app;
+// =============================
+// ❌ Error Handler
+// =============================
+app.use(errorMiddleware);
+
+// =============================
+// 🚨 Unhandled Errors
+// =============================
+process.on('unhandledRejection', (err: any) => {
+  logger.error('Unhandled Rejection', { error: err.message });
+});
+
+process.on('uncaughtException', (err: any) => {
+  logger.error('Uncaught Exception', { error: err.message });
+  process.exit(1);
+});

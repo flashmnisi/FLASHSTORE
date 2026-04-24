@@ -4,36 +4,42 @@ export const HEADER_KEYS = {
   REQUEST_ID: 'x-request-id',
   CORRELATION_ID: 'x-correlation-id',
   RETRY_COUNT: 'x-retry-count',
-};
+} as const;
+
+export interface TraceHeaders {
+  requestId: string;
+  correlationId: string;
+  retryCount: number;
+}
 
 /**
- * Extract tracing headers
+ * Normalize headers from incoming request/Kafka message
  */
-export const extractHeaders = (headers: any) => {
+export const extractHeaders = (headers: Record<string, any> = {}): TraceHeaders => {
   return {
-    requestId: headers[HEADER_KEYS.REQUEST_ID],
-    correlationId: headers[HEADER_KEYS.CORRELATION_ID],
-    retryCount: headers[HEADER_KEYS.RETRY_COUNT] || '0',
+    requestId: String(headers[HEADER_KEYS.REQUEST_ID] || uuidv4()),
+    correlationId: String(headers[HEADER_KEYS.CORRELATION_ID] || uuidv4()),
+    retryCount: Number(headers[HEADER_KEYS.RETRY_COUNT] || 0),
   };
 };
 
 /**
- * Build headers for Kafka message
+ * Build headers for Kafka publishing
  */
-export const buildHeaders = (headers: any = {}) => {
+export const buildHeaders = (headers: Partial<TraceHeaders> = {}): Record<string, string> => {
   return {
     [HEADER_KEYS.REQUEST_ID]: headers.requestId || uuidv4(),
     [HEADER_KEYS.CORRELATION_ID]: headers.correlationId || uuidv4(),
-    [HEADER_KEYS.RETRY_COUNT]: headers.retryCount || '0',
+    [HEADER_KEYS.RETRY_COUNT]: String(headers.retryCount ?? 0),
   };
 };
 
 /**
- * Forward headers (Gateway → Services)
+ * Forward headers from gateway → services
  */
-export const forwardHeaders = (headers: any) => {
+export const forwardHeaders = (headers: Record<string, any> = {}): Record<string, string> => {
   return {
-    [HEADER_KEYS.REQUEST_ID]: headers[HEADER_KEYS.REQUEST_ID] || uuidv4(),
-    [HEADER_KEYS.CORRELATION_ID]: headers[HEADER_KEYS.CORRELATION_ID] || uuidv4(),
+    [HEADER_KEYS.REQUEST_ID]: String(headers[HEADER_KEYS.REQUEST_ID] || uuidv4()),
+    [HEADER_KEYS.CORRELATION_ID]: String(headers[HEADER_KEYS.CORRELATION_ID] || uuidv4()),
   };
 };

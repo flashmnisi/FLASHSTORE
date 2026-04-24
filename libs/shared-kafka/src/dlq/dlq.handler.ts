@@ -47,29 +47,38 @@ export const sendToDLQ = async ({
       headers: {
         ...headers,
         'x-failed-reason': error || 'unknown',
+        'x-retry-count': retryCount,
       },
     });
 
-    logger.error(`💀 Message sent to DLQ`, {
-      topic: dlqTopic,
-      key,
-      retryCount,
-      correlationId,
-    });
+    // ✅ FIXED LOGGER
+    logger.error(
+      {
+        topic: dlqTopic,
+        key,
+        retryCount,
+        correlationId,
+      },
+      '💀 Message sent to DLQ'
+    );
 
   } catch (err: any) {
-    logger.error(`🚨 CRITICAL: Failed to send message to DLQ`, {
-      originalTopic: topic,
-      key,
-      error: err.message,
-    });
+    // ✅ FIXED LOGGER
+    logger.error(
+      {
+        originalTopic: topic,
+        key,
+        error: err.message,
+      },
+      '🚨 CRITICAL: Failed to send message to DLQ'
+    );
 
     /**
-     * 🔥 EXTREME CASE HANDLING
-     * If DLQ fails → this is system-level failure
-     * You SHOULD:
-     * - send alert (Slack / email)
-     * - persist locally (file / fallback DB)
+     * 🔥 PRODUCTION UPGRADE
+     * If DLQ fails → fallback persistence
      */
+    // TODO:
+    // - write to local file
+    // - send alert (Slack / PagerDuty)
   }
 };

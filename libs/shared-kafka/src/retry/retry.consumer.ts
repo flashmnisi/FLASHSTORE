@@ -1,6 +1,7 @@
+//import logger from '@org/shared-logger';
+import logger from 'src/utils/logger';
 import { createConsumer, runConsumer } from '../client/consumer';
 import { calculateDelay, DEFAULT_RETRY_POLICY } from './retry.policy';
-import logger from '@org/shared-logger';
 
 interface RetryConsumerOptions {
   groupId: string;
@@ -8,10 +9,6 @@ interface RetryConsumerOptions {
   handler: (message: any) => Promise<void>;
 }
 
-/**
- * Retry consumer
- * Listens to *.retry topics and reprocesses messages with delay
- */
 export const startRetryConsumer = async ({
   groupId,
   topic,
@@ -22,41 +19,40 @@ export const startRetryConsumer = async ({
   const consumer = createConsumer({
     groupId: `${groupId}-retry`,
     topics: [retryTopic],
+    serviceName: groupId,
   });
 
   await runConsumer(
     consumer,
-    { groupId, topics: [retryTopic] },
-    async (message: any, raw?: any) => {
-      const headers = raw?.headers || {};
+    { groupId, topics: [retryTopic], serviceName: groupId },
+    async (event: any) => {
+      const headers = event?.metadata?.headers || {};
       const retryCount = parseInt(headers['x-retry-count'] || '0');
 
       const delay = calculateDelay(retryCount, DEFAULT_RETRY_POLICY);
 
-      logger.info(`⏳ Delaying retry`, {
+      logger.info('⏳ Retry delay started', {
         retryCount,
         delay,
         topic,
       });
 
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
       try {
-        await handler(message);
+        await handler(event);
 
-        logger.info(`✅ Retry successful`, {
+        logger.info('✅ Retry successful', {
           retryCount,
           topic,
         });
-
       } catch (error: any) {
-        logger.error(`❌ Retry failed again`, {
+        logger.error('❌ Retry failed again', {
           retryCount,
           error: error.message,
         });
 
-        throw error; // triggers retry handler again
+        throw error; // let retry pipeline handle it
       }
     }
   );

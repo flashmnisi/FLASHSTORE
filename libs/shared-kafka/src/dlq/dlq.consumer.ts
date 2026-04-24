@@ -3,20 +3,15 @@ import logger from '@org/shared-logger';
 
 interface DLQConsumerOptions {
   groupId: string;
-  topics: string[]; // base topics (without .dlq)
+  topics: string[];
+  serviceName: string;
   handler?: (message: any) => Promise<void>;
 }
 
-/**
- * DLQ Consumer
- * Used for:
- * - Logging failures
- * - Alerting
- * - Manual recovery
- */
 export const startDLQConsumer = async ({
   groupId,
   topics,
+  serviceName,
   handler,
 }: DLQConsumerOptions) => {
   const dlqTopics = topics.map(topic => `${topic}.dlq`);
@@ -24,32 +19,46 @@ export const startDLQConsumer = async ({
   const consumer = createConsumer({
     groupId: `${groupId}-dlq`,
     topics: dlqTopics,
+    serviceName, // ✅ REQUIRED
   });
 
   await runConsumer(
     consumer,
-    { groupId, topics: dlqTopics },
+    {
+      groupId: `${groupId}-dlq`,
+      topics: dlqTopics,
+      serviceName,
+    },
     async (message: any) => {
       try {
-        logger.error(`💀 DLQ message received`, {
-          event: message?.originalMessage?.event,
-          error: message?.error,
-        });
+        // ✅ FIXED LOGGER
+        logger.error(
+          {
+            event: message?.originalMessage?.event,
+            error: message?.error?.message,
+            correlationId: message?.metadata?.correlationId,
+          },
+          '💀 DLQ message received'
+        );
 
-        // Optional custom handler (manual recovery, alerts, etc.)
+        // Optional recovery logic
         if (handler) {
           await handler(message);
         }
 
       } catch (error: any) {
-        logger.error(`❌ DLQ handler failed`, {
-          error: error.message,
-        });
+        logger.error(
+          {
+            error: error.message,
+          },
+          '❌ DLQ handler failed'
+        );
       }
     }
   );
 
-  logger.info(`🚨 DLQ Consumer started`, {
-    topics: dlqTopics,
-  });
+  logger.info(
+    { topics: dlqTopics },
+    '🚨 DLQ Consumer started'
+  );
 };

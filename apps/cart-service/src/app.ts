@@ -5,8 +5,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 
 import cartRoutes from './presentation/routes/cart.routes';
-import { errorMiddleware } from './middlewares/error.middleware';
-import logger from './utils/logger';
+import logger from '@org/shared-logger';
+import { errorMiddleware } from './middleware/error.middleware';
 
 export const app = express();
 

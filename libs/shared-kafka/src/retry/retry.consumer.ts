@@ -1,5 +1,5 @@
 //import logger from '@org/shared-logger';
-import logger from 'src/utils/logger';
+import logger from '@org/shared-logger';
 import { createConsumer, runConsumer } from '../client/consumer';
 import { calculateDelay, DEFAULT_RETRY_POLICY } from './retry.policy';
 

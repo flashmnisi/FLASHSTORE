@@ -1,6 +1,5 @@
 // apps/cart-service/src/infrastructure/analytics/cart-events.tracker.ts
-
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 import { sendToOutbox } from '../outbox/outbox.processor';
 
 export class CartEventsTracker {

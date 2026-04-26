@@ -1,27 +1,30 @@
 import { createConsumer, runConsumer } from '@org/shared-kafka';
-import logger from '@org/shared-logger';
 import { NotificationService } from '../../application/services/notification.service';
-import { NotificationType } from '../../domain/entities/notification.entity';
+import logger from '@org/shared-logger';
 
-export const startNotificationConsumer = async (notificationService: NotificationService) => {
+export const startNotificationConsumer = async (
+  notificationService: NotificationService
+) => {
+  const groupId = 'notification-service';
+
   try {
     const consumer = createConsumer({
-      groupId: 'notification-service-group',
-      topics: [
-        'flashstore.users',     
-        'flashstore.orders',     
-        'flashstore.payments',   
-      ],
+      groupId,
+      topics: ['flashstore.users', 'flashstore.orders', 'flashstore.payments'],
+      serviceName: groupId,
     });
 
     await runConsumer(
       consumer,
       {
-        groupId: 'notification-service-group',
+        groupId,
         topics: ['flashstore.users', 'flashstore.orders', 'flashstore.payments'],
+        serviceName: groupId,
       },
       async (message: any) => {
-        logger.info(`📥 Notification Consumer received event: ${message.event}`);
+        logger.info('📥 Notification event received', { 
+          event: message.event 
+        });
 
         try {
           switch (message.event) {
@@ -29,9 +32,10 @@ export const startNotificationConsumer = async (notificationService: Notificatio
               await notificationService.send({
                 userId: message.data.userId,
                 type: 'user.registered',
+                templateName: 'welcome-email',           // ← Required
+                templateData: message.data,              // ← Required
                 title: 'Welcome to Flashstore!',
-                message: `Hello ${message.data.name || 'there'}, thank you for joining us!`,
-                data: message.data,
+                message: `Hello ${message.data.name || 'there'}, welcome to Flashstore!`,
                 channel: 'email',
               });
               break;
@@ -40,9 +44,10 @@ export const startNotificationConsumer = async (notificationService: Notificatio
               await notificationService.send({
                 userId: message.data.userId,
                 type: 'order.created',
+                templateName: 'order-confirmation',      // ← Required
+                templateData: message.data,
                 title: 'Order Confirmed',
-                message: `Your order #${message.data.orderId} has been placed successfully.`,
-                data: message.data,
+                message: `Your order #${message.data.orderId} has been created successfully.`,
                 channel: 'email',
               });
               break;
@@ -51,9 +56,10 @@ export const startNotificationConsumer = async (notificationService: Notificatio
               await notificationService.send({
                 userId: message.data.userId,
                 type: 'payment.success',
+                templateName: 'payment-success',
+                templateData: message.data,
                 title: 'Payment Successful',
                 message: `Payment for order #${message.data.orderId} was successful.`,
-                data: message.data,
                 channel: 'email',
               });
               break;
@@ -62,24 +68,35 @@ export const startNotificationConsumer = async (notificationService: Notificatio
               await notificationService.send({
                 userId: message.data.userId,
                 type: 'payment.failed',
+                templateName: 'payment-failed',
+                templateData: message.data,
                 title: 'Payment Failed',
-                message: `Payment for order #${message.data.orderId} failed. Please try again.`,
-                data: message.data,
+                message: `Payment for order #${message.data.orderId} has failed. Please try again.`,
                 channel: 'email',
               });
               break;
 
             default:
-              logger.info(`Unknown event received: ${message.event}`);
+              logger.warn('Unknown event received', { 
+                event: message.event 
+              });
           }
         } catch (err: any) {
-          logger.error(`Failed to process event ${message.event}`, { error: err.message });
+          logger.error('Failed to process notification event', {
+            event: message.event,
+            error: err.message,
+            userId: message.data?.userId,
+          });
         }
       }
     );
 
-    logger.info('👥 Notification Kafka consumer started successfully');
-  } catch (error: any) {
-    logger.error('Failed to start notification consumer', { error: error.message });
+    logger.info('👥 Notification consumer started successfully', { groupId });
+
+  } catch (err: any) {
+    logger.error('Failed to start notification consumer', {
+      error: err.message,
+      groupId,
+    });
   }
 };

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { OrderService } from '../../application/services/order.service';
+//import { OrderService } from '../../application/services/order.service';
 import { createOrderSchema } from '../../application/dtos/create-order.dto';
-import logger from '../../utils/logger';
 import { AuthRequest } from '../../middlewares/auth.middleware';
+import logger from '@org/shared-logger';
+import { OrderService } from '../../application/sevices/order.service';
 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}

@@ -3,7 +3,8 @@ import { SearchQueryDto } from '../dtos/search-query.dto';
 import { QueryNormalizer } from './query-normalizer';
 import { RankingEngine } from './ranking.engine';
 import { SearchCache } from '../../infrastructure/cache/search-cache';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
+//import logger from '../../utils/logger';
 
 export class SearchOrchestrator {
   private normalizer = new QueryNormalizer();

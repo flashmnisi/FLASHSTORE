@@ -1,4 +1,6 @@
-import { BaseEvent } from '@org/shared-kafka';
+//import { BaseEvent } from '@org/shared-kafka';
+
+import { BaseEvent } from "@org/shared-kafka";
 
 /**
  * ORDER CREATED EVENT

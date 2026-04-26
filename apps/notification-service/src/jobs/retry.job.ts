@@ -13,7 +13,7 @@ export class RetryJob {
     try {
       const failedNotifications = await OutboxModel.find({
         status: 'failed',
-        retryCount: { $lt: 5 }   // max 5 retries
+        retryCount: { $lt: 5 },   // max 5 retries
       }).limit(20);
 
       if (failedNotifications.length === 0) return;
@@ -22,16 +22,17 @@ export class RetryJob {
 
       for (const outbox of failedNotifications) {
         try {
-          // Re-process the notification
-          const notificationData = outbox.payload;
+          const payload = outbox.payload;
 
+          // Call notificationService with correct shape (templateName + templateData)
           await this.notificationService.send({
-            userId: notificationData.userId,
-            type: notificationData.type,
-            title: notificationData.title,
-            message: notificationData.message,
-            data: notificationData.data,
-            channel: notificationData.channel,
+            userId: payload.userId,
+            type: payload.type,
+            templateName: payload.templateName || 'default-notification',
+            templateData: payload.data || payload,
+            title: payload.title,
+            message: payload.message,
+            channel: payload.channel,
           });
 
           // Mark as processed
@@ -39,14 +40,18 @@ export class RetryJob {
           outbox.retryCount = (outbox.retryCount || 0) + 1;
           await outbox.save();
 
-          logger.info(`✅ Retry successful for notification ${outbox._id}`);
+          logger.info('✅ Retry successful for notification', { 
+            outboxId: outbox._id 
+          });
+
         } catch (err: any) {
           outbox.retryCount = (outbox.retryCount || 0) + 1;
           await outbox.save();
 
-          logger.warn(`Retry failed for notification ${outbox._id}`, {
+          logger.warn('⚠️ Retry failed for notification', {
+            outboxId: outbox._id,
             retryCount: outbox.retryCount,
-            error: err.message
+            error: err.message,
           });
         }
       }

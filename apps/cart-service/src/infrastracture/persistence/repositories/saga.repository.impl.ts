@@ -1,6 +1,7 @@
-import { ISagaRepository } from '../../application/interfaces/saga.repository';
-import { CheckoutSagaEntity } from '../../domain/entities/checkout-saga.entity';
-import { CheckoutSagaModel } from '../persistence/models/checkout-saga.model';
+import { ISagaRepository } from "../../../application/interfaces/saga.repository";
+import { CheckoutSagaEntity } from "../../../domain/entities/checkout-saga.entity";
+import { CheckoutSagaModel } from "../models/checkout-saga.model";
+
 
 export class SagaRepositoryImpl implements ISagaRepository {
 

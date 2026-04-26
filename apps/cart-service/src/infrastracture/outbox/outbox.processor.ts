@@ -1,8 +1,8 @@
 // apps/cart-service/src/infrastructure/outbox/outbox.processor.ts
 
+import logger from '@org/shared-logger';
 import { OutboxModel } from './outbox.model';
 import { publish } from '@org/shared-kafka';
-import logger from '../../utils/logger';
 
 const BATCH_SIZE = 50;
 const MAX_RETRIES = 5;

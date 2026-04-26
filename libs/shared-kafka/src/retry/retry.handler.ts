@@ -1,4 +1,4 @@
-import logger from 'src/utils/logger';
+import logger from '@org/shared-logger';
 import { publish } from '../client/producer';
 //import logger from '@org/shared-logger';
 import { DEFAULT_RETRY_POLICY } from './retry.policy';

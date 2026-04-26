@@ -32,13 +32,12 @@ export const startDLQConsumer = async ({
     async (message: any) => {
       try {
         // ✅ FIXED LOGGER
-        logger.error(
+        logger.error( '💀 DLQ message received',
           {
             event: message?.originalMessage?.event,
             error: message?.error?.message,
             correlationId: message?.metadata?.correlationId,
           },
-          '💀 DLQ message received'
         );
 
         // Optional recovery logic
@@ -47,18 +46,16 @@ export const startDLQConsumer = async ({
         }
 
       } catch (error: any) {
-        logger.error(
+        logger.error('❌ DLQ handler failed',
           {
             error: error.message,
           },
-          '❌ DLQ handler failed'
         );
       }
     }
   );
 
-  logger.info(
+  logger.info('🚨 DLQ Consumer started',
     { topics: dlqTopics },
-    '🚨 DLQ Consumer started'
   );
 };

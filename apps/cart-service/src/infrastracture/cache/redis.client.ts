@@ -1,7 +1,7 @@
 // apps/cart-service/src/infrastructure/cache/redis.client.ts
 
+import logger from '@org/shared-logger';
 import Redis from 'ioredis';
-import logger from '../../utils/logger';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 

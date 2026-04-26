@@ -7,46 +7,44 @@ export class OutboxWorker {
 
   /**
    * Process pending events from the Outbox table
-   * This ensures reliable event delivery even if Kafka is temporarily down
    */
   async processOutbox() {
     try {
       const pendingEvents = await OutboxModel.find({
-        status: 'pending'
-      }).limit(50); // Process max 50 at a time
+        status: 'pending',
+      }).limit(50);
 
       if (pendingEvents.length === 0) return;
 
-      logger.info(`📦 Processing ${pendingEvents.length} pending outbox events`);
+      logger.info(`Processing ${pendingEvents.length} pending outbox events`);
 
       for (const outbox of pendingEvents) {
         try {
           const payload = outbox.payload;
 
-          // Re-send the notification using the service
           await this.notificationService.send({
             userId: payload.userId,
             type: payload.type,
+            templateName: payload.templateName || 'default',
+            templateData: payload.data || payload,
             title: payload.title,
             message: payload.message,
-            data: payload.data,
             channel: payload.channel,
           });
 
-          // Mark as processed
           outbox.status = 'processed';
           await outbox.save();
 
-          logger.info(`✅ Outbox event processed successfully`, { outboxId: outbox._id });
+          logger.info('Outbox event processed successfully', { outboxId: outbox._id });
         } catch (err: any) {
           outbox.status = 'failed';
           outbox.retryCount = (outbox.retryCount || 0) + 1;
           await outbox.save();
 
-          logger.warn(`⚠️ Outbox event failed`, {
+          logger.warn('Outbox event failed', {
             outboxId: outbox._id,
             retryCount: outbox.retryCount,
-            error: err.message
+            error: err.message,
           });
         }
       }

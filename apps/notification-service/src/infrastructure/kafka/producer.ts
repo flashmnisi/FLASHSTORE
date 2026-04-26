@@ -4,10 +4,11 @@ import logger from '@org/shared-logger';
 import { NotificationEntity } from '../../domain/entities/notification.entity';
 
 export class NotificationProducer {
+
   /**
-   * Publish event when a notification is successfully sent
+   * ✅ Publish Notification Sent Event
    */
-  async notificationSent(notification: NotificationEntity) {
+  async notificationSent(notification: NotificationEntity): Promise<void> {
     try {
       await publish({
         topic: 'flashstore.notifications',
@@ -19,29 +20,39 @@ export class NotificationProducer {
             type: notification.type,
             channel: notification.channel,
             title: notification.title,
+            status: notification.status,
           },
-          source: 'notification-service',
-          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'notification-service',
+            timestamp: new Date().toISOString(),
+          },
         },
-        key: notification.userId,
+        key: notification.userId,   // Good for partitioning
       });
 
-      logger.info(`✅ Published notification.sent event`, { 
-        notificationId: notification.id, 
-        userId: notification.userId 
+      logger.info('✅ notification.sent event published', {
+        notificationId: notification.id,
+        userId: notification.userId,
+        type: notification.type,
+        channel: notification.channel,
       });
-    } catch (error: any) {
-      logger.error(`❌ Failed to publish notification.sent event`, { 
-        error: error.message, 
-        notificationId: notification.id 
+
+    } catch (err: any) {
+      logger.error('❌ Failed to publish notification.sent event', {
+        notificationId: notification.id,
+        userId: notification.userId,
+        error: err.message,
       });
     }
   }
 
   /**
-   * Publish event when notification sending fails
+   * ❌ Publish Notification Failed Event
    */
-  async notificationFailed(notification: NotificationEntity, errorMessage: string) {
+  async notificationFailed(
+    notification: NotificationEntity,
+    errorMessage: string
+  ): Promise<void> {
     try {
       await publish({
         topic: 'flashstore.notifications',
@@ -53,19 +64,29 @@ export class NotificationProducer {
             type: notification.type,
             channel: notification.channel,
             error: errorMessage,
+            title: notification.title,
           },
-          source: 'notification-service',
-          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'notification-service',
+            timestamp: new Date().toISOString(),
+          },
         },
         key: notification.userId,
       });
 
-      logger.warn(`⚠️ Published notification.failed event`, { 
-        notificationId: notification.id, 
-        userId: notification.userId 
+      logger.warn('⚠️ notification.failed event published', {
+        notificationId: notification.id,
+        userId: notification.userId,
+        type: notification.type,
+        error: errorMessage,
       });
-    } catch (error: any) {
-      logger.error(`Failed to publish notification.failed event`, { error: error.message });
+
+    } catch (err: any) {
+      logger.error('❌ Failed to publish notification.failed event', {
+        notificationId: notification.id,
+        userId: notification.userId,
+        error: err.message,
+      });
     }
   }
 }

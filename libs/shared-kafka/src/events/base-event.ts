@@ -1,11 +1,14 @@
-export interface BaseEvent<TPayload = any> {
-  event: string;              // event name
-  version: number;            // for schema evolution
-  timestamp: string;          // ISO date
-  data: TPayload;             // actual payload
+/**
+ * Base Event Interface for all domain events in Flashstore
+ */
+export interface BaseEvent<T = any> {
+  event: string;
+  version: number;
+  timestamp: string;
+  data: T;
   metadata?: {
-    requestId?: string;
-    correlationId?: string;
     source?: string;
+    correlationId?: string;
+    [key: string]: any;
   };
 }

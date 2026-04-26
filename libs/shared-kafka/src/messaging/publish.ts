@@ -1,7 +1,6 @@
 import { ProducerRecord } from 'kafkajs';
 import { getProducer } from '../client/producer';
-import logger from 'src/utils/logger';
-//import logger from '@org/shared-logger';
+import logger from '@org/shared-logger';
 
 export const publish = async (options: {
   topic: string;

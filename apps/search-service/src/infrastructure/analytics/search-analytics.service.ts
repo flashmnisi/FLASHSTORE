@@ -1,4 +1,5 @@
-import { redis } from '../../../../../libs/shared-redis/src';
+//import { redis } from '../../../../../libs/shared-redis/src';
+import { getRedis } from '@org/shared-redis';
 import logger from '../../utils/logger';
 
 export class SearchAnalyticsService {
@@ -9,7 +10,7 @@ export class SearchAnalyticsService {
     if (!query) return;
 
     try {
-      await redis.zincrby('search:trending', 1, query);
+      await getRedis.zincrby('search:trending', 1, query);
     } catch (error: any) {
       logger.error('Track search failed', { error: error.message });
     }

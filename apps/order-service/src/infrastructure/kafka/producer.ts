@@ -1,6 +1,6 @@
 import { publish } from '@org/shared-kafka';
-import logger from '../../utils/logger';
-import { ORDER_TOPICS, ORDER_EVENTS } from './topics';
+import { TOPICS, EVENTS } from './topics';
+import logger from '@org/shared-logger';
 
 export class OrderProducer {
   /**
@@ -8,10 +8,10 @@ export class OrderProducer {
    */
   async orderCreated(payload: any) {
     await publish({
-      topic: ORDER_TOPICS.ORDERS,
+      topic: TOPICS.ORDERS,
       key: payload.orderId,
       message: {
-        event: ORDER_EVENTS.ORDER_CREATED,
+        event: EVENTS.ORDER_CREATED,
         data: payload,
       },
     });
@@ -26,10 +26,10 @@ export class OrderProducer {
    */
   async orderUpdated(payload: any) {
     await publish({
-      topic: ORDER_TOPICS.ORDERS,
+      topic: TOPICS.ORDERS,
       key: payload.orderId,
       message: {
-        event: ORDER_EVENTS.ORDER_UPDATED,
+        event: EVENTS.ORDER_UPDATED,
         data: payload,
       },
     });

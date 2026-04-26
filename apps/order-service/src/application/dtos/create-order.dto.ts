@@ -26,7 +26,7 @@ export const createOrderSchema = z.object({
    */
   idempotencyKey: z.string().min(1),
 
-  metadata: z.record(z.any()).optional().default({}),
+  metadata: z.record(z.string(),z.any()).optional().default({}),
 });
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;

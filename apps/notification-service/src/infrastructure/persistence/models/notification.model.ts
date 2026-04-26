@@ -1,13 +1,53 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const notificationSchema = new Schema({
-  userId: { type: String, required: true },
-  type: { type: String, required: true },
-  title: { type: String, required: true },
-  message: { type: String, required: true },
-  data: { type: Schema.Types.Mixed },
-  status: { type: String, default: 'pending' },
-  channel: { type: String, required: true },
-}, { timestamps: true });
+export interface NotificationDocument extends Document {
+  userId: string;
+  type: string;
 
-export const NotificationModel = mongoose.model('Notification', notificationSchema);
+  templateName: string;
+  templateData: any;
+
+  title?: string;
+  message?: string;
+
+  status: 'pending' | 'sent' | 'failed';
+  channel: 'email' | 'sms' | 'push';
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const notificationSchema = new Schema<NotificationDocument>(
+  {
+    userId: { type: String, required: true, index: true },
+
+    type: { type: String, required: true },
+
+    templateName: { type: String, required: true },
+    templateData: { type: Schema.Types.Mixed },
+
+    title: { type: String },
+    message: { type: String },
+
+    status: {
+      type: String,
+      enum: ['pending', 'sent', 'failed'],
+      default: 'pending',
+      index: true,
+    },
+
+    channel: {
+      type: String,
+      enum: ['email', 'sms', 'push'],
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+notificationSchema.index({ userId: 1, createdAt: -1 });
+
+export const NotificationModel = mongoose.model<NotificationDocument>(
+  'Notification',
+  notificationSchema
+);

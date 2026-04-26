@@ -2,7 +2,7 @@
 
 import { publish } from '@org/shared-kafka';
 import { CART_TOPICS } from './topics';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class CartProducer {
 

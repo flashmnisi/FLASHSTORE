@@ -1,8 +1,8 @@
 // apps/cart-service/src/application/services/cart-validation.service.ts
 
+import logger from '@org/shared-logger';
 import { CartEntity } from '../../domain/entities/cart.entity';
 import { IProductClient } from '../interfaces/product.client';
-import logger from '../../utils/logger';
 
 export class CartValidationService {
   constructor(private readonly productClient: IProductClient) {}

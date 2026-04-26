@@ -1,16 +1,23 @@
-import { OrderEntity } from '../../domain/entities/order.entity';
+import { OrderEntity, OrderItem } from '../../domain/entities/order.entity';
 import { IOrderRepository } from '../interfaces/order.repository';
-import { OrderProducer } from '../../infrastructure/kafka/producer';
+//import { OrderProducer } from '../../infrastructure/kafka/producer';
 import { sendToOutbox } from '../../infrastructure/outbox/outbox.processor';
 import { idempotencyService } from '@org/shared-kafka';
-import logger from '../../utils/logger';
 import { CreateOrderDto } from '../dtos/create-order.dto';
-import { TOPICS, EVENTS } from '@org/shared-kafka';
+import logger from '@org/shared-logger';
+
+// Import domain events
+import {
+  createOrderCreatedEvent,
+  createOrderStatusUpdatedEvent,
+} from '../../domain/events/order.events';
+//import { OrderProducer } from '../../infrastructure/kafka/producer';
 
 export class OrderService {
   constructor(
     private readonly repository: IOrderRepository,
-    private readonly producer: OrderProducer
+   // private readonly producer: OrderProducer
+    //private readonly producer: OrderProducer
   ) {}
 
   /**
@@ -18,69 +25,70 @@ export class OrderService {
    * 🟢 CREATE ORDER (Saga Start)
    * =============================
    */
-  async createOrder(
-    dto: CreateOrderDto,
-    context?: { correlationId?: string }
-  ) {
-    const log = logger.withContext({
-      correlationId: context?.correlationId,
-      service: 'order-service',
-    });
-
+  async createOrder(dto: CreateOrderDto, context?: { correlationId?: string }) {
     try {
-      log.info('Creating order', { userId: dto.userId });
+      logger.info('Creating new order', { 
+        userId: dto.userId, 
+        itemsCount: dto.items.length,
+        correlationId: context?.correlationId 
+      });
 
-      // =============================
-      // 1. Idempotency (Prevent duplicate orders)
-      // =============================
+      // 1. Idempotency Check
       const existing = await this.repository.findById(dto.idempotencyKey);
-
       if (existing) {
-        log.warn('Duplicate order prevented', {
+        logger.warn('Duplicate order prevented (idempotency)', { 
           orderId: existing.id,
+          idempotencyKey: dto.idempotencyKey 
         });
         return existing;
       }
 
-      // =============================
       // 2. Create Order Entity
-      // =============================
       const order = new OrderEntity(
-        '',
+        '', 
         dto.userId,
-        dto.items,
+        dto.items as OrderItem[],
         dto.totalAmount,
-        'pending', // initial state
-        'pending', // payment status
-        new Date()
+        'pending',
+        'pending'
       );
 
       const savedOrder = await this.repository.create(order);
 
-      // =============================
-      // 3. Emit ORDER_CREATED (via Outbox)
-      // =============================
-      await sendToOutbox({
-        topic: TOPICS.ORDERS,
-        event: EVENTS.ORDER_CREATED,
-        key: savedOrder.id,
-        payload: {
-          orderId: savedOrder.id,
-          userId: savedOrder.userId,
-          items: savedOrder.items,
-          amount: savedOrder.totalAmount,
-        },
+
+      // 3. Create Domain Event
+      const orderCreatedEvent = createOrderCreatedEvent({
+        orderId: savedOrder.id,
+        userId: savedOrder.userId,
+        items: savedOrder.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalAmount: savedOrder.totalAmount,
+        currency: 'USD', // you can make this configurable
       });
 
-      log.info('Order created successfully', {
+      // 4. Send to Outbox
+      await sendToOutbox({
+        topic: 'flashstore.orders',
+        event: orderCreatedEvent.event,
+        payload: orderCreatedEvent,
+        key: savedOrder.id,
+        correlationId: context?.correlationId,
+      });
+
+      logger.info('Order created successfully', {
         orderId: savedOrder.id,
+        userId: savedOrder.userId,
       });
 
       return savedOrder;
 
     } catch (error: any) {
-      log.error('Create order failed', {
+      logger.error('Failed to create order', {
         error: error.message,
+        userId: dto.userId,
       });
       throw error;
     }
@@ -92,66 +100,54 @@ export class OrderService {
    * =============================
    */
   async handlePaymentCompleted(event: any) {
-    const log = logger.withContext({
-      service: 'order-service',
-      event: 'payment.completed',
-    });
-
     try {
       const { orderId, paymentId } = event.data;
 
-      // =============================
-      // 1. Idempotency (CRITICAL)
-      // =============================
       const isDuplicate = await idempotencyService.isDuplicate(
         `payment.completed:${paymentId}`,
         'order-service'
       );
 
       if (isDuplicate) {
-        log.warn('Duplicate payment event ignored', { paymentId });
+        logger.warn('Duplicate payment.completed event ignored', { paymentId });
         return;
       }
 
-      // =============================
-      // 2. Find Order
-      // =============================
       const order = await this.repository.findById(orderId);
-
       if (!order) {
-        log.error('Order not found for payment', { orderId });
+        logger.error('Order not found for payment completion', { orderId });
         return;
       }
 
-      // =============================
-      // 3. Update Order State
-      // =============================
-      order.status = 'confirmed';
-      order.paymentStatus = 'paid';
+      const previousStatus = order.status;
+      order.confirmOrder();
 
       await this.repository.update(order);
 
-      // =============================
-      // 4. Emit ORDER_CONFIRMED
-      // =============================
-      await sendToOutbox({
-        topic: TOPICS.ORDERS,
-        event: EVENTS.ORDER_STATUS_UPDATED,
-        key: order.id,
-        payload: {
-          orderId: order.id,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-        },
+      // Create Domain Event
+      const statusUpdatedEvent = createOrderStatusUpdatedEvent({
+        orderId: order.id,
+        userId: order.userId,
+        previousStatus,
+        newStatus: order.status,
       });
 
-      log.info('Order confirmed after payment', {
+      await sendToOutbox({
+        topic: 'flashstore.orders',
+        event: statusUpdatedEvent.event,
+        payload: statusUpdatedEvent,
+        key: order.id,
+      });
+
+      logger.info('Order confirmed after successful payment', {
         orderId: order.id,
+        paymentId,
       });
 
     } catch (error: any) {
-      log.error('handlePaymentCompleted failed', {
+      logger.error('handlePaymentCompleted failed', {
         error: error.message,
+        orderId: event.data?.orderId,
       });
       throw error;
     }
@@ -163,91 +159,64 @@ export class OrderService {
    * =============================
    */
   async handlePaymentFailed(event: any) {
-    const log = logger.withContext({
-      service: 'order-service',
-      event: 'payment.failed',
-    });
-
     try {
       const { orderId, paymentId } = event.data;
 
-      // =============================
-      // 1. Idempotency
-      // =============================
       const isDuplicate = await idempotencyService.isDuplicate(
         `payment.failed:${paymentId}`,
         'order-service'
       );
 
       if (isDuplicate) {
-        log.warn('Duplicate failure event ignored', { paymentId });
+        logger.warn('Duplicate payment.failed event ignored', { paymentId });
         return;
       }
 
-      // =============================
-      // 2. Find Order
-      // =============================
       const order = await this.repository.findById(orderId);
-
       if (!order) {
-        log.error('Order not found', { orderId });
+        logger.error('Order not found for payment failure', { orderId });
         return;
       }
 
-      // =============================
-      // 3. Update Status
-      // =============================
-      order.status = 'cancelled';
-      order.paymentStatus = 'failed';
+      const previousStatus = order.status;
+      order.cancelOrder();
 
       await this.repository.update(order);
 
-      // =============================
-      // 4. Emit ORDER_CANCELLED
-      // =============================
-      await sendToOutbox({
-        topic: TOPICS.ORDERS,
-        event: EVENTS.ORDER_STATUS_UPDATED,
-        key: order.id,
-        payload: {
-          orderId: order.id,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-        },
+      const statusUpdatedEvent = createOrderStatusUpdatedEvent({
+        orderId: order.id,
+        userId: order.userId,
+        previousStatus,
+        newStatus: order.status,
       });
 
-      log.warn('Order cancelled due to payment failure', {
+      await sendToOutbox({
+        topic: 'flashstore.orders',
+        event: statusUpdatedEvent.event,
+        payload: statusUpdatedEvent,
+        key: order.id,
+      });
+
+      logger.warn('Order cancelled due to payment failure', {
         orderId: order.id,
+        paymentId,
       });
 
     } catch (error: any) {
-      log.error('handlePaymentFailed failed', {
+      logger.error('handlePaymentFailed failed', {
         error: error.message,
+        orderId: event.data?.orderId,
       });
       throw error;
     }
   }
 
-  /**
-   * =============================
-   * 📦 GET ORDER
-   * =============================
-   */
   async getOrderById(orderId: string) {
     const order = await this.repository.findById(orderId);
-
-    if (!order) {
-      throw new Error('Order not found');
-    }
-
+    if (!order) throw new Error('Order not found');
     return order;
   }
 
-  /**
-   * =============================
-   * 📜 GET USER ORDERS
-   * =============================
-   */
   async getOrdersByUser(userId: string) {
     return this.repository.findByUserId(userId);
   }

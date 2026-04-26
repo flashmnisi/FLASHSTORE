@@ -2,16 +2,12 @@
 
 import mongoose from 'mongoose';
 import { app } from './app';
-import logger from './utils/logger';
-
-import { connectRedis } from './infrastructure/cache/redis.client';
-import { startOutboxProcessor } from './infrastructure/outbox/outbox.processor';
-import { startCartConsumer } from './infrastructure/kafka/consumer';
-
 import { CheckoutSaga } from './application/saga/checkout.saga';
-import { SagaRepositoryImpl } from './infrastructure/repositories/saga.repository.impl';
-import { OrderClient } from './infrastructure/clients/order.client';
-import { PaymentClient } from './infrastructure/clients/payment.client';
+import { connectRedis } from './config/redis';
+import { startCartConsumer } from './infrastracture/kafka/consumer';
+import { startOutboxProcessor } from './infrastracture/outbox/outbox.processor';
+import { SagaRepositoryImpl } from './infrastracture/persistence/repositories/saga.repository.impl';
+import logger from '@org/shared-logger';
 
 // =============================
 // ENV

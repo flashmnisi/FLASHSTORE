@@ -2,7 +2,7 @@ import { ISagaRepository } from '../interfaces/saga.repository';
 import { IOrderClient } from '../interfaces/order.client';
 import { IPaymentClient } from '../interfaces/payment.client';
 import { CartEntity } from '../../domain/entities/cart.entity';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class CheckoutSaga {
   constructor(

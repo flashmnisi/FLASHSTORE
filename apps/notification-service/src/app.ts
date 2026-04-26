@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import notificationRoutes from './presentation/routes/notification.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
-import { requestLogger } from './middlewares/request-logger.middleware';
+import { requestLogger } from './middlewares/requestLogger.middleware';
 
 const app = express();
 
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging
+// Correlation ID + Request Logging Middleware
 app.use(requestLogger);
 
 // Health Check
@@ -22,6 +22,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     service: 'notification-service',
     timestamp: new Date().toISOString(),
+    correlationId: (req as any).correlationId,
   });
 });
 

@@ -3,7 +3,7 @@
 import { CartEntity } from '../../domain/entities/cart.entity';
 import { CartItemEntity } from '../../domain/entities/cart-item.entity';
 import { IProductClient } from '../interfaces/product.client';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class CartItemService {
   constructor(private readonly productClient: IProductClient) {}

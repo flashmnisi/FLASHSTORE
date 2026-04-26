@@ -17,7 +17,7 @@ export const getProducer = async (): Promise<Producer> => {
 
     await producer.connect();
 
-    logger.info({}, '🚀 Kafka Producer connected successfully');
+    logger.info('🚀 Kafka Producer connected successfully',{}, );
   }
 
   return producer;
@@ -51,23 +51,21 @@ export const publish = async (options: {
     await prod.send(record);
 
     // ✅ FIXED LOGGER
-    logger.info(
+    logger.info( '📤 Event published',
       {
         topic: options.topic,
         key: options.key,
         event: options.message?.event,
       },
-      '📤 Event published'
     );
 
   } catch (error: any) {
     // ✅ FIXED LOGGER
-    logger.error(
+    logger.error('❌ Failed to publish event',
       {
         topic: options.topic,
         error: error.message,
       },
-      '❌ Failed to publish event'
     );
 
     throw error;

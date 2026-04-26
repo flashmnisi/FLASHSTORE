@@ -1,8 +1,8 @@
-import { getKafkaClient } from '@org/shared-kafka';
+import { getKafka } from '@org/shared-kafka';
 import env from './env';
-import logger from '../utils/logger';
+import logger from '@org/shared-logger';
 
-export const kafka = getKafkaClient();
+export const kafka = getKafka();
 
 export const kafkaConfig = {
   clientId: env.KAFKA_CLIENT_ID,

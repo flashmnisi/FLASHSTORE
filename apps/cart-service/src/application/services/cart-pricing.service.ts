@@ -1,8 +1,8 @@
 // apps/cart-service/src/application/services/cart-pricing.service.ts
 
+import logger from '@org/shared-logger';
 import { CartEntity } from '../../domain/entities/cart.entity';
 import { IPromotionProvider } from '../interfaces/promotion.provider';
-import logger from '../../utils/logger';
 
 export interface CartPricing {
   subtotal: number;

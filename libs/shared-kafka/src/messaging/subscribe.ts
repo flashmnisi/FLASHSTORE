@@ -1,11 +1,10 @@
-import { EventPipeline } from 'src/pipeline/compose';
+import { EventPipeline } from '../pipeline/compose';
 import { createConsumer, runConsumer } from '../client/consumer';
-
-import { dlqMiddleware } from 'src/pipeline/middlewares/dlq.middleware';
-import { idempotencyMiddleware } from 'src/pipeline/middlewares/idempotency.middleware';
-import { loggingMiddleware } from 'src/pipeline/middlewares/logging.middleware';
-import { retryMiddleware } from 'src/pipeline/middlewares/retry.middleware';
-import { tracingMiddleware } from 'src/pipeline/middlewares/tracing.middleware';
+import { dlqMiddleware } from '../pipeline/middlewares/dlq.middleware';
+import { idempotencyMiddleware } from '../pipeline/middlewares/idempotency.middleware';
+import { loggingMiddleware } from '../pipeline/middlewares/logging.middleware';
+import { retryMiddleware } from '../pipeline/middlewares/retry.middleware';
+import { tracingMiddleware } from '../pipeline/middlewares/tracing.middleware';
 
 export const subscribe = async (
   config: {

@@ -1,4 +1,4 @@
-import { sendToDLQ } from "src/dlq/dlq.handler";
+import { sendToDLQ } from "../../dlq/dlq.handler";
 import { EventMiddleware } from "../middleware";
 
 export const dlqMiddleware: EventMiddleware = async (ctx, next) => {

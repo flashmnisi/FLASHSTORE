@@ -1,5 +1,4 @@
-//import logger from '@org/shared-logger';
-import logger from 'src/utils/logger';
+import logger from '@org/shared-logger';
 import { EventMiddleware } from '../middleware';
 
 export const loggingMiddleware: EventMiddleware = async (ctx, next) => {

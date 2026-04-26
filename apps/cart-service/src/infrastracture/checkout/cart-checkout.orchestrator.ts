@@ -3,8 +3,9 @@ import { IPaymentClient } from '../../application/interfaces/payment.client';
 import { ICartCacheRepository } from '../../application/interfaces/cart-cache.repository';
 import { ICartRepository } from '../../application/interfaces/cart.repository';
 import { CartEntity } from '../../domain/entities/cart.entity';
-import logger from '../../utils/logger';
-import { idempotencyService } from '../../utils/idempotency.service';
+//import { idempotencyService } from '../../utils/idempotency.service';
+import logger from '@org/shared-logger';
+import { idempotencyService } from '../../shared/idempotency/idempotency.service';
 
 type CheckoutResult = {
   orderId: string;

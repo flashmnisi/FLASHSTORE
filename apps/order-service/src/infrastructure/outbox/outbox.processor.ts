@@ -6,22 +6,43 @@ const BATCH_SIZE = 50;
 const MAX_RETRIES = 5;
 const INTERVAL_MS = 2000;
 
+/**
+ * Send event to Outbox (Reliable Delivery)
+ */
 export const sendToOutbox = async (data: {
   topic: string;
   event: string;
   payload: any;
   key?: string;
+  correlationId?: string;
 }) => {
-  await OutboxModel.create({
-    ...data,
-    status: 'pending',
-    retries: 0,
-    nextRetryAt: new Date(),
-  });
+  try {
+    await OutboxModel.create({
+      topic: data.topic,
+      event: data.event,
+      payload: data.payload,
+      key: data.key,
+      status: 'pending',
+      retries: 0,
+      nextRetryAt: new Date(),
+      correlationId: data.correlationId,
+    });
+
+    logger.info('Event saved to outbox', { 
+      event: data.event, 
+      topic: data.topic 
+    });
+  } catch (error: any) {
+    logger.error('Failed to save event to outbox', {
+      event: data.event,
+      error: error.message,
+    });
+    throw error;
+  }
 };
 
 /**
- * 🚀 Outbox Worker (Event Delivery Guarantee)
+ * 🚀 Outbox Processor (Reliable Event Delivery)
  */
 export const startOrderOutboxProcessor = () => {
   setInterval(async () => {
@@ -33,35 +54,34 @@ export const startOrderOutboxProcessor = () => {
         .limit(BATCH_SIZE)
         .lean();
 
+      if (messages.length === 0) return;
+
+      logger.info(`Processing ${messages.length} pending outbox messages`);
+
       for (const msg of messages) {
         const locked = await OutboxModel.findOneAndUpdate(
-          {
-            _id: msg._id,
-            status: 'pending',
-          },
-          {
+          { _id: msg._id, status: 'pending' },
+          { 
             status: 'processing',
-            lockedAt: new Date(),
+            lockedAt: new Date() 
           },
           { new: true }
         );
 
-        if (!locked) continue;
+        if (!locked) continue; // Another worker got it
 
         await processMessage(locked);
       }
     } catch (error: any) {
-      logger.error('Order Outbox processor error', {
-        error: error.message,
-      });
+      logger.error('Outbox processor error', { error: error.message });
     }
   }, INTERVAL_MS);
 
-  logger.info('🚀 Order Outbox Processor started');
+  logger.info('🚀 Order Outbox Processor started successfully');
 };
 
 /**
- * Process single message
+ * Process single outbox message
  */
 const processMessage = async (msg: any) => {
   try {
@@ -72,6 +92,7 @@ const processMessage = async (msg: any) => {
         event: msg.event,
         data: msg.payload,
         timestamp: new Date().toISOString(),
+        correlationId: msg.correlationId,
       },
     });
 
@@ -80,9 +101,9 @@ const processMessage = async (msg: any) => {
       { status: 'processed' }
     );
 
-    logger.info('📤 Order outbox delivered', {
+    logger.info('✅ Outbox message delivered successfully', {
       event: msg.event,
-      id: msg._id,
+      outboxId: msg._id,
     });
   } catch (error: any) {
     await handleFailure(msg, error);
@@ -90,25 +111,25 @@ const processMessage = async (msg: any) => {
 };
 
 /**
- * Retry + Backoff Strategy (Exponential)
+ * Handle failure with exponential backoff
  */
 const handleFailure = async (msg: any, error: any) => {
-  const retries = msg.retries + 1;
+  const retries = (msg.retries || 0) + 1;
+  const backoffMs = Math.min(1000 * Math.pow(2, retries), 60000); // max 60 seconds
 
-  const backoffMs = Math.min(1000 * 2 ** retries, 60000);
-
-  const update: any = {
+  const updateData = {
     retries,
     nextRetryAt: new Date(Date.now() + backoffMs),
     status: retries >= MAX_RETRIES ? 'failed' : 'pending',
   };
 
-  await OutboxModel.updateOne({ _id: msg._id }, update);
+  await OutboxModel.updateOne({ _id: msg._id }, updateData);
 
-  logger.error('❌ Order Outbox failed', {
-    id: msg._id,
+  logger.error('❌ Outbox message failed', {
+    outboxId: msg._id,
+    event: msg.event,
     retries,
-    error: error.message,
     nextRetryInMs: backoffMs,
+    error: error.message,
   });
 };

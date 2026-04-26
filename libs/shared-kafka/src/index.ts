@@ -30,3 +30,4 @@ export * from './resilience/indempotency/idempotency.service';
 // OBSERVABILITY UTILITIES
 // ===============================
 export * from './utils/header';
+export * from './events/base-event';

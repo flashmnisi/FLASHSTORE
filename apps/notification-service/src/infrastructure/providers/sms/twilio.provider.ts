@@ -1,6 +1,7 @@
 import logger from '@org/shared-logger';
 import { NotificationEntity } from '../../../domain/entities/notification.entity';
-import { ISmsProvider } from '../../interfaces/sms.provider';
+import { ISmsProvider } from '../../../application/interfaces/sms.provider';
+//import { ISmsProvider } from '../../interfaces/sms.provider';
 
 export class TwilioProvider implements ISmsProvider {
   async send(notification: NotificationEntity): Promise<void> {

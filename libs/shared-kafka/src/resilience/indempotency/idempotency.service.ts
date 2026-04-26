@@ -24,18 +24,16 @@ export class IdempotencyService {
       );
 
       if (result === null) {
-        logger.warn(
+        logger.warn('🔄 Duplicate event blocked',
           { eventId, service },
-          '🔄 Duplicate event blocked'
         );
         return true;
       }
 
       return false;
     } catch (error: any) {
-      logger.error(
+      logger.error('❌ Idempotency check failed',
         { eventId, service, error: error.message },
-        '❌ Idempotency check failed'
       );
 
       // Fail OPEN (important in distributed systems)
@@ -55,14 +53,12 @@ export class IdempotencyService {
         EX: IDEMPOTENCY_TTL,
       });
 
-      logger.info(
+      logger.info('✅ Event marked as processed',
         { eventId, service },
-        '✅ Event marked as processed'
       );
     } catch (error: any) {
-      logger.error(
+      logger.error('❌ Failed to mark event as processed',
         { eventId, service, error: error.message },
-        '❌ Failed to mark event as processed'
       );
     }
   }

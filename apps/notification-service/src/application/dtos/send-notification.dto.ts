@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 export const sendNotificationSchema = z.object({
+  templateName: z.string().min(1),
+  templateData: z.record(z.string(), z.any()),
   userId: z.string().min(1),
   type: z.enum(['user.registered', 'order.created', 'payment.success', 'payment.failed']),
   title: z.string().min(1),

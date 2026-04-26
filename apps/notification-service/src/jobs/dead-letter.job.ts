@@ -13,18 +13,18 @@ export class DeadLetterJob {
       const result = await OutboxModel.updateMany(
         {
           status: 'failed',
-          retryCount: { $gte: maxRetries }
+          retryCount: { $gte: maxRetries },
         },
         {
-          $set: { 
+          $set: {
             status: 'dead_letter',
-            movedToDeadLetterAt: new Date()
-          }
+            movedToDeadLetterAt: new Date(),
+          },
         }
       );
 
       if (result.modifiedCount > 0) {
-        logger.warn(`🚨 ${result.modifiedCount} notifications moved to dead-letter queue`);
+        logger.warn(`Moved ${result.modifiedCount} notifications to dead-letter queue`);
       }
     } catch (error: any) {
       logger.error('Dead letter job failed', { error: error.message });

@@ -1,4 +1,4 @@
-import { buildHeaders } from 'src/utils/header';
+import { buildHeaders } from '../../utils/header';
 import { publish } from '../../messaging/publish';
 import { DLQEvent } from './dlq.types';
 //import { buildHeaders } from '../../headers';

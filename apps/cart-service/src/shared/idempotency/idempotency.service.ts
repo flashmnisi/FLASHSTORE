@@ -1,7 +1,7 @@
 // apps/cart-service/src/utils/idempotency.service.ts
 
+import logger from '@org/shared-logger';
 import redis from '../infrastructure/cache/redis.client';
-import logger from './logger';
 
 const DEFAULT_TTL = 60 * 10; // 10 minutes
 const LOCK_TTL = 30; // 30 seconds

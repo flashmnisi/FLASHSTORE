@@ -52,25 +52,23 @@ export const sendToDLQ = async ({
     });
 
     // ✅ FIXED LOGGER
-    logger.error(
+    logger.error('💀 Message sent to DLQ',
       {
         topic: dlqTopic,
         key,
         retryCount,
         correlationId,
       },
-      '💀 Message sent to DLQ'
     );
 
   } catch (err: any) {
     // ✅ FIXED LOGGER
-    logger.error(
+    logger.error('🚨 CRITICAL: Failed to send message to DLQ',
       {
         originalTopic: topic,
         key,
         error: err.message,
       },
-      '🚨 CRITICAL: Failed to send message to DLQ'
     );
 
     /**

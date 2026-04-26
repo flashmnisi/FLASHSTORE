@@ -1,4 +1,4 @@
-import { idempotencyService } from "src/resilience/indempotency/idempotency.service";
+import { idempotencyService } from "../../resilience/indempotency/idempotency.service";
 import { EventMiddleware } from "../middleware";
 
 export const idempotencyMiddleware: EventMiddleware = async (ctx, next) => {

@@ -1,14 +1,19 @@
-export class NotificationTypeVO {
-  private constructor(private readonly value: string) {}
+// domain/value-objects/notification-type.ts
 
-  static from(value: string): NotificationTypeVO {
-    if (!Object.values(NotificationType).includes(value as any)) {
-      throw new Error(`Invalid notification type: ${value}`);
-    }
-    return new NotificationTypeVO(value);
+export const NOTIFICATION_TYPES = [
+  'user.registered',
+  'order.created',
+  'payment.success',
+  'payment.failed',
+  'order.status.updated',
+] as const;
+
+export type NotificationType = typeof NOTIFICATION_TYPES[number];
+
+export const toNotificationType = (type: string): NotificationType => {
+  if (NOTIFICATION_TYPES.includes(type as NotificationType)) {
+    return type as NotificationType;
   }
 
-  getValue(): string {
-    return this.value;
-  }
-}
+  throw new Error(`Invalid notification type: ${type}`);
+};

@@ -13,10 +13,11 @@ import { IProductClient } from '../interfaces/product.client';
 import { IPromotionProvider } from '../interfaces/promotion.provider';
 import { IPricingProvider } from '../interfaces/pricing.provider';
 
-import { CartCheckoutOrchestrator } from '../../infrastructure/checkout/cart-checkout.orchestrator';
+//import { CartCheckoutOrchestrator } from '../../infrastructure/checkout/cart-checkout.orchestrator';
 
 import { CartKeyBuilder } from '../../utils/cart-key-builder';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
+import { CartCheckoutOrchestrator } from '../../infrastracture/checkout/cart-checkout.orchestrator';
 
 const MAX_RETRIES = 3;
 
@@ -136,7 +137,7 @@ export class CartService {
   // 🔥 CHECKOUT (SAGA ENTRY)
   // =====================================================
   async checkout(dto: CheckoutCartDto) {
-    const log = logger.withContext({
+    const log = logger.info({
       userId: dto.userId,
       flow: 'checkout',
     });
@@ -150,7 +151,7 @@ export class CartService {
     const existing = await this.cache.get(idempotencyKey as any);
 
     if (existing) {
-      log.warn('Duplicate checkout prevented');
+      logger.warn('Duplicate checkout prevented');
       return existing;
     }
 
@@ -178,7 +179,7 @@ export class CartService {
 
       // Optional: detect price changes
       if (product.price !== item.price) {
-        log.warn('Price changed before checkout', {
+        logger.warn('Price changed before checkout', {
           productId: item.productId,
           old: item.price,
           new: product.price,
@@ -207,7 +208,7 @@ export class CartService {
       key: idempotencyKey,
     } as any);
 
-    log.info('Checkout started', {
+    logger.info('Checkout started', {
       orderId: result.orderId,
     });
 

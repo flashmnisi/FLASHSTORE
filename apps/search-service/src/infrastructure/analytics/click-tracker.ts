@@ -1,7 +1,9 @@
 // analytics/click-tracker.ts
 
-import { redis } from '../config/database'; // or redis config
-import logger from '../utils/logger';
+//import { redis } from '../config/database'; // or redis config
+import logger from '@org/shared-logger';
+import { getRedis } from '@org/shared-redis';
+//import logger from '../utils/logger';
 
 const CLICK_TTL = 60 * 60 * 24; // 24h
 
@@ -17,7 +19,7 @@ export class ClickTracker {
     try {
       const key = this.buildKey(data.query);
 
-      await redis.zincrby(key, 1, data.productId);
+      await getRedis.zincrby(key, 1, data.productId);
 
       await redis.expire(key, CLICK_TTL);
 

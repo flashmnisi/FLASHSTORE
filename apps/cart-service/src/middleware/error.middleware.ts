@@ -1,7 +1,8 @@
 // apps/cart-service/src/middlewares/error.middleware.ts
 
+import logger from '@org/shared-logger';
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+
 
 export const errorMiddleware = (
   err: any,

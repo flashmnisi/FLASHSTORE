@@ -1,6 +1,6 @@
 import { Kafka } from 'kafkajs';
 import { env } from './env';
-import logger from '../utils/logger';
+import logger from '@org/shared-logger';
 
 export const kafka = new Kafka({
   clientId: 'cart-service',

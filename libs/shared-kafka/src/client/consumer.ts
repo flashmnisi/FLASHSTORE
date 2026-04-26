@@ -3,8 +3,7 @@ import { getKafka } from './kafka.client';
 import { sendToDLQ } from '../resilience/dlq/dlq.publisher';
 import { retryExecutor } from '../resilience/retry/retry.executor';
 import logger from '@org/shared-logger';
-import { idempotencyService } from 'src/resilience/indempotency/idempotency.service';
-//import { idempotencyService } from '../resilience/idempotency/idempotency.service';
+import { idempotencyService } from '../resilience/indempotency/idempotency.service';
 
 interface ConsumerConfig {
   groupId: string;
@@ -20,12 +19,11 @@ export const createConsumer = (config: ConsumerConfig): Consumer => {
     retry: { retries: 5 },
   });
 
-  logger.info(
+  logger.info('👥 Consumer created',
     {
       groupId: config.groupId,
       topics: config.topics,
     },
-    '👥 Consumer created'
   );
 
   return consumer;
@@ -52,7 +50,7 @@ export const runConsumer = async (
       try {
         parsed = JSON.parse(raw);
       } catch {
-        logger.error({ topic, raw }, 'Invalid JSON message');
+        logger.error('Invalid JSON message',{ topic, raw });
         return;
       }
 
@@ -68,17 +66,16 @@ export const runConsumer = async (
         );
 
         if (isDuplicate) {
-          logger.info({ eventId }, 'Duplicate event skipped');
+          logger.info( 'Duplicate event skipped',{ eventId });
           return;
         }
 
-        logger.info(
+        logger.info('📥 Processing event',
           {
             topic,
             event: parsed.event,
             eventId,
           },
-          '📥 Processing event'
         );
 
         // ✅ Retry wrapper
@@ -93,13 +90,12 @@ export const runConsumer = async (
         );
 
       } catch (error: any) {
-        logger.error(
+        logger.error( '❌ Event processing failed',
           {
             topic,
             event: parsed?.event,
             error: error.message,
           },
-          '❌ Event processing failed'
         );
 
         // ✅ Send to DLQ
@@ -119,8 +115,7 @@ export const runConsumer = async (
     },
   });
 
-  logger.info(
+  logger.info( '✅ Consumer running',
     { groupId: config.groupId },
-    '✅ Consumer running'
   );
 };

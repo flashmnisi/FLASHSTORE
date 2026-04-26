@@ -1,8 +1,8 @@
 // apps/cart-service/src/infrastructure/kafka/consumer.ts
 
 import { createConsumer } from '@org/shared-kafka';
-import logger from '../../utils/logger';
 import { CartCheckoutOrchestrator } from '../checkout/cart-checkout.orchestrator';
+import logger from '@org/shared-logger';
 
 export const startCartConsumer = async (
   orchestrator: CartCheckoutOrchestrator

@@ -20,6 +20,8 @@ export class NotificationService {
         '',
         dto.userId,
         dto.type as NotificationType,
+        dto.templateName,     // ✅ REQUIRED
+        dto.templateData,  
         dto.title,
         dto.message,
         dto.data,

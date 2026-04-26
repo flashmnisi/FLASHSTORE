@@ -1,3 +1,4 @@
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { z } from 'zod';
 
 /**
@@ -57,16 +58,20 @@ const updateOrderStatus = z.object({
 /**
  * Express validator middleware
  */
-export const validate = (schema: z.ZodSchema) => {
-  return (req: any, res: any, next: any) => {
+/**
+ * Express validator middleware (typed)
+ */
+export const validate = (schema: z.ZodSchema): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: result.error.flatten().fieldErrors,
       });
+      return; // ✅ explicit exit, no return value
     }
 
     req.body = result.data;

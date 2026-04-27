@@ -1,29 +1,39 @@
-// apps/cart-service/src/utils/idempotency.service.ts
-
 import logger from '@org/shared-logger';
-import redis from '../infrastructure/cache/redis.client';
+import redis from '../../infrastructure/cache/redis.client';
 
 const DEFAULT_TTL = 60 * 10; // 10 minutes
-const LOCK_TTL = 30; // 30 seconds
+const LOCK_TTL = 30;         // 30 seconds
 
 export class IdempotencyService {
 
-  /**
-   * 🔑 Build key
-   */
-  private buildKey(key: string) {
+  private buildKey(key: string): string {
     return `idempotency:${key}`;
   }
 
   /**
-   * 🔒 Acquire lock (prevent concurrent execution)
+   * 🔒 Acquire distributed lock - ioredis syntax (type-safe)
    */
   async acquireLock(key: string): Promise<boolean> {
     const lockKey = `${this.buildKey(key)}:lock`;
 
-    const result = await redis.set(lockKey, 'locked', 'NX', 'EX', LOCK_TTL);
+    try {
+      // Explicitly cast to bypass wrong type definitions
+      const result = await (redis as any).set(
+        lockKey, 
+        'locked', 
+        'NX', 
+        'EX', 
+        LOCK_TTL
+      );
 
-    return result === 'OK';
+      return result === 'OK';
+    } catch (error: any) {
+      logger.error('Failed to acquire lock', { 
+        lockKey, 
+        error: error.message 
+      });
+      return false;
+    }
   }
 
   /**
@@ -31,98 +41,84 @@ export class IdempotencyService {
    */
   async releaseLock(key: string): Promise<void> {
     const lockKey = `${this.buildKey(key)}:lock`;
-    await redis.del(lockKey);
+    try {
+      await redis.del(lockKey);
+    } catch (error: any) {
+      logger.warn('Failed to release lock', { lockKey });
+    }
   }
 
   /**
-   * 📦 Get stored result (if already processed)
+   * 📦 Get stored result
    */
   async getResult<T = any>(key: string): Promise<T | null> {
-    const data = await redis.get(this.buildKey(key));
+    try {
+      const data = await redis.get(this.buildKey(key));
+      if (!data) return null;
 
-    if (!data) return null;
-
-    return JSON.parse(data);
+      return JSON.parse(data) as T;
+    } catch (error) {
+      logger.error('Failed to parse cached result', { key });
+      return null;
+    }
   }
 
   /**
-   * 💾 Store result
+   * 💾 Store result with TTL
    */
   async storeResult(key: string, value: any, ttl = DEFAULT_TTL): Promise<void> {
-    await redis.set(
-      this.buildKey(key),
-      JSON.stringify(value),
-      'EX',
-      ttl
-    );
+    try {
+      await redis.set(this.buildKey(key), JSON.stringify(value), 'EX', ttl);
+    } catch (error: any) {
+      logger.error('Failed to store idempotency result', { key });
+    }
   }
 
   /**
-   * 🔥 MAIN WRAPPER (recommended usage)
+   * 🔥 MAIN IDEMPOTENCY WRAPPER
    */
   async execute<T>(
     key: string,
     handler: () => Promise<T>
   ): Promise<T> {
-
-    const log = logger.withContext({ idempotencyKey: key });
-
-    // =============================
-    // 1. Check existing result
-    // =============================
     const existing = await this.getResult<T>(key);
-
-    if (existing) {
-      log.info('Idempotent hit (cached result)');
+    if (existing !== null) {
+      logger.info('Idempotent hit - returning cached result', { idempotencyKey: key });
       return existing;
     }
 
-    // =============================
-    // 2. Acquire lock
-    // =============================
     const lockAcquired = await this.acquireLock(key);
 
     if (!lockAcquired) {
-      log.warn('Duplicate request in progress');
+      logger.warn('Duplicate request in progress', { idempotencyKey: key });
+      await this.sleep(500);
 
-      // Optional: wait & retry
-      await this.sleep(300);
+      const retryResult = await this.getResult<T>(key);
+      if (retryResult !== null) return retryResult;
 
-      const retry = await this.getResult<T>(key);
-
-      if (retry) return retry;
-
-      throw new Error('Request already being processed');
+      throw new Error('Request is already being processed by another instance');
     }
 
     try {
-      // =============================
-      // 3. Execute handler
-      // =============================
       const result = await handler();
-
-      // =============================
-      // 4. Store result
-      // =============================
       await this.storeResult(key, result);
 
+      logger.info('Idempotent execution completed successfully', { idempotencyKey: key });
       return result;
 
-    } catch (error) {
-      log.error('Idempotent execution failed', {
-        error: (error as any).message,
+    } catch (error: any) {
+      logger.error('Idempotent execution failed', {
+        idempotencyKey: key,
+        error: error.message,
       });
       throw error;
 
     } finally {
-      // =============================
-      // 5. Release lock
-      // =============================
       await this.releaseLock(key);
     }
   }
 
-  private sleep(ms: number) {
+  private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

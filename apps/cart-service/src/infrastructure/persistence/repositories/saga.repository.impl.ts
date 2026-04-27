@@ -25,17 +25,17 @@ export class SagaRepositoryImpl implements ISagaRepository {
     return doc ? this.toEntity(doc) : null;
   }
 
-  private toEntity(doc: any): CheckoutSagaEntity {
-    return new CheckoutSagaEntity(
-      doc._id.toString(),
-      doc.userId,
-      doc.orderId,
-      doc.paymentId,
-      doc.status,
-      doc.payload,
-      doc.error,
-      doc.createdAt,
-      doc.updatedAt
-    );
-  }
+private toEntity(doc: any): CheckoutSagaEntity {
+  return CheckoutSagaEntity.fromPersistence({
+    id: doc._id.toString(),
+    userId: doc.userId,
+    orderId: doc.orderId,
+    paymentId: doc.paymentId,
+    status: doc.status,
+    payload: doc.payload,
+    errorMessage: doc.error,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  });
+}
 }

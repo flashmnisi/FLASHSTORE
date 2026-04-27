@@ -1,69 +1,61 @@
-// apps/cart-service/src/main.ts
-
 import mongoose from 'mongoose';
 import { app } from './app';
-import { CheckoutSaga } from './application/saga/checkout.saga';
 import { connectRedis } from './config/redis';
-import { startCartConsumer } from './infrastracture/kafka/consumer';
-import { startOutboxProcessor } from './infrastracture/outbox/outbox.processor';
-import { SagaRepositoryImpl } from './infrastracture/persistence/repositories/saga.repository.impl';
+import { startCartConsumer } from './infrastructure/kafka/consumer';
 import logger from '@org/shared-logger';
 
-// =============================
-// ENV
-// =============================
+import { CartCheckoutOrchestrator } from './infrastructure/checkout/cart-checkout.orchestrator';
+import { OrderClient } from './infrastructure/client/order.client';
+import { PaymentClient } from './infrastructure/client/payment.client';
+
+import { CartRepositoryImpl } from './infrastructure/persistence/repositories/cart.repository.impl';
+import { CartCacheRepository } from './infrastructure/cache/cart.cache';           // ← Use the correct cache class
+import { CouponService } from './application/services/coupon.service';
+import { CouponRepositoryImpl } from './infrastructure/persistence/repositories/coupon.repository.impl';
+//import { CouponRepositoryImpl } from './infrastructure/persistence/repositories/coupon.repository.impl'; // ← New
+
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cart';
 
-// =============================
-// START SERVER
-// =============================
 const start = async () => {
   try {
-    // =============================
-    // 1. DATABASE
-    // =============================
     await mongoose.connect(MONGO_URI);
-    logger.info('MongoDB connected');
+    logger.info('✅ MongoDB connected');
 
-    // =============================
-    // 2. REDIS
-    // =============================
     await connectRedis();
-    logger.info('Redis connected');
+    logger.info('✅ Redis connected');
 
-    // =============================
-    // 3. OUTBOX WORKER
-    // =============================
-    startOutboxProcessor();
-    logger.info('Outbox processor started');
+    // ============================
+    // DI SETUP - All Dependencies
+    // ============================
+    const orderClient = new OrderClient();
+    const paymentClient = new PaymentClient();
 
-    // =============================
-    // 4. KAFKA CONSUMER
-    // =============================
-    startCartConsumer();
-    logger.info('Kafka consumer started');
+    const cartRepo = new CartRepositoryImpl();
+    const cartCache = new CartCacheRepository();           // ← Use CartCacheRepository
+    const couponRepo = new CouponRepositoryImpl();         // ← New
+    const couponService = new CouponService(couponRepo);   // ← Pass repository
 
-    // =============================
-    // 5. SAGA ENGINE (READY)
-    // =============================
-    const saga = new CheckoutSaga(
-      new SagaRepositoryImpl(),
-      new OrderClient(),
-      new PaymentClient()
+    const orchestrator = new CartCheckoutOrchestrator(
+      orderClient,
+      paymentClient,
+      cartRepo,
+      cartCache,
+      couponService
     );
 
-    logger.info('Saga engine initialized');
+    // ============================
+    // Start Kafka Consumer
+    // ============================
+    await startCartConsumer(orchestrator);
 
-    // =============================
-    // 6. EXPRESS SERVER
-    // =============================
+    // Start HTTP Server
     app.listen(PORT, () => {
-      logger.info(`Cart Service running on port ${PORT}`);
+      logger.info(`🚀 Cart Service running on http://localhost:${PORT}`);
     });
 
   } catch (error: any) {
-    logger.error('Startup failed', { error: error.message });
+    logger.error('❌ Startup failed', { error: error.message });
     process.exit(1);
   }
 };

@@ -1,10 +1,13 @@
 export interface IPaymentClient {
-  processPayment(input: {
+  processPayment(dto: {
     orderId: string;
     userId: string;
     amount: number;
+    idempotencyKey?: string;
+    correlationId?: string;
   }): Promise<{
     paymentId: string;
     clientSecret: string;
+    status: string;
   }>;
 }

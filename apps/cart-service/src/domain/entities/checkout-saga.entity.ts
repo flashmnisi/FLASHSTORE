@@ -1,49 +1,62 @@
-export type SagaStatus =
-  | 'CREATED'
-  | 'ORDER_CREATED'
-  | 'PAYMENT_INITIATED'
-  | 'PAYMENT_SUCCESS'
-  | 'COMPLETED'
-  | 'FAILED';
-
 export class CheckoutSagaEntity {
-  constructor(
-    public readonly id: string,
-    public readonly userId: string,
-    public orderId: string | null,
-    public paymentId: string | null,
-    public status: SagaStatus,
-    public payload: any,
-    public error?: string,
-    public createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
-  ) {}
+  public id: string = '';
+  public userId: string;
+  public orderId: string | null = null;
+  public paymentId: string | null = null;
+  public status: 'CREATED' | 'ORDER_CREATED' | 'PAYMENT_INITIATED' | 'PAYMENT_SUCCESS' | 'COMPLETED' | 'FAILED' = 'CREATED';
+  public payload: any;
+  public createdAt: Date = new Date();
+  public updatedAt: Date = new Date();
+  public errorMessage?: string;
 
-  markOrderCreated(orderId: string) {
+  constructor(userId: string, payload: any) {
+    this.userId = userId;
+    this.payload = payload;
+  }
+
+  // 🔥 ADD THIS
+  static fromPersistence(data: Partial<CheckoutSagaEntity>): CheckoutSagaEntity {
+    const entity = new CheckoutSagaEntity(
+      data.userId!,
+      data.payload
+    );
+
+    entity.id = data.id || '';
+    entity.orderId = data.orderId ?? null;
+    entity.paymentId = data.paymentId ?? null;
+    entity.status = data.status || 'CREATED';
+    entity.createdAt = data.createdAt || new Date();
+    entity.updatedAt = data.updatedAt || new Date();
+    entity.errorMessage = data.errorMessage;
+
+    return entity;
+  }
+
+  markOrderCreated(orderId: string): void {
     this.orderId = orderId;
     this.status = 'ORDER_CREATED';
     this.updatedAt = new Date();
   }
 
-  markPaymentInitiated(paymentId: string) {
+  markPaymentInitiated(paymentId: string): void {
     this.paymentId = paymentId;
     this.status = 'PAYMENT_INITIATED';
     this.updatedAt = new Date();
   }
 
-  markPaymentSuccess() {
+  markPaymentSuccess(): void {
     this.status = 'PAYMENT_SUCCESS';
     this.updatedAt = new Date();
   }
 
-  complete() {
+  complete(): void {
     this.status = 'COMPLETED';
     this.updatedAt = new Date();
   }
 
-  fail(error: string) {
+  fail(errorMessage: string): void {
     this.status = 'FAILED';
-    this.error = error;
+    this.errorMessage = errorMessage;
     this.updatedAt = new Date();
   }
 }

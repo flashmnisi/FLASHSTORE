@@ -1,11 +1,17 @@
 export interface IOrderClient {
-  createOrder(input: {
+  createOrder(dto: {
     userId: string;
-    items: any[];
+    items: Array<{
+      productId: string;
+      quantity: number;
+      price: number;
+    }>;
     totalAmount: number;
+    idempotencyKey?: string;      // ← Added
+    correlationId?: string;       // ← Added
   }): Promise<{
     orderId: string;
-    status: string;
+    // other fields returned by order service
   }>;
 
   cancelOrder(orderId: string): Promise<void>;

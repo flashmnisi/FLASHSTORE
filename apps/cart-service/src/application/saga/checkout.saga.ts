@@ -2,6 +2,7 @@ import { ISagaRepository } from '../interfaces/saga.repository';
 import { IOrderClient } from '../interfaces/order.client';
 import { IPaymentClient } from '../interfaces/payment.client';
 import { CartEntity } from '../../domain/entities/cart.entity';
+import { CheckoutSagaEntity } from '../../domain/entities/checkout-saga.entity';
 import logger from '@org/shared-logger';
 
 export class CheckoutSaga {
@@ -15,26 +16,17 @@ export class CheckoutSaga {
   // 🚀 START SAGA
   // =====================================================
   async start(userId: string, cart: CartEntity) {
-    const saga = await this.sagaRepo.create(
-      new (class {
-        constructor(
-          public id = '',
-          public userId = userId,
-          public orderId = null,
-          public paymentId = null,
-          public status: any = 'CREATED',
-          public payload = { cart }
-        ) {}
-      })()
-    );
+    const saga = new CheckoutSagaEntity(userId, { cart });
 
-    return this.executeStep1(saga);
+    const savedSaga = await this.sagaRepo.create(saga);
+
+    return this.executeStep1(savedSaga);
   }
 
   // =====================================================
   // STEP 1: CREATE ORDER
   // =====================================================
-  private async executeStep1(saga: any) {
+  private async executeStep1(saga: CheckoutSagaEntity) {
     try {
       const order = await this.orderClient.createOrder({
         userId: saga.userId,
@@ -56,10 +48,10 @@ export class CheckoutSaga {
   // =====================================================
   // STEP 2: PAYMENT
   // =====================================================
-  private async executeStep2(saga: any) {
+  private async executeStep2(saga: CheckoutSagaEntity) {
     try {
       const payment = await this.paymentClient.processPayment({
-        orderId: saga.orderId,
+        orderId: saga.orderId!,
         userId: saga.userId,
         amount: saga.payload.cart.totalAmount,
       });
@@ -85,7 +77,7 @@ export class CheckoutSaga {
   // =====================================================
   // COMPENSATION
   // =====================================================
-  private async compensate(saga: any) {
+  private async compensate(saga: CheckoutSagaEntity) {
     try {
       if (saga.orderId) {
         await this.orderClient.cancelOrder(saga.orderId);
@@ -97,7 +89,7 @@ export class CheckoutSaga {
   }
 
   // =====================================================
-  // EVENT: PAYMENT SUCCESS (from Kafka)
+  // EVENT: PAYMENT SUCCESS
   // =====================================================
   async onPaymentSuccess(sagaId: string) {
     const saga = await this.sagaRepo.findById(sagaId);

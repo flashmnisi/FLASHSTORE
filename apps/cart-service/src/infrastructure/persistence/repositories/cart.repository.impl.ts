@@ -1,5 +1,3 @@
-// apps/cart-service/src/infrastructure/persistence/repositories/cart.repository.impl.ts
-
 import { ICartRepository } from '../../../application/interfaces/cart.repository';
 import { CartEntity } from '../../../domain/entities/cart.entity';
 import { CartItemEntity } from '../../../domain/entities/cart-item.entity';
@@ -16,7 +14,13 @@ export class CartRepositoryImpl implements ICartRepository {
       doc._id.toString(),
       doc.userId,
       doc.items.map(
-        i => new CartItemEntity(i.productId, i.quantity, i.price, i.name, i.image)
+        i => new CartItemEntity(
+          i.productId, 
+          i.quantity, 
+          i.price, 
+          i.name || '',           // ← Fixed: provide default
+          i.image
+        )
       ),
       doc.createdAt,
       doc.updatedAt
@@ -28,15 +32,26 @@ export class CartRepositoryImpl implements ICartRepository {
       { userId: cart.userId },
       {
         items: cart.items,
+        updatedAt: new Date(),
       },
       { upsert: true, new: true }
     );
+
+    if (!updated) {
+      throw new Error('Failed to save cart');
+    }
 
     return new CartEntity(
       updated._id.toString(),
       updated.userId,
       updated.items.map(
-        i => new CartItemEntity(i.productId, i.quantity, i.price, i.name, i.image)
+        i => new CartItemEntity(
+          i.productId, 
+          i.quantity, 
+          i.price, 
+          i.name || '',           // ← Fixed
+          i.image
+        )
       ),
       updated.createdAt,
       updated.updatedAt

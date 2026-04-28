@@ -1,10 +1,13 @@
 import mongoose from 'mongoose';
-import logger from '../utils/logger';
 import env from './env';
+import logger from '@org/shared-logger';
 
 export const connectDatabase = async () => {
   try {
-    if (!env.MONGO_URI) return;
+    if (!env.MONGO_URI) {
+      logger.warn('⚠️ MONGO_URI not provided — skipping DB connection');
+      return;
+    }
 
     await mongoose.connect(env.MONGO_URI);
 

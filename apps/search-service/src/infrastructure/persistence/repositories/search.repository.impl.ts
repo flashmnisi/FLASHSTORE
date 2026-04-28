@@ -1,8 +1,10 @@
+// apps/search-service/src/infrastructure/search/search.repository.impl.ts
+
 import { Client } from '@elastic/elasticsearch';
 import { SearchQueryVO } from '../../../domain/value-objects/search-query.vo';
 import { SearchResultEntity } from '../../../domain/entities/search-result.entity';
 import { PRODUCT_INDEX } from '../models/product-index.model';
-import logger from '../../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class SearchRepositoryImpl {
   constructor(private readonly client: Client) {}
@@ -36,7 +38,7 @@ export class SearchRepositoryImpl {
       });
     }
 
-    if (query.minPrice || query.maxPrice) {
+    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
       filter.push({
         range: {
           price: {
@@ -70,12 +72,15 @@ export class SearchRepositoryImpl {
         ? response.hits.total
         : response.hits.total?.value || 0;
 
+    // Fixed: Pass correct arguments to SearchResultEntity
     return new SearchResultEntity(
-      hits,
-      total,
-      query.page,
-      query.limit,
-      Math.ceil(total / query.limit)
+      hits,                    // products
+      total,                   // total
+      query.page,              // page
+      query.limit,             // limit
+      {},                      // facets (empty for now)
+      query.query,             // query
+      response.took            // took (response time from Elasticsearch)
     );
   }
 
@@ -86,18 +91,14 @@ export class SearchRepositoryImpl {
     switch (sort) {
       case 'price_asc':
         return [{ price: 'asc' }];
-
       case 'price_desc':
         return [{ price: 'desc' }];
-
       case 'newest':
         return [{ createdAt: 'desc' }];
-
+      case 'rating_desc':
+        return [{ rating: 'desc' }];
       default:
-        return [
-          { popularityScore: 'desc' },
-          '_score',
-        ];
+        return ['_score'];
     }
   }
 

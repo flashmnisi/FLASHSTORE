@@ -1,78 +1,20 @@
-export const productMapping = {
-  mappings: {
-    properties: {
-      id: { type: 'keyword' },
+import { IndicesIndexSettings, MappingTypeMapping } from "@elastic/elasticsearch/lib/api/types";
 
-      name: {
-        type: 'text',
-        analyzer: 'standard',
-        fields: {
-          keyword: { type: 'keyword' },
-          suggest: {
-            type: 'completion',
-          },
-        },
-      },
-
-      description: {
-        type: 'text',
-        analyzer: 'standard',
-      },
-
-      price: { type: 'double' },
-      currency: { type: 'keyword' },
-
-      category: {
-        type: 'keyword',
-      },
-
-      brand: {
-        type: 'keyword',
-      },
-
-      tags: {
-        type: 'keyword',
-      },
-
-      images: {
-        type: 'keyword',
-      },
-
-      inStock: {
-        type: 'boolean',
-      },
-
-      rating: {
-        type: 'float',
-      },
-
-      reviewCount: {
-        type: 'integer',
-      },
-
-      createdAt: {
-        type: 'date',
-      },
-
-      updatedAt: {
-        type: 'date',
-      },
-    },
-  },
-
+export const productMapping: {
+  settings: IndicesIndexSettings;
+  mappings: MappingTypeMapping;
+} = {
   settings: {
     number_of_shards: 1,
     number_of_replicas: 1,
-
     analysis: {
       analyzer: {
         autocomplete: {
           type: 'custom',
           tokenizer: 'standard',
-          filter: ['lowercase', 'edge_ngram_filter'],
+          filter: ['lowercase', 'edge_ngram_filter'], // ✅ NOT readonly
         },
       },
-
       filter: {
         edge_ngram_filter: {
           type: 'edge_ngram',
@@ -80,6 +22,23 @@ export const productMapping = {
           max_gram: 20,
         },
       },
+    },
+  },
+
+  mappings: {
+    properties: {
+      id: { type: 'keyword' },
+      name: {
+        type: 'text',
+        analyzer: 'standard',
+        fields: {
+          keyword: { type: 'keyword' },
+          suggest: { type: 'completion' },
+        },
+      },
+      price: { type: 'double' },
+      inStock: { type: 'boolean' },
+      createdAt: { type: 'date' },
     },
   },
 };

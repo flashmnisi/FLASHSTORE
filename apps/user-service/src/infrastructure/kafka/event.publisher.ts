@@ -1,5 +1,5 @@
 import { publish } from '@org/shared-kafka';
-import { USER_EVENTS } from '../../domain/events/user.events';
+import { USER_EVENTS } from '../../domain/events/user-created.event';
 import logger from '@org/shared-logger';
 
 export class EventPublisher {

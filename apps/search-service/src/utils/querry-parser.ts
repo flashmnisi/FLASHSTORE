@@ -1,3 +1,5 @@
+// apps/search-service/src/application/orchestration/query-parser.ts
+
 import { SearchQueryVO } from '../domain/value-objects/search-query.vo';
 
 export class QueryParser {
@@ -6,7 +8,7 @@ export class QueryParser {
    */
   static toElasticQuery(vo: SearchQueryVO) {
     const must: any[] = [];
-    const filter: any[] = vo.toFilters();
+    const filter: any[] = vo.toElasticFilters();   // ← Fixed: use correct method name
 
     // =========================
     // 1. TEXT SEARCH (CORE)
@@ -45,12 +47,12 @@ export class QueryParser {
         sort = [{ createdAt: 'desc' }];
         break;
 
+      case 'rating_desc':
+        sort = [{ rating: 'desc' }];
+        break;
+
       default:
-        sort = [
-          {
-            _score: 'desc', // relevance first
-          },
-        ];
+        sort = [{ _score: 'desc' }];
     }
 
     // =========================
@@ -97,6 +99,7 @@ export class QueryParser {
       })),
       total: response.hits?.total?.value || 0,
       facets: response.aggregations || {},
+      took: response.took,
     };
   }
 }

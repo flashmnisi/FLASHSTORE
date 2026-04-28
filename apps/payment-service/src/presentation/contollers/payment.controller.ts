@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { PaymentService } from '../../application/services/payment.service';
 import { processPaymentSchema } from '../../application/dtos/process-payment.dto';
 import { stripeWebhookSchema } from '../../application/dtos/webhook.dto';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}

@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import { PRODUCT_INDEX } from '../../infrastructure/persistence/models/product-index.model';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class SuggestService {
   constructor(private readonly client: Client) {}

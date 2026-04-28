@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
-import logger from '../../utils/logger';
 import { ProductIndexEntity } from '../../domain/entities/product-index.entity';
+import logger from '@org/shared-logger';
 
 export class BatchIndexer {
   constructor(private readonly client: Client) {}

@@ -2,67 +2,69 @@
 
 import app from './app';
 import env from './config/env';
-import { connectDB } from './config/database';
-import { startKafkaConsumer } from './infrastructure/kafka/consumer';
-import { elasticClient } from './config/elastic';
-import logger from './utils/logger';
+import { connectDatabase } from './config/database';
+import { connectRedis } from './config/redis';
+import { getElasticClient } from './config/elastic';
+import { initProductIndex } from './config/init-index';
+import { startSearchConsumer } from './infrastructure/kafka/consumer';
+
+import logger from '@org/shared-logger';
 
 const startServer = async () => {
   try {
-    // =============================
-    // 1. CONNECT DATABASE (Mongo/Redis if used)
-    // =============================
-    await connectDB();
-    logger.info('✅ Database connected');
+    logger.info('🚀 Starting Search Service...');
 
-    // =============================
-    // 2. CONNECT ELASTICSEARCH
-    // =============================
+    // 1. Database
+    await connectDatabase();
+    logger.info('✅ MongoDB connected');
+
+    // 2. Redis
+    await connectRedis();
+    logger.info('✅ Redis connected');
+
+    // 3. Elasticsearch
+    const elasticClient = getElasticClient();
     await elasticClient.ping();
-    logger.info('✅ Elasticsearch connected');
+    await initProductIndex();
+    logger.info('✅ Elasticsearch connected and index initialized');
 
-    // =============================
-    // 3. START KAFKA CONSUMER
-    // =============================
-    await startKafkaConsumer();
+    // 4. Kafka Consumer
+    await startSearchConsumer();
     logger.info('✅ Kafka consumer started');
 
-    // =============================
-    // 4. START HTTP SERVER
-    // =============================
+    // 5. Start HTTP Server
     app.listen(env.PORT, () => {
-      logger.info(`🚀 Search Service running on port ${env.PORT}`);
+      logger.info(`🚀 Search Service running on http://localhost:${env.PORT}`);
     });
 
   } catch (error: any) {
-    logger.error('❌ Failed to start service', {
+    logger.error('❌ Failed to start Search Service', {
       error: error.message,
       stack: error.stack,
     });
-
     process.exit(1);
   }
 };
 
-// =============================
-// GRACEFUL SHUTDOWN 🔥
-// =============================
-const shutdown = async (signal: string) => {
-  logger.warn(`⚠️ Received ${signal}. Shutting down...`);
+// Graceful Shutdown
+const gracefulShutdown = async (signal: string) => {
+  logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
 
   try {
-    // Close DB, Kafka, etc if needed
+    // Add cleanup logic here later (close connections)
+    const elasticClient = getElasticClient();
+    await elasticClient.close?.();
+
+    logger.info('✅ Graceful shutdown completed');
     process.exit(0);
   } catch (error: any) {
-    logger.error('Shutdown error', { error: error.message });
+    logger.error('❌ Error during shutdown', { error: error.message });
     process.exit(1);
   }
 };
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// =============================
-// START
-// =============================
+// Start the server
 startServer();

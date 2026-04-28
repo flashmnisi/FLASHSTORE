@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 let client: Client | null = null;
 

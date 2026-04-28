@@ -1,6 +1,6 @@
+import logger from '@org/shared-logger';
 import { getElasticClient } from './client';
 import { productMapping } from './mappings/product.mapping';
-import logger from '../../utils/logger';
 
 const INDEX_NAME = 'products';
 
@@ -13,9 +13,9 @@ export const initProductIndex = async () => {
 
   if (!exists) {
     await client.indices.create({
-      index: INDEX_NAME,
-      ...productMapping,
-    });
+    index: INDEX_NAME,
+    ...productMapping,
+});
 
     logger.info('📦 Product index created in Elasticsearch');
   } else {

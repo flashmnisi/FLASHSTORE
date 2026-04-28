@@ -1,0 +1,67 @@
+{
+  "name": "@org/search-service",
+  "projectType": "application",
+  "sourceRoot": "apps/search-service/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "dependsOn": ["^build"],
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/search-service",
+        "format": ["cjs"],
+        "bundle": true,
+        "main": "apps/search-service/src/main.ts",
+        "tsConfig": "apps/search-service/tsconfig.app.json",
+        "assets": ["apps/search-service/src/assets"],
+        "generatePackageJson": false,
+        "esbuildOptions": {
+          "sourcemap": true
+        }
+      },
+      "configurations": {
+        "development": {
+          "sourcemap": true
+        },
+        "production": {
+          "sourcemap": false,
+          "minify": true
+        }
+      }
+    },
+
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "@org/search-service:build",
+        "watch": true
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/search-service:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/search-service:build:production"
+        }
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  },
+   "dependencies": {
+    "express": "^4.21.2"
+  }
+}

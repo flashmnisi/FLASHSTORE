@@ -4,7 +4,12 @@ dotenv.config();
 
 const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: process.env.PORT || 4005,
+  PORT: Number(process.env.PORT) || 4005,
+
+  // =========================
+  // DATABASE
+  // =========================
+  MONGO_URI: process.env.MONGO_URI || '',
 
   // =========================
   // ELASTICSEARCH

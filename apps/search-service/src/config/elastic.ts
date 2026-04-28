@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import env from './env';
-import logger from '../utils/logger';
+import logger from '@org/shared-logger';
 
 let client: Client;
 

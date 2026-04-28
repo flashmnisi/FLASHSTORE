@@ -5,7 +5,7 @@ import { IPaymentProvider } from '../interfaces/payment.provider';
 import { PaymentProducer } from '../../infrastructure/kafka/producer';
 import { idempotencyService } from '@org/shared-kafka';
 import { Money } from '../../domain/value-objects/money.vo';
-import logger from '../../utils/logger';
+import logger from '@org/shared-logger';
 
 export class PaymentService {
   constructor(

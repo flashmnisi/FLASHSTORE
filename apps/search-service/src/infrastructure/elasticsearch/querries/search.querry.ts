@@ -1,8 +1,8 @@
 // persistence/queries/search.query.ts
 
-import { buildFuzzyQuery } from './fuzzy.query';
-import { buildFilters } from './filter.query';
-import { buildAggregations } from './aggregation.query';
+import { buildAggregations } from "./aggregation.querry";
+import { buildFilters } from "./filter.querry";
+import { buildFuzzyQuery } from "./fuzzy.querry";
 
 export const buildSearchQuery = (params: {
   query?: string;

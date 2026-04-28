@@ -1,46 +1,39 @@
-import { createConsumer, runConsumer } from '@org/shared-kafka';
-import { KAFKA_TOPICS, PRODUCT_EVENTS } from './topics';
-import { handleProductCreated } from './handlers/product-index.handler';
-import { handleProductUpdated } from './handlers/product-update.handler';
-import logger from '../../utils/logger';
+import { createConsumer } from '@org/shared-kafka';
+import logger from '@org/shared-logger';
+import { handleProductEvent } from './handler/product-index.handler';
+//import { handleProductEvent } from '../../application/handlers/product.handler';
 
-export const startKafkaConsumer = async () => {
+export const startSearchConsumer = async () => {
   const consumer = createConsumer({
     groupId: 'search-service-group',
-    topics: [KAFKA_TOPICS.PRODUCTS],
+    serviceName: 'search-service',
+    topics: ['product.created', 'product.updated', 'product.deleted'],
   });
 
-  await runConsumer(
-    consumer,
-    {
-      groupId: 'search-service-group',
-      topics: [KAFKA_TOPICS.PRODUCTS],
-    },
-    async (message) => {
+  await consumer.run({
+    eachMessage: async ({ topic, message }) => {
       try {
-        const eventType = message.event;
+        if (!message.value) return;
 
-        switch (eventType) {
-          case PRODUCT_EVENTS.PRODUCT_CREATED:
-            await handleProductCreated(message);
-            break;
+        const event = JSON.parse(message.value.toString());
 
-          case PRODUCT_EVENTS.PRODUCT_UPDATED:
-            await handleProductUpdated(message);
-            break;
+        logger.info('📥 Search consumer received event', {
+          topic,
+          event: event.event,
+        });
 
-          default:
-            logger.warn('Unhandled product event', { eventType });
-        }
+        await handleProductEvent(event);
+
       } catch (error: any) {
-        logger.error('Kafka handler failed', {
+        logger.error('❌ Failed to process Kafka message', {
+          topic,
           error: error.message,
         });
 
-        throw error; // 🔥 enables retry / DLQ
+        throw error; // 🔥 ensures retry / DLQ
       }
-    }
-  );
+    },
+  });
 
   logger.info('🚀 Search Kafka consumer started');
 };

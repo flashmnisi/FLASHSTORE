@@ -1,41 +1,50 @@
-import { z } from 'zod';
+// apps/search-service/src/utils/validators.ts
 
-export const searchValidators = {
-  query: z.string().max(200).optional(),
-
-  category: z.string().optional(),
-
-  brand: z.string().optional(),
-
-  priceRange: z.object({
-    min: z.number().nonnegative().optional(),
-    max: z.number().nonnegative().optional(),
-  }).optional(),
-
-  sort: z.enum([
-    'relevance',
-    'price_asc',
-    'price_desc',
-    'newest',
-  ]).default('relevance'),
-
-  page: z.number().int().min(1).default(1),
-
-  limit: z.number().int().min(1).max(100).default(20),
-};
+import { z, ZodObject, ZodRawShape } from 'zod';
+import { Request, Response, NextFunction } from 'express';
 
 /**
- * Full search request validator
+ * Extended Request with validated data
  */
-export const searchQueryValidator = z.object({
-  query: searchValidators.query,
-  category: searchValidators.category,
-  brand: searchValidators.brand,
-  minPrice: z.number().optional(),
-  maxPrice: z.number().optional(),
-  sort: searchValidators.sort,
-  page: searchValidators.page,
-  limit: searchValidators.limit,
-});
+export interface ValidatedRequest<T = any> extends Request {
+  validated: T;
+}
 
-export type SearchQueryInput = z.infer<typeof searchQueryValidator>;
+/**
+ * Generic Zod validation middleware for Express
+ * Supports query, body, and params validation
+ */
+export const validate = <T extends ZodRawShape>(schema: ZodObject<T>) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      // Merge query, body, and params for validation
+      const dataToValidate = {
+        ...req.query,
+        ...req.body,
+        ...req.params,
+      };
+
+      const result = schema.safeParse(dataToValidate);
+
+      if (!result.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: result.error.flatten().fieldErrors,
+        });
+        return;
+      }
+
+      // Attach validated data to request
+      (req as ValidatedRequest<z.infer<typeof schema>>).validated = result.data;
+
+      next();
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid request data',
+        error: error.message,
+      });
+    }
+  };
+};

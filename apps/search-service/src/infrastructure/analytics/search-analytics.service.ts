@@ -1,40 +1,65 @@
-//import { redis } from '../../../../../libs/shared-redis/src';
+// apps/search-service/src/analytics/search.analytics.service.ts
+
+import logger from '@org/shared-logger';
 import { getRedis } from '@org/shared-redis';
-import logger from '../../utils/logger';
 
 export class SearchAnalyticsService {
   /**
-   * 🔍 Track search query
+   * 🔍 Track search query (for trending searches)
    */
   async trackSearch(query: string) {
-    if (!query) return;
+    if (!query?.trim()) return;
 
     try {
-      await getRedis.zincrby('search:trending', 1, query);
+      const redis = await getRedis();
+      await redis.zIncrBy('search:trending', 1, query.toLowerCase().trim());
+
+      logger.info('Search query tracked', { query });
     } catch (error: any) {
-      logger.error('Track search failed', { error: error.message });
+      logger.error('Failed to track search query', { query, error: error.message });
     }
   }
 
   /**
-   * 👆 Track click
+   * 👆 Track product click (global)
    */
   async trackClick(productId: string) {
     try {
-      await redis.zincrby('product:clicks', 1, productId);
+      const redis = await getRedis();
+      await redis.zIncrBy('product:clicks', 1, productId);
+
+      logger.info('Product click tracked', { productId });
     } catch (error: any) {
-      logger.error('Track click failed', { error: error.message });
+      logger.error('Failed to track product click', { productId, error: error.message });
     }
   }
 
   /**
-   * 💰 Track purchase (optional)
+   * 💰 Track purchase / conversion
    */
   async trackConversion(productId: string) {
     try {
-      await redis.zincrby('product:conversions', 1, productId);
+      const redis = await getRedis();
+      await redis.zIncrBy('product:conversions', 1, productId);
+
+      logger.info('Product conversion tracked', { productId });
     } catch (error: any) {
-      logger.error('Track conversion failed', { error: error.message });
+      logger.error('Failed to track conversion', { productId, error: error.message });
+    }
+  }
+
+  /**
+   * Get trending searches
+   */
+  async getTrendingSearches(limit = 10): Promise<string[]> {
+    try {
+      const redis = await getRedis();
+      return await redis.zRange('search:trending', 0, limit - 1);
+    } catch (error: any) {
+      logger.error('Failed to get trending searches', { error: error.message });
+      return [];
     }
   }
 }
+
+export const searchAnalytics = new SearchAnalyticsService();

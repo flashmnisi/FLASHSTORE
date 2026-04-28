@@ -92,6 +92,12 @@
     },
     {
       "path": "./libs/shared-redis"
+    },
+    {
+      "path": "./apps/analytics-service-e2e"
+    },
+    {
+      "path": "./apps/analytics-service"
     }
   ]
 }

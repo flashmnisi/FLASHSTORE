@@ -1,3 +1,5 @@
+// apps/search-service/src/application/interfaces/indexer.provider.ts
+
 import { ProductIndexEntity } from '../../domain/entities/product-index.entity';
 
 export interface IIndexerProvider {
@@ -15,4 +17,10 @@ export interface IIndexerProvider {
    * 🗑 Delete from index
    */
   deleteProduct(productId: string): Promise<void>;
+
+  /**
+   * ✅ Ensure index exists with correct mappings
+   * (Should be called on startup)
+   */
+  ensureIndex(): Promise<void>;
 }

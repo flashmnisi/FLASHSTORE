@@ -20,14 +20,13 @@ export const errorMiddleware: ErrorRequestHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  logger.error(
+  logger.error('❌ Unhandled error',
     {
       error: err.message,
       stack: err.stack,
       path: req.path,
       method: req.method,
-    },
-    '❌ Unhandled error'
+    }
   );
 
   const statusCode = (err as any).statusCode || 500;

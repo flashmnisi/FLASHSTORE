@@ -1,34 +1,36 @@
 import { IUserRepository } from '../../domain/repositories/user.repository';
 import bcrypt from 'bcryptjs';
-import { generateAccessToken, generateRefreshToken } from '@org/shared-auth';
-import { UserEntity } from '../../domain/entities/user.entities';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { LoginDto } from '../dtos/login.dto';
-
-import { EventWriter } from '../../infrastructure/kafka/event.writer';
+import { UpdateProfileDto } from '../dtos/create-user.dto';
+import { OutboxService } from '../../infrastructure/outbox/outbox.service';
+import { addressService, authService } from '../../container';
 import { AppError } from '../../middlewares/error.middleware';
-
+//import logger from '@org/shared-logger';
+import { UserEntity } from '../../domain/entities/user.entities';
 
 export class UserService {
-  private eventWriter = new EventWriter();
-
-  constructor(private readonly userRepository: IUserRepository) {}
+  constructor(private readonly userRepository: IUserRepository,
+    private readonly outboxService: OutboxService
+  ) 
+  {}
 
   async register(dto: CreateUserDto) {
     const existing = await this.userRepository.findByEmail(dto.email);
-
-    if (existing) {
-      throw new AppError('User with this email already exists', 400);
-    }
+    if (existing) throw new AppError('User exists', 400);
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = new UserEntity('', dto.name, dto.email, hashedPassword);
+    const user = new UserEntity(
+      '',
+      dto.name,
+      dto.email,
+      hashedPassword
+    );
 
     const createdUser = await this.userRepository.create(user);
 
-    // ✅ WRITE EVENT TO OUTBOX (NOT KAFKA DIRECTLY)
-    await this.eventWriter.write({
+    await this.outboxService.write({
       event: 'user.registered',
       data: {
         userId: createdUser.id,
@@ -36,57 +38,67 @@ export class UserService {
         name: createdUser.name,
         role: createdUser.role,
       },
+      key: createdUser.id,
     });
 
-    const accessToken = generateAccessToken({
-      userId: createdUser.id,
-      email: createdUser.email,
-      role: createdUser.role,
-    });
-
-    const refreshToken = generateRefreshToken({
-      userId: createdUser.id,
-      email: createdUser.email,
-      role: createdUser.role, 
-    });
-
-    return { user: createdUser, accessToken, refreshToken };
+    return createdUser;
   }
 
   async login(dto: LoginDto) {
-    const user = await this.userRepository.findByEmail(dto.email);
+    return authService.login(dto);
+  }
 
-    if (!user) {
-      throw new AppError('Invalid email or password', 401);
-    }
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError('User not found', 404);
+    return user;
+  }
 
-    const isMatch = await bcrypt.compare(dto.password, user.password);
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const updatedUser = await this.userRepository.update(userId, dto);
 
-    if (!isMatch) {
-      throw new AppError('Invalid email or password', 401);
-    }
-
-    // ✅ EVENT → OUTBOX
-    await this.eventWriter.write({
-      event: 'user.logged_in',
+    await this.outboxService.write({
+      event: 'user.updated',
       data: {
-        userId: user.id,
-        email: user.email,
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
       },
+      key: updatedUser.id,
     });
 
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+    return updatedUser;
+  }
+
+  async deleteUser(userId: string) {
+    await this.userRepository.delete(userId);
+
+    await this.outboxService.write({
+      event: 'user.deleted',
+      data: { userId },
+      key: userId,
     });
 
-    const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    });
+    return true;
+  }
 
-    return { user, accessToken, refreshToken };
+  async clearRefreshToken(userId: string) {
+    return authService.logout(userId);
+  }
+
+  async addAddress(userId: string, addressData: any) {
+    return addressService.addAddress(userId, addressData);
+  }
+
+  async updateAddress(userId: string, index: number, addressData: any) {
+    return addressService.updateAddress(userId, index, addressData);
+  }
+
+  async deleteAddress(userId: string, index: number) {
+    return addressService.deleteAddress(userId, index);
+  }
+
+  async getAddresses(userId: string) {
+    return addressService.getAddresses(userId);
   }
 }

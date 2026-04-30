@@ -1,344 +1,293 @@
-// // apps/user-service/src/controllers/user.controller.ts
-// import { Request, Response } from 'express';
-// import { userService } from '../services/user.service';
-// import { generateAccessToken, generateRefreshToken } from '@org/shared-auth';
-// import logger from '@org/shared-logger';
-// import { CreateUserDto, LoginDto, UpdateProfileDto } from '../dtos/create-user.dto';
+import { Request, Response } from 'express';
+import { generateAccessToken, generateRefreshToken } from '@org/shared-auth';
+import logger from '@org/shared-logger';
+import { CreateUserDto, LoginDto, UpdateProfileDto } from '../application/dtos/create-user.dto';
+import { userService } from '../container';
+//import { userService } from '../application/services/user.service';
 
-// export const registerUser = async (req: Request, res: Response) => {
-  
-//   try {
-//     console.log("📥 Received registration data:", req.body);
+export const registerUser = async (req: Request, res: Response) => {
+  try {
+    const user = await userService.register(req.body as CreateUserDto);
 
-//     const user = await userService.register(req.body as CreateUserDto);
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
-//     console.log("✅ User created from service:", {
-//       id: user._id,
-//       name: user.name,
-//       email: user.email
-//     });
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
-//     const accessToken = generateAccessToken({
-//       userId: user._id.toString(),
-//       email: user.email,
-//       role: user.role || 'user',
-//     });
+    logger.info('User registered', { userId: user.id });
 
-//     const refreshToken = generateRefreshToken({
-//       userId: user._id.toString(),
-//       email: user.email,
-//     });
+    return res.status(201).json({
+      success: true,
+      accessToken,
+      refreshToken,
+      user: user.toJSON(), // ✅ clean
+    });
 
-//     user.refreshToken = refreshToken;
-//     await user.save();
+  } catch (error: any) {
+    logger.error('Registration failed', { error: error.message });
 
-//     console.log("✅ Tokens generated and user saved successfully");
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
-//     logger.info({ userId: user._id, email: user.email }, 'User registered successfully');
+// apps/user-service/src/controllers/user.controller.ts
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const loginDto = req.body as LoginDto;
 
-//     return res.status(201).json({
-//       success: true,
-//       message: 'User registered successfully',
-//       accessToken,
-//       refreshToken,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         isAdmin: user.isAdmin,
-//       },
-//     });
-//   } catch (error: any) {
-//     console.error("❌ Registration error:", error.message);
-//     console.error("Full error object:", error);
+    // Call login from UserService (which delegates to AuthService)
+    const result = await userService.login(loginDto);
 
-//     logger.error({ 
-//       error: error.message || String(error), 
-//       email: req.body?.email 
-//     }, 'Registration failed');
+    // result now has: { user, accessToken, refreshToken }
+    const { user, accessToken, refreshToken } = result;
 
-//     return res.status(400).json({ 
-//       success: false, 
-//       message: error.message || 'Registration failed' 
-//     });
-//   }
-// };
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: user.toJSON ? user.toJSON() : {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin || false,
+      },
+    });
 
-// // apps/user-service/src/controllers/user.controller.ts
+  } catch (error: any) {
+    logger.error('Login failed', {
+      email: req.body?.email,
+      error: error.message,
+    });
 
-// export const loginUser = async (req: Request, res: Response) => {
-//   try {
-//     console.log("📥 Login attempt for email:", req.body.email);
+    return res.status(401).json({
+      success: false,
+      message: error.message || 'Invalid credentials',
+    });
+  }
+};
 
-//     const user = await userService.login(req.body as LoginDto);
+export const getUserProfile = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Not authorized' 
+      });
+    }
 
-//     const accessToken = generateAccessToken({
-//       userId: user._id.toString(),
-//       email: user.email,
-//       role: user.role || 'user',
-//     });
+    const user = await userService.getProfile(req.user.userId);
 
-//     const refreshToken = generateRefreshToken({
-//       userId: user._id.toString(),
-//       email: user.email,
-//     });
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        address: user.addresses || [],
+        // orders: user.orders || [],   // Uncomment when you add Order model
+      },
+    });
+  } catch (error: any) {
+    logger.error('Get profile failed',
+      { error: error.message, userId: req.user?.userId }
+    );
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+};
 
-//     // Save refresh token to user document
-//     user.refreshToken = refreshToken;
-//     await user.save();
+export const updateProfile = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Not authorized' 
+      });
+    }
 
-//     logger.info(
-//       { userId: user._id, email: user.email },
-//       'User logged in successfully'
-//     );
+    const user = await userService.updateProfile(req.user.userId, req.body as UpdateProfileDto);
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Login successful',
-//       accessToken,
-//       refreshToken,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         isAdmin: user.isAdmin,
-//       },
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, email: req.body?.email },
-//       'Login failed'
-//     );
+    logger.info('Profile updated successfully',
+      { userId: user.id }
+    );
 
-//     return res.status(401).json({
-//       success: false,
-//       message: error.message || 'Invalid email or password',
-//     });
-//   }
-// };
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (error: any) {
+    logger.error('Update profile failed',
+      { error: error.message, userId: req.user?.userId }
+    );
 
-// export const getUserProfile = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ 
-//         success: false, 
-//         message: 'Not authorized' 
-//       });
-//     }
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Update failed' 
+    });
+  }
+};
 
-//     const user = await userService.getProfile(req.user.userId);
+export const deleteUser = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Not authorized' 
+      });
+    }
 
-//     return res.status(200).json({
-//       success: true,
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         isAdmin: user.isAdmin,
-//         address: user.address || [],
-//         // orders: user.orders || [],   // Uncomment when you add Order model
-//       },
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Get profile failed'
-//     );
-//     return res.status(500).json({ 
-//       success: false, 
-//       message: 'Server error' 
-//     });
-//   }
-// };
+    await userService.deleteUser(req.user.userId);
 
-// export const updateProfile = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ 
-//         success: false, 
-//         message: 'Not authorized' 
-//       });
-//     }
+    logger.info('User account deleted successfully',
+      { userId: req.user.userId }
+    );
 
-//     const user = await userService.updateProfile(req.user.userId, req.body as UpdateProfileDto);
+    return res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
+  } catch (error: any) {
+    logger.error('Delete user failed',
+      { error: error.message, userId: req.user?.userId }
+    );
 
-//     logger.info(
-//       { userId: user._id },
-//       'Profile updated successfully'
-//     );
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+};
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Profile updated successfully',
-//       user: {
-//         _id: user._id,
-//         name: user.name,
-//         email: user.email,
-//         isAdmin: user.isAdmin,
-//       },
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Update profile failed'
-//     );
+export const getAddresses = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
 
-//     return res.status(400).json({ 
-//       success: false, 
-//       message: error.message || 'Update failed' 
-//     });
-//   }
-// };
+    const user = await userService.getProfile(req.user.userId);
 
-// export const deleteUser = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ 
-//         success: false, 
-//         message: 'Not authorized' 
-//       });
-//     }
+    return res.status(200).json({
+      success: true,
+      message: 'Addresses retrieved successfully',
+      address: user.addresses || [],
+    });
+  } catch (error: any) {
+    logger.error('Get addresses failed',
+      { error: error.message, userId: req.user?.userId }
+    );
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
 
-//     await userService.deleteUser(req.user.userId);
+export const addAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
 
-//     logger.info(
-//       { userId: req.user.userId },
-//       'User account deleted successfully'
-//     );
+    const user = await userService.addAddress(req.user.userId, req.body);
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Account deleted successfully',
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Delete user failed'
-//     );
+    logger.info('Address added successfully',
+      { userId: req.user.userId }
+    );
 
-//     return res.status(500).json({ 
-//       success: false, 
-//       message: 'Server error' 
-//     });
-//   }
-// };
+    return res.status(200).json({
+      success: true,
+      message: 'Address added successfully',
+      address: user.addresses,
+    });
+  } catch (error: any) {
+    logger.error('Add address failed',
+      { error: error.message, userId: req.user?.userId },
+    );
 
-// export const getAddresses = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ success: false, message: 'Not authorized' });
-//     }
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to add address' 
+    });
+  }
+};
 
-//     const user = await userService.getProfile(req.user.userId);
+export const updateAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Addresses retrieved successfully',
-//       address: user.address || [],
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Get addresses failed'
-//     );
-//     return res.status(500).json({ success: false, message: 'Server error' });
-//   }
-// };
+    const { index } = req.params;
+    const addressIndex = parseInt(index, 10);
 
-// export const addAddress = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ success: false, message: 'Not authorized' });
-//     }
+    const user = await userService.updateAddress(req.user.userId, addressIndex, req.body);
 
-//     const user = await userService.addAddress(req.user.userId, req.body);
+    logger.info('Address updated successfully',
+      { userId: req.user.userId, addressIndex }
+    );
 
-//     logger.info(
-//       { userId: req.user.userId },
-//       'Address added successfully'
-//     );
+    return res.status(200).json({
+      success: true,
+      message: 'Address updated successfully',
+      address: user.addresses,
+    });
+  } catch (error: any) {
+    logger.error( 'Update address failed',
+      { error: error.message, userId: req.user?.userId }
+    );
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Address added successfully',
-//       address: user.address,
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Add address failed'
-//     );
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to update address' 
+    });
+  }
+};
 
-//     return res.status(400).json({ 
-//       success: false, 
-//       message: error.message || 'Failed to add address' 
-//     });
-//   }
-// };
+export const deleteAddress = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
 
-// export const updateAddress = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ success: false, message: 'Not authorized' });
-//     }
+    const { index } = req.params;
+    const addressIndex = parseInt(index, 10);
 
-//     const { index } = req.params;
-//     const addressIndex = parseInt(index, 10);
+    await userService.deleteAddress(req.user.userId, addressIndex);
 
-//     const user = await userService.updateAddress(req.user.userId, addressIndex, req.body);
+    logger.info('Address deleted successfully',
+      { userId: req.user.userId, addressIndex }
+    );
 
-//     logger.info(
-//       { userId: req.user.userId, addressIndex },
-//       'Address updated successfully'
-//     );
+    return res.status(200).json({
+      success: true,
+      message: 'Address deleted successfully',
+    });
+  } catch (error: any) {
+    logger.error('Delete address failed',
+      { error: error.message, userId: req.user?.userId }
+    );
 
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Address updated successfully',
-//       address: user.address,
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Update address failed'
-//     );
-
-//     return res.status(400).json({ 
-//       success: false, 
-//       message: error.message || 'Failed to update address' 
-//     });
-//   }
-// };
-
-// export const deleteAddress = async (req: Request & { user?: any }, res: Response) => {
-//   try {
-//     if (!req.user?.userId) {
-//       return res.status(401).json({ success: false, message: 'Not authorized' });
-//     }
-
-//     const { index } = req.params;
-//     const addressIndex = parseInt(index, 10);
-
-//     await userService.deleteAddress(req.user.userId, addressIndex);
-
-//     logger.info(
-//       { userId: req.user.userId, addressIndex },
-//       'Address deleted successfully'
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       message: 'Address deleted successfully',
-//     });
-//   } catch (error: any) {
-//     logger.error(
-//       { error: error.message, userId: req.user?.userId },
-//       'Delete address failed'
-//     );
-
-//     return res.status(400).json({ 
-//       success: false, 
-//       message: error.message || 'Failed to delete address' 
-//     });
-//   }
-// };
+    return res.status(400).json({ 
+      success: false, 
+      message: error.message || 'Failed to delete address' 
+    });
+  }
+};

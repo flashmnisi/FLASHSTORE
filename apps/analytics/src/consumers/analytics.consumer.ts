@@ -21,9 +21,8 @@ export const startAnalyticsConsumer = async () => {
         topics: ['flashstore.events']
       },
       async (message) => {
-        logger.info(
-          { event: message.event, service: message.service },
-          'Analytics service received event'
+        logger.info('Analytics service received event',
+          { event: message.event, service: message.service }
         );
 
         await analyticsService.storeEvent(message);
@@ -32,6 +31,6 @@ export const startAnalyticsConsumer = async () => {
 
     logger.info('👥 Analytics consumer started successfully');
   } catch (error: any) {
-    logger.error({ error: error.message }, 'Failed to start analytics consumer');
+    logger.error('Failed to start analytics consumer',{ error: error.message });
   }
 };

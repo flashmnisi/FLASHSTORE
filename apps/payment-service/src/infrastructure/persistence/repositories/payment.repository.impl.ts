@@ -1,14 +1,130 @@
-// apps/payment-service/src/infrastructure/persistence/repositories/payment.repository.impl.ts
+// apps/payment-service/src/infrastructure/persistence/mongoose/repositories/payment.repository.impl.ts
 
-import { IPaymentRepository } from '../../../application/interfaces/payment.repository';
-import { PaymentEntity } from '../../../domain/entities/payment.entity';
-import { PaymentModel, PaymentDocument } from '../models/payment.model';
 import logger from '@org/shared-logger';
+import { PaymentEntity } from '../../../domain/entities/payment.entity';
+import { IPaymentRepository } from '../../../application/interfaces/payment.repository';
+import { AppError } from '../../../middlewares/error.middleware';
+import { PaymentModel } from '../models/payment.model';
 
-export class PaymentRepository implements IPaymentRepository {
+export class PaymentRepositoryImpl implements IPaymentRepository {
 
-  // 🔁 Document → Entity
-  private toEntity(doc: PaymentDocument): PaymentEntity {
+  async create(payment: PaymentEntity): Promise<PaymentEntity> {
+    try {
+      const paymentDoc = await PaymentModel.create({
+        orderId: payment.orderId,
+        userId: payment.userId,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        paymentMethod: payment.paymentMethod,
+        stripePaymentIntentId: payment.stripePaymentIntentId,
+        metadata: payment.metadata,
+      });
+
+      return new PaymentEntity(
+        paymentDoc._id.toString(),
+        paymentDoc.orderId,
+        paymentDoc.userId,
+        paymentDoc.amount,
+        paymentDoc.currency,
+        paymentDoc.status,
+        paymentDoc.paymentMethod,
+        paymentDoc.stripePaymentIntentId,
+        paymentDoc.metadata,
+        paymentDoc.createdAt
+      );
+    } catch (error: any) {
+      logger.error('Failed to create payment', { orderId: payment.orderId, error: error.message });
+      throw new AppError('Failed to create payment', 500);
+    }
+  }
+
+  async update(payment: PaymentEntity): Promise<PaymentEntity> {
+    try {
+      const paymentDoc = await PaymentModel.findByIdAndUpdate(
+        payment.id,
+        {
+          status: payment.status,
+          stripePaymentIntentId: payment.stripePaymentIntentId,
+          metadata: payment.metadata,
+          updatedAt: new Date(),
+        },
+        { new: true }
+      );
+
+      if (!paymentDoc) throw new AppError('Payment not found', 404);
+
+      return new PaymentEntity(
+        paymentDoc._id.toString(),
+        paymentDoc.orderId,
+        paymentDoc.userId,
+        paymentDoc.amount,
+        paymentDoc.currency,
+        paymentDoc.status,
+        paymentDoc.paymentMethod,
+        paymentDoc.stripePaymentIntentId,
+        paymentDoc.metadata,
+        paymentDoc.createdAt
+      );
+    } catch (error: any) {
+      logger.error('Failed to update payment', { paymentId: payment.id });
+      throw error;
+    }
+  }
+
+  async findById(id: string): Promise<PaymentEntity | null> {
+    const paymentDoc = await PaymentModel.findById(id);
+    if (!paymentDoc) return null;
+
+    return this.toEntity(paymentDoc);
+  }
+
+  async findByOrderId(orderId: string): Promise<PaymentEntity | null> {
+    const paymentDoc = await PaymentModel.findOne({ orderId });
+    if (!paymentDoc) return null;
+
+    return this.toEntity(paymentDoc);
+  }
+
+  async findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<PaymentEntity | null> {
+    const paymentDoc = await PaymentModel.findOne({ stripePaymentIntentId });
+    if (!paymentDoc) return null;
+
+    return this.toEntity(paymentDoc);
+  }
+
+  async findByUserId(userId: string): Promise<PaymentEntity[]> {
+    const paymentDocs = await PaymentModel.find({ userId }).sort({ createdAt: -1 });
+    return paymentDocs.map(doc => this.toEntity(doc));
+  }
+
+  async findByStatus(status: string): Promise<PaymentEntity[]> {
+    const paymentDocs = await PaymentModel.find({ status });
+    return paymentDocs.map(doc => this.toEntity(doc));
+  }
+
+  async existsByOrderId(orderId: string): Promise<boolean> {
+    const count = await PaymentModel.countDocuments({ orderId });
+    return count > 0;
+  }
+
+  async updateStatus(id: string, status: string): Promise<PaymentEntity | null> {
+    const paymentDoc = await PaymentModel.findByIdAndUpdate(
+      id,
+      { status, updatedAt: new Date() },
+      { new: true }
+    );
+
+    return paymentDoc ? this.toEntity(paymentDoc) : null;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await PaymentModel.findByIdAndDelete(id);
+    return !!result;
+  }
+
+  // Helper method to convert Mongoose document to Entity
+  private toEntity(doc: any): PaymentEntity {
     return new PaymentEntity(
       doc._id.toString(),
       doc.orderId,
@@ -21,100 +137,5 @@ export class PaymentRepository implements IPaymentRepository {
       doc.metadata,
       doc.createdAt
     );
-  }
-
-  // 🔁 Entity → DB object
-  private toPersistence(entity: PaymentEntity) {
-    return {
-      orderId: entity.orderId,
-      userId: entity.userId,
-      amount: entity.amount,
-      currency: entity.currency,
-      status: entity.status,
-      paymentMethod: entity.paymentMethod,
-      stripePaymentIntentId: entity.stripePaymentIntentId,
-      metadata: entity.metadata,
-    };
-  }
-
-  /**
-   * Save new payment
-   */
-  async save(payment: PaymentEntity): Promise<PaymentEntity> {
-    try {
-      const doc = await PaymentModel.create(this.toPersistence(payment));
-
-      logger.info('Payment saved', {
-        paymentId: doc._id.toString(),
-        orderId: doc.orderId,
-      });
-
-      return this.toEntity(doc);
-    } catch (error: any) {
-      logger.error('Failed to save payment', {
-        error: error.message,
-        orderId: payment.orderId,
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Update payment
-   */
-  async update(payment: PaymentEntity): Promise<PaymentEntity> {
-    try {
-      const updated = await PaymentModel.findByIdAndUpdate(
-        payment.id,
-        this.toPersistence(payment),
-        { new: true }
-      );
-
-      if (!updated) {
-        throw new Error('Payment not found');
-      }
-
-      logger.info('Payment updated', {
-        paymentId: payment.id,
-        status: payment.status,
-      });
-
-      return this.toEntity(updated);
-    } catch (error: any) {
-      logger.error('Failed to update payment', {
-        error: error.message,
-        paymentId: payment.id,
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Find by Stripe ID
-   */
-  async findByStripePaymentIntentId(
-    stripeId: string
-  ): Promise<PaymentEntity | null> {
-    const doc = await PaymentModel.findOne({
-      stripePaymentIntentId: stripeId,
-    });
-
-    return doc ? this.toEntity(doc) : null;
-  }
-
-  /**
-   * Find by Order ID
-   */
-  async findByOrderId(orderId: string): Promise<PaymentEntity | null> {
-    const doc = await PaymentModel.findOne({ orderId });
-    return doc ? this.toEntity(doc) : null;
-  }
-
-  /**
-   * Find by ID
-   */
-  async findById(id: string): Promise<PaymentEntity | null> {
-    const doc = await PaymentModel.findById(id);
-    return doc ? this.toEntity(doc) : null;
   }
 }

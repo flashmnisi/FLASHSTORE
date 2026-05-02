@@ -1,37 +1,41 @@
+// apps/catalog-service/src/app.ts
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import morgan from 'morgan';
 
-import productRoutes from './modules/product/product.routes';
-import categoryRoutes from './modules/category/category.routes';
+import productRoutes from './presentation/routes/product.routes';
+import categoryRoutes from './presentation/routes/category.routes';
+import { errorMiddleware } from './middlewares/error.middleware';
 
 const app = express();
 
-// Global middleware
+// ====================== GLOBAL MIDDLEWARE ======================
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Mount routes
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
-// Health check
+// ====================== HEALTH CHECK ======================
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
+  res.status(200).json({
+    success: true,
     service: 'catalog-service',
+    status: 'healthy',
     timestamp: new Date().toISOString(),
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  });
-});
+// ====================== ROUTES ======================
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+
+// ====================== ERROR HANDLING ======================
+app.use(errorMiddleware);
 
 export default app;

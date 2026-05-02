@@ -1,3 +1,5 @@
+// apps/payment-service/src/application/dtos/stripe-webhook.dto.ts
+
 import { z } from 'zod';
 
 export const stripeWebhookSchema = z.object({
@@ -6,19 +8,40 @@ export const stripeWebhookSchema = z.object({
     'payment_intent.succeeded',
     'payment_intent.payment_failed',
     'payment_intent.processing',
+    'payment_intent.canceled',
   ]),
+
   data: z.object({
     object: z.object({
       id: z.string(),
-      amount: z.number(),
-      currency: z.string(),
-      metadata: z.object({
-        orderId: z.string(),
-        userId: z.string(),
-      }).optional(),
+      amount: z.number().nonnegative(),
+      currency: z.string().length(3).toUpperCase(),
+      status: z.string().optional(),
+
+      // Last payment error (important for failed events)
+      last_payment_error: z
+        .object({
+          message: z.string().optional(),
+          type: z.string().optional(),
+          code: z.string().optional(),
+        })
+        .optional()
+        .nullable(),
+
+      // Metadata from Stripe - made fully optional with safe default
+      metadata: z
+        .object({
+          orderId: z.string().optional(),
+          userId: z.string().optional(),
+        })
+        .optional()
+        .default({}),
+
+      receipt_url: z.string().url().optional(),
     }),
   }),
-  created: z.number(),
+
+  created: z.number().int().positive(),
   livemode: z.boolean(),
 });
 

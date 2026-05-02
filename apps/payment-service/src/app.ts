@@ -1,29 +1,61 @@
+// apps/payment-service/src/app.ts
+
 import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+
 import paymentRoutes from './presentation/routes/payment.routes';
-import logger from './utils/logger';
+import { errorMiddleware } from './middlewares/error.middleware';
+//import logger from '@org/shared-logger';
 
 const app = express();
 
-// ⚠️ IMPORTANT: Stripe webhook requires raw body
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+// ====================== MIDDLEWARE ======================
 
-app.use(express.json());
+// Security
+app.use(helmet());
 
-app.use('/api/payments', paymentRoutes);
+// CORS
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  credentials: true,
+}));
 
-// Health check
-app.get('/health', (_, res) => {
-  res.send('Payment Service is healthy');
-});
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Global error handler
-app.use((err: any, req: any, res: any, next: any) => {
-  logger.error('Unhandled error', { error: err.message });
+// Logging
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
 
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
+// ====================== HEALTH CHECK ======================
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'payment-service',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
   });
 });
+
+// ====================== API ROUTES ======================
+app.use('/api/payments', paymentRoutes);
+
+// ====================== 404 HANDLER ======================
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.originalUrl}`,
+  });
+});
+
+// ====================== GLOBAL ERROR HANDLER ======================
+app.use(errorMiddleware);
 
 export default app;

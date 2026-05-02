@@ -1,48 +1,21 @@
+// apps/payment-service/src/application/interfaces/payment.repository.ts
+
 import { PaymentEntity } from '../../domain/entities/payment.entity';
 
 export interface IPaymentRepository {
-  /**
-   * Create a new payment
-   */
   create(payment: PaymentEntity): Promise<PaymentEntity>;
-
-  /**
-   * Update payment state (status, stripe ID, etc.)
-   */
   update(payment: PaymentEntity): Promise<PaymentEntity>;
 
-  /**
-   * Find by internal ID
-   */
   findById(id: string): Promise<PaymentEntity | null>;
-
-  /**
-   * Find payment by order (critical for idempotency)
-   */
   findByOrderId(orderId: string): Promise<PaymentEntity | null>;
-
-  /**
-   * Find payment by Stripe Payment Intent ID
-   */
-  findByStripePaymentIntentId(
-    stripePaymentIntentId: string
-  ): Promise<PaymentEntity | null>;
-
-  /**
-   * 🔥 Prevent duplicate payments
-   */
-  existsByOrderId(orderId: string): Promise<boolean>;
-
-  /**
-   * 🔥 Optional: get payments for a user (analytics / history)
-   */
+  findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<PaymentEntity | null>;
   findByUserId(userId: string): Promise<PaymentEntity[]>;
+  findByStatus(status: string): Promise<PaymentEntity[]>;
 
-  /**
-   * 🔥 Optional: transactional update (important for saga consistency)
-   */
-  updateStatus(
-    paymentId: string,
-    status: PaymentEntity['status']
-  ): Promise<void>;
+  // Missing methods that caused the error
+  existsByOrderId(orderId: string): Promise<boolean>;
+  updateStatus(id: string, status: string): Promise<PaymentEntity | null>;
+
+  // Optional but useful
+  delete(id: string): Promise<boolean>;
 }

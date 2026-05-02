@@ -1,13 +1,13 @@
-// apps/payment-service/src/infrastructure/persistence/models/payment.model.ts
+// apps/payment-service/src/infrastructure/persistence/mongoose/models/payment.model.ts
 
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface PaymentDocument extends Document {
+export interface IPaymentDocument extends Document {
   orderId: string;
   userId: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed';
+  status: 'pending' | 'processing' | 'succeeded' | 'failed';
   paymentMethod: string;
   stripePaymentIntentId?: string;
   metadata?: Record<string, any>;
@@ -15,32 +15,26 @@ export interface PaymentDocument extends Document {
   updatedAt: Date;
 }
 
-const paymentSchema = new Schema<PaymentDocument>(
+const paymentSchema = new Schema<IPaymentDocument>(
   {
     orderId: { type: String, required: true, index: true },
-    userId: { type: String, required: true },
-    amount: { type: Number, required: true },
-    currency: { type: String, default: 'ZAR' },
+    userId: { type: String, required: true, index: true },
+    amount: { type: Number, required: true, min: 0 },
+    currency: { type: String, required: true, uppercase: true, default: 'ZAR' },
     status: {
       type: String,
-      enum: ['pending', 'succeeded', 'failed'],
+      enum: ['pending', 'processing', 'succeeded', 'failed'],
       default: 'pending',
       index: true,
     },
-    paymentMethod: { type: String, required: true },
-    stripePaymentIntentId: { type: String, index: true },
-    metadata: { type: Schema.Types.Mixed },
+    paymentMethod: { type: String, default: 'card' },
+    stripePaymentIntentId: { type: String, sparse: true, index: true },
+    metadata: { type: Schema.Types.Mixed, default: {} },
   },
-  {
+  { 
     timestamps: true,
+    versionKey: false 
   }
 );
 
-// Helpful indexes for performance
-paymentSchema.index({ orderId: 1 });
-paymentSchema.index({ stripePaymentIntentId: 1 });
-
-export const PaymentModel = mongoose.model<PaymentDocument>(
-  'Payment',
-  paymentSchema
-);
+export const PaymentModel = mongoose.model<IPaymentDocument>('Payment', paymentSchema);

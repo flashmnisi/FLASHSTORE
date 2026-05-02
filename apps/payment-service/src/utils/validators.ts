@@ -1,3 +1,5 @@
+// apps/payment-service/src/utils/validators.ts
+
 import { z } from 'zod';
 
 /**
@@ -7,14 +9,12 @@ const positiveAmount = z
   .number()
   .positive('Amount must be greater than zero')
   .max(1_000_000, 'Amount too large')
-  .refine(val => Number.isFinite(val), 'Invalid amount')
-  .refine(val => Math.round(val * 100) === val * 100, {
+  .refine((val) => Number.isFinite(val), 'Invalid amount')
+  .refine((val) => Math.round(val * 100) === val * 100, {
     message: 'Amount must have max 2 decimal places',
   });
 
-const currency = z
-  .enum(['ZAR', 'USD', 'EUR', 'GBP'])
-  .default('ZAR');
+const currency = z.enum(['ZAR', 'USD', 'EUR', 'GBP']).default('ZAR');
 
 const orderId = z
   .string()
@@ -40,7 +40,8 @@ const processPayment = z.object({
   amount: positiveAmount,
   currency,
   paymentMethod: z.enum(['card']).default('card'),
-  metadata: z.record(z.any()).optional().default({}),
+  // FIXED: Correct Zod record syntax → record(keyType, valueType)
+  metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
 const webhookEvent = z.object({
@@ -65,11 +66,10 @@ export const validators = {
   stripePaymentIntentId,
   processPayment,
   webhookEvent,
-};
+} as const;
 
 /**
  * Express middleware validator
- * Usage: app.post('/payment', validate(validators.processPayment), handler)
  */
 export const validate = (schema: z.ZodSchema) => {
   return (req: any, res: any, next: any) => {
@@ -83,14 +83,13 @@ export const validate = (schema: z.ZodSchema) => {
       });
     }
 
-    // Replace req.body with validated and typed data
     req.body = result.data;
     next();
   };
 };
 
 /**
- * Type exports for clean usage in services/DTOs
+ * Type exports
  */
 export type ProcessPaymentInput = z.infer<typeof processPayment>;
 export type WebhookEventInput = z.infer<typeof webhookEvent>;

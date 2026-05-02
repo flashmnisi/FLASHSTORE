@@ -1,31 +1,66 @@
-import app from './app';
-import mongoose from 'mongoose';
-import logger from './utils/logger';
-import env from './config/env';
-import { PaymentConsumer } from './infrastructure/kafka/consumer';
+// apps/payment-service/src/main.ts
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+import logger from '@org/shared-logger';
+
+import { connectDatabase } from './config/database';
+import { initKafka } from './config/kafka';
 import { startOutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { paymentConsumer } from './container';
 
-const PORT = env.PORT || 3005;
+import app from './app';
 
-async function bootstrap() {
+const PORT = process.env.PORT || 3005;
+
+const startServer = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI);
-    logger.info('MongoDB connected');
+    logger.info('🚀 Starting Payment Service...');
 
-    const consumer = new PaymentConsumer(paymentService);
+    // 1. Connect to MongoDB
+    await connectDatabase();
+    logger.info('✅ MongoDB connected successfully');
 
-     await consumer.start();
-     await startOutboxProcessor();
+    // 2. Initialize Kafka
+    await initKafka();
+    logger.info('✅ Kafka client initialized');
 
+    // 3. Start Outbox Processor (reliable event delivery)
+    startOutboxProcessor();
+    logger.info('✅ Outbox Processor started');
+
+    // 4. Start Kafka Consumer (listens to Order Service events)
+    await paymentConsumer.start();
+    logger.info('✅ Payment Consumer started and listening for events');
+
+    // 5. Start Express HTTP Server
     app.listen(PORT, () => {
-      logger.info(`💳 Payment Service running on http://localhost:${PORT}`);
+      logger.info(`🚀 Payment Service is running on http://localhost:${PORT}`);
     });
+
   } catch (error: any) {
-    logger.error('Failed to start payment service', {
+    logger.error('❌ Failed to start Payment Service', {
       error: error.message,
+      stack: error.stack,
     });
     process.exit(1);
   }
-}
+};
 
-bootstrap();
+// ====================== GRACEFUL SHUTDOWN ======================
+const gracefulShutdown = (signal: string) => {
+  logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
+
+  // You can add more cleanup here (e.g., close Kafka consumer, Redis, etc.)
+  setTimeout(() => {
+    logger.info('✅ Graceful shutdown completed');
+    process.exit(0);
+  }, 1500);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Start the application
+startServer();

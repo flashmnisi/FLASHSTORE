@@ -1,214 +1,144 @@
-import { PaymentEntity } from '../../domain/entities/payment.entity';
-import { ProcessPaymentDto, processPaymentSchema } from '../dtos/process-payment.dto';
+// apps/payment-service/src/application/services/payment.service.ts
+
+import { validators } from '../../utils/validators';
+import { stripeWebhookSchema } from '../dtos/webhook.dto';
 import { IPaymentRepository } from '../interfaces/payment.repository';
 import { IPaymentProvider } from '../interfaces/payment.provider';
-import { PaymentProducer } from '../../infrastructure/kafka/producer';
-import { idempotencyService } from '@org/shared-kafka';
-import { Money } from '../../domain/value-objects/money.vo';
+import { PaymentProducer } from '../../infrastructure/kafka/payment.producer';
+import { ProcessPaymentUseCase } from '../use-cases/process-payment.usecase';
 import logger from '@org/shared-logger';
 
 export class PaymentService {
+  private readonly processPaymentUseCase: ProcessPaymentUseCase;
+
   constructor(
     private readonly repository: IPaymentRepository,
     private readonly provider: IPaymentProvider,
     private readonly producer: PaymentProducer
-  ) {}
+  ) {
+    this.processPaymentUseCase = new ProcessPaymentUseCase(
+      repository,
+      provider,
+      producer
+    );
+  }
 
   /**
-   * 🔥 PROCESS PAYMENT (Saga Step)
+   * Create Stripe Payment Intent only
    */
-  async processPayment(input: ProcessPaymentDto, context?: { correlationId?: string }) {
-    const log = logger.withContext({
-      correlationId: context?.correlationId,
+  async createPaymentIntent(input: {
+    amount: number;
+    currency: string;
+    orderId: string;
+    userId: string;
+  }) {
+    logger.info('Creating payment intent', {
+      orderId: input.orderId,
+      amount: input.amount,
     });
 
-    // =============================
-    // 1. Validate DTO
-    // =============================
-    const dto = processPaymentSchema.parse(input);
-
-    // =============================
-    // 2. Use Money VO (CRITICAL FIX)
-    // =============================
-    const money = new Money(dto.amount, dto.currency);
-
-    log.info('Processing payment', {
-      orderId: dto.orderId,
-      amount: money.getAmount(),
-      currency: money.getCurrency(),
+    return this.provider.createPaymentIntent({
+      amount: input.amount,
+      currency: input.currency,
+      orderId: input.orderId,
+      userId: input.userId,
     });
+  }
 
-    // =============================
-    // 3. Idempotency (ORDER LEVEL)
-    // =============================
-    const existing = await this.repository.findByOrderId(dto.orderId);
+  /**
+   * Main payment processing (delegates to use case)
+   */
+  async processPayment(input: any, context?: { correlationId?: string }) {
+    // Validate using the new validators
+    const validated = validators.processPayment.parse(input);
 
-    if (existing) {
-      log.warn('Duplicate payment prevented', {
-        orderId: dto.orderId,
-        paymentId: existing.id,
-      });
+    return this.processPaymentUseCase.execute(validated, context);
+  }
 
-      return existing;
+  /**
+   * Get payment by order ID
+   */
+  async getPaymentByOrder(orderId: string) {
+    const payment = await this.repository.findByOrderId(orderId);
+
+    if (!payment) {
+      throw new Error('Payment not found');
     }
 
-    // =============================
-    // 4. Create Payment (processing state)
-    // =============================
-    const payment = new PaymentEntity(
-      '',
-      dto.orderId,
-      dto.userId,
-      money.getAmount(),
-      money.getCurrency(),
-      'processing', // 👈 better than pending
-      dto.paymentMethod,
-      undefined,
-      dto.metadata
-    );
+    return payment;
+  }
 
-    const savedPayment = await this.repository.create(payment);
-
+  /**
+   * Handle Stripe Webhook
+   */
+  async handleWebhook(input: any, signature: string) {
     try {
-      // =============================
-      // 5. Call Stripe (with retry)
-      // =============================
-      const providerResult = await this.retryStripeCall(() =>
-        this.provider.createPaymentIntent({
-          amount: money.getAmount(),
-          currency: money.getCurrency(),
-          orderId: dto.orderId,
-          userId: dto.userId,
-          metadata: dto.metadata,
-        })
-      );
+      // Validate webhook using schema
+      const event = stripeWebhookSchema.parse(input);
+      const paymentIntentId = event.data.object.id;
 
-      // =============================
-      // 6. Update Payment
-      // =============================
-      savedPayment.stripePaymentIntentId = providerResult.paymentIntentId;
-      savedPayment.status = 'pending';
+      if (!paymentIntentId) {
+        logger.warn('Webhook received without paymentIntentId');
+        return;
+      }
 
-      await this.repository.update(savedPayment);
+      const payment = await this.repository.findByStripePaymentIntentId(paymentIntentId);
+      if (!payment) {
+        logger.warn('Payment not found for webhook', { paymentIntentId });
+        return;
+      }
 
-      // =============================
-      // 7. Outbox instead of direct Kafka (CRITICAL)
-      // =============================
-      await this.producer.paymentInitiatedOutbox(savedPayment);
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          payment.markSucceeded(paymentIntentId);
+          await this.repository.update(payment);
+          await this.producer.paymentCompletedOutbox(payment);
+          logger.info('Payment succeeded via webhook', { paymentId: payment.id });
+          break;
 
-      log.info('Payment initiated', {
-        paymentId: savedPayment.id,
-      });
+        case 'payment_intent.payment_failed':
+          const reason = event.data.object.last_payment_error?.message || 'Unknown error';
+          payment.markFailed(reason);
+          await this.repository.update(payment);
+          await this.producer.paymentFailedOutbox(payment);
+          logger.warn('Payment failed via webhook', { paymentId: payment.id });
+          break;
 
-      return {
-        paymentId: savedPayment.id,
-        clientSecret: providerResult.clientSecret,
-        status: savedPayment.status,
-      };
-
+        default:
+          logger.info('Unhandled webhook event', { type: event.type });
+      }
     } catch (error: any) {
-      // =============================
-      // 8. Mark as failed (compensation)
-      // =============================
-      savedPayment.status = 'failed';
-      await this.repository.update(savedPayment);
-
-      log.error('Payment failed', {
+      logger.error('Webhook processing failed', { 
         error: error.message,
-        paymentId: savedPayment.id,
+        type: input?.type 
       });
-
       throw error;
     }
   }
 
   /**
-   * 🔥 STRIPE WEBHOOK HANDLER (Saga Completion)
+   * Create payment from Order Service event (Saga trigger)
    */
-  async handleWebhook(payload: string, signature: string, context?: { correlationId?: string }) {
-    const log = logger.withContext({
-      correlationId: context?.correlationId,
+  async createPaymentFromOrder(data: {
+    orderId: string;
+    userId: string;
+    amount: number;
+    currency?: string;
+  }) {
+    const dto = {
+      orderId: data.orderId,
+      userId: data.userId,
+      amount: data.amount,
+      currency: (data.currency || 'ZAR') as 'ZAR' | 'USD' | 'EUR' | 'GBP',
+      paymentMethod: 'card' as const,
+      metadata: {} as Record<string, any>,
+    };
+
+    logger.info('Auto-creating payment from order event', {
+      orderId: data.orderId,
+      userId: data.userId,
     });
 
-    // =============================
-    // 1. Verify signature
-    // =============================
-    const event = await this.provider.verifyWebhookSignature(payload, signature);
-
-    const paymentIntentId = event.data?.id;
-
-    if (!paymentIntentId) {
-      log.warn('Missing paymentIntentId');
-      return;
-    }
-
-    // =============================
-    // 2. Idempotency (EVENT LEVEL)
-    // =============================
-    const isDuplicate = await idempotencyService.isDuplicate(
-      `${event.eventType}:${paymentIntentId}`,
-      'payment-service'
-    );
-
-    if (isDuplicate) return;
-
-    // =============================
-    // 3. Find payment
-    // =============================
-    const payment = await this.repository.findByStripePaymentIntentId(paymentIntentId);
-
-    if (!payment) {
-      log.error('Payment not found', { paymentIntentId });
-      return;
-    }
-
-    // =============================
-    // 4. Handle events
-    // =============================
-    switch (event.eventType) {
-      case 'payment_intent.succeeded': {
-        payment.status = 'succeeded';
-        await this.repository.update(payment);
-
-        await this.producer.paymentCompletedOutbox(payment);
-
-        log.info('Payment succeeded', { paymentId: payment.id });
-        break;
-      }
-
-      case 'payment_intent.payment_failed': {
-        payment.status = 'failed';
-        await this.repository.update(payment);
-
-        await this.producer.paymentFailedOutbox(payment);
-
-        log.warn('Payment failed', { paymentId: payment.id });
-        break;
-      }
-
-      default:
-        log.info('Unhandled event', { type: event.eventType });
-    }
-  }
-
-  /**
-   * 🔁 Stripe Retry Strategy (Production-grade)
-   */
-  private async retryStripeCall<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-    let lastError;
-
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await fn();
-      } catch (err: any) {
-        lastError = err;
-
-        if (i < retries - 1) {
-          await new Promise(r => setTimeout(r, 500 * (i + 1)));
-        }
-      }
-    }
-
-    throw lastError;
+    return this.processPayment(dto);
   }
 }

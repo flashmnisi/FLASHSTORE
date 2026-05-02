@@ -1,85 +1,35 @@
-export type Currency = 'ZAR' | 'USD' | 'EUR' | 'GBP';
+// apps/payment-service/src/domain/value-objects/money.vo.ts
 
 export class Money {
-  private readonly amount: number; // stored in cents
-  private readonly currency: Currency;
-
-  private constructor(amount: number, currency: Currency) {
-    if (amount < 0) {
-      throw new Error('Amount cannot be negative');
-    }
-
-    if (!Number.isInteger(amount)) {
-      throw new Error('Amount must be in smallest currency unit (cents)');
-    }
-
-    this.amount = amount;
-    this.currency = currency;
-  }
+  private constructor(
+    private readonly _amount: number,
+    private readonly _currency: string
+  ) {}
 
   /**
-   * Create from major unit (e.g. 100.50 ZAR)
+   * Factory method - the only way to create Money
    */
-  static fromDecimal(value: number, currency: Currency = 'ZAR'): Money {
-    return new Money(Math.round(value * 100), currency);
+  static create(amount: number, currency: string): Money {
+    if (amount < 0) throw new Error('Amount cannot be negative');
+    if (!currency || currency.length !== 3) throw new Error('Invalid currency');
+
+    return new Money(amount, currency.toUpperCase());
   }
 
-  /**
-   * Create from cents directly
-   */
-  static fromCents(amount: number, currency: Currency = 'ZAR'): Money {
-    return new Money(amount, currency);
-  }
-
-  /**
-   * Get value in cents
-   */
   getAmount(): number {
-    return this.amount;
+    return this._amount;
   }
 
-  /**
-   * Get decimal value
-   */
-  toDecimal(): number {
-    return this.amount / 100;
+  getCurrency(): string {
+    return this._currency;
   }
 
-  getCurrency(): Currency {
-    return this.currency;
-  }
-
-  /**
-   * Add money safely
-   */
   add(other: Money): Money {
-    this.assertSameCurrency(other);
-    return new Money(this.amount + other.amount, this.currency);
+    if (this._currency !== other._currency) throw new Error('Currency mismatch');
+    return Money.create(this._amount + other._amount, this._currency);
   }
 
-  /**
-   * Subtract money safely
-   */
-  subtract(other: Money): Money {
-    this.assertSameCurrency(other);
-
-    if (this.amount < other.amount) {
-      throw new Error('Insufficient amount');
-    }
-
-    return new Money(this.amount - other.amount, this.currency);
-  }
-
-  /**
-   * Compare values
-   */
-  equals(other: Money): boolean {
-    return this.amount === other.amount && this.currency === other.currency;
-  }
-
-  private assertSameCurrency(other: Money) {
-    if (this.currency !== other.currency) {
-      throw new Error('Currency mismatch');
-    }
+  toString(): string {
+    return `${this._amount} ${this._currency}`;
   }
 }

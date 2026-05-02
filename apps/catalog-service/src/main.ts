@@ -1,28 +1,63 @@
-import dotenv from 'dotenv';
-import logger from '@org/shared-logger';
-import { connectDB } from './config/db';
-import app from './app';
+// apps/catalog-service/src/main.ts
 
+import dotenv from 'dotenv';
 dotenv.config();
+
+import logger from '@org/shared-logger';
+
+import { connectDatabase } from './config/database';
+import { initKafka } from './config/kafka';
+import { connectRedis } from './config/radis';
+
+import app from './app';
 
 const PORT = process.env.PORT || 3002;
 
 const startServer = async () => {
   try {
-    
-    await connectDB();
+    logger.info('🚀 Starting Catalog Service...');
 
-    // Start the server
+    // 1. Connect to MongoDB
+    await connectDatabase();
+    logger.info('✅ MongoDB connected');
+
+    // 2. Connect to Redis
+    await connectRedis();
+    logger.info('✅ Redis connected');
+
+    // 3. Initialize Kafka
+    await initKafka();
+    logger.info('✅ Kafka initialized');
+
+    // 4. Start Express Server
     app.listen(PORT, () => {
       logger.info(`🚀 Catalog Service running on http://localhost:${PORT}`);
     });
+
   } catch (error: any) {
-    logger.error(
-      { error: error.message },
-      'Failed to start Catalog Service'
-    );
+    logger.error('❌ Failed to start Catalog Service', {
+      error: error.message,
+    });
     process.exit(1);
   }
 };
 
+// ====================== GRACEFUL SHUTDOWN ======================
+const gracefulShutdown = async (signal: string) => {
+  logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
+
+  try {
+    // Add cleanup if needed
+    logger.info('✅ Graceful shutdown completed');
+    process.exit(0);
+  } catch (error: any) {
+    logger.error('Error during shutdown', { error: error.message });
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Start the application
 startServer();

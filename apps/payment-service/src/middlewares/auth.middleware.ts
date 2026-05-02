@@ -13,7 +13,7 @@ export interface AuthRequest extends Request {
  * Simple service-to-service auth (gateway already verifies JWT)
  * Payment service trusts headers from gateway
  */
-export const authMiddleware = (
+export const protect = (
   req: AuthRequest,
   res: Response,
   next: NextFunction

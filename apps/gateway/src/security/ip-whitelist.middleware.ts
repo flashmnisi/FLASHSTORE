@@ -21,8 +21,7 @@ export const ipWhitelistMiddleware = (
   const clientIp = req.ip;
 
   if (!ALLOWED_IPS.has(clientIp)) {
-    logger.warn({
-      message: 'IP not allowed',
+    logger.warn('IP not allowed',{
       ip: clientIp,
       path: req.originalUrl,
       requestId: req.id,

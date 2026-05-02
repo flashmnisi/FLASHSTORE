@@ -2,6 +2,7 @@
 
 import { createConsumer, runConsumer } from '@org/shared-kafka';
 import { TrackPaymentSuccessUseCase } from '../../../application/use-cases/track-payment-success.usecase';
+import { TOPICS, EVENTS } from '../topics';
 import logger from '@org/shared-logger';
 
 export class PaymentEventsConsumer {
@@ -10,7 +11,7 @@ export class PaymentEventsConsumer {
   async start() {
     const consumer = createConsumer({
       groupId: 'analytics-payment-events',
-      topics: ['flashstore.payments'],
+      topics: [TOPICS.PAYMENTS],
       serviceName: 'analytics-service',
     });
 
@@ -18,14 +19,14 @@ export class PaymentEventsConsumer {
       consumer,
       {
         groupId: 'analytics-payment-events',
-        topics: ['flashstore.payments'],
+        topics: [TOPICS.PAYMENTS],
         serviceName: 'analytics-service',
       },
       async (event: any) => {
         try {
           const { event: eventType, data } = event;
 
-          if (eventType === 'payment.succeeded') {
+          if (eventType === EVENTS.PAYMENT_SUCCEEDED) {
             await this.trackPaymentSuccess.execute({
               paymentId: data.paymentId,
               orderId: data.orderId,

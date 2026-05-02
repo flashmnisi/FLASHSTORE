@@ -2,6 +2,7 @@
 
 import { createConsumer, runConsumer } from '@org/shared-kafka';
 import { TrackUserRegistrationUseCase } from '../../../application/use-cases/track-user-registration.usecase';
+import { TOPICS, EVENTS } from '../topics';
 import logger from '@org/shared-logger';
 
 export class UserEventsConsumer {
@@ -10,7 +11,7 @@ export class UserEventsConsumer {
   async start() {
     const consumer = createConsumer({
       groupId: 'analytics-user-events',
-      topics: ['flashstore.users'],
+      topics: [TOPICS.USERS],
       serviceName: 'analytics-service',
     });
 
@@ -18,14 +19,14 @@ export class UserEventsConsumer {
       consumer,
       {
         groupId: 'analytics-user-events',
-        topics: ['flashstore.users'],
+        topics: [TOPICS.USERS],
         serviceName: 'analytics-service',
       },
       async (event: any) => {
         try {
           const { event: eventType, data } = event;
 
-          if (eventType === 'user.registered') {
+          if (eventType === EVENTS.USER_REGISTERED) {
             await this.trackUserRegistration.execute({
               userId: data.userId,
               email: data.email,
@@ -37,7 +38,7 @@ export class UserEventsConsumer {
             eventType: event.event,
             error: error.message,
           });
-          throw error; // Let shared-kafka handle retry + DLQ
+          throw error;
         }
       }
     );

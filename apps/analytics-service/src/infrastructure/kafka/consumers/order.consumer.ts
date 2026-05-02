@@ -2,6 +2,7 @@
 
 import { createConsumer, runConsumer } from '@org/shared-kafka';
 import { TrackOrderCreatedUseCase } from '../../../application/use-cases/track-order-created.usecase';
+import { TOPICS, EVENTS } from '../topics';
 import logger from '@org/shared-logger';
 
 export class OrderEventsConsumer {
@@ -10,7 +11,7 @@ export class OrderEventsConsumer {
   async start() {
     const consumer = createConsumer({
       groupId: 'analytics-order-events',
-      topics: ['flashstore.orders'],
+      topics: [TOPICS.ORDERS],
       serviceName: 'analytics-service',
     });
 
@@ -18,14 +19,14 @@ export class OrderEventsConsumer {
       consumer,
       {
         groupId: 'analytics-order-events',
-        topics: ['flashstore.orders'],
+        topics: [TOPICS.ORDERS],
         serviceName: 'analytics-service',
       },
       async (event: any) => {
         try {
           const { event: eventType, data } = event;
 
-          if (eventType === 'order.created') {
+          if (eventType === EVENTS.ORDER_CREATED) {
             await this.trackOrderCreated.execute({
               orderId: data.orderId,
               userId: data.userId,

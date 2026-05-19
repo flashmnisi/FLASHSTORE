@@ -98,6 +98,15 @@
     },
     {
       "path": "./apps/analytics-service"
+    },
+    {
+      "path": "./packages"
+    },
+    {
+      "path": "./libs/shared/types"
+    },
+    {
+      "path": "./libs/shared-resilience"
     }
   ]
 }

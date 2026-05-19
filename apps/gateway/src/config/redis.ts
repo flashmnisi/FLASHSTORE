@@ -1,14 +1,58 @@
-import Redis from 'ioredis';
+// apps/gateway/src/config/redis.ts
 
-export const redis = new Redis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
+import { 
+  getRedis as connectSharedRedis, 
+  disconnectRedis as disconnectSharedRedis 
+} from '@org/shared-redis';
+import logger from '@org/shared-logger';
 
-redis.on('connect', () => {
-  console.log('✅ Redis connected');
-});
+let isConnected = false;
 
-redis.on('error', (err) => {
-  console.error('❌ Redis error:', err);
-});
+/**
+ * Initialize Redis connection for Gateway
+ */
+export const connectRedis = async (): Promise<void> => {
+  try {
+    if (isConnected) return;
+
+    await connectSharedRedis();
+    isConnected = true;
+
+    logger.info('✅ Redis connected successfully (Gateway)');
+  } catch (error: any) {
+    logger.error('❌ Redis connection failed', {
+      error: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Disconnect Redis gracefully
+ */
+export const disconnectRedis = async (): Promise<void> => {
+  try {
+    if (isConnected) {
+      await disconnectSharedRedis();
+      isConnected = false;
+      logger.info('✅ Redis disconnected');
+    }
+  } catch (error: any) {
+    logger.warn('Failed to disconnect Redis', { 
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Health check for Redis
+ */
+export const checkRedisHealth = async (): Promise<boolean> => {
+  try {
+    const redis = await connectSharedRedis();
+    await redis.ping();
+    return true;
+  } catch {
+    return false;
+  }
+};

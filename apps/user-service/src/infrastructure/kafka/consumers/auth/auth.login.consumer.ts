@@ -1,38 +1,103 @@
 // apps/user-service/src/infrastructure/kafka/consumers/auth/auth.login.consumer.ts
 
-import { createConsumer, runConsumer } from '@org/shared-kafka';
+import { createConsumer, runConsumer, EVENTS, TOPICS } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
-import { AUTH_EVENTS } from '../../events/auth.events';
 
 export const startAuthLoginConsumer = async () => {
-  const consumer = createConsumer({
-    groupId: 'user-service-auth-login',
-    topics: ['flashstore.auth'],
-    serviceName: 'user-service',
-  });
+  try {
+    const groupId = 'user-service-auth-login';
 
-  await runConsumer(
-    consumer,
-    {
-      groupId: 'user-service-auth-login',
-      topics: ['flashstore.auth'],
+    const consumer = createConsumer({
+      groupId,
+      topics: [TOPICS.AUTH],
       serviceName: 'user-service',
-    },
-    async (event: any) => {
-      try {
-        if (event.event === AUTH_EVENTS.LOGIN_SUCCESS) {
-          logger.info('📥 Processing auth.login.success event', {
-            userId: event.data.userId,
+    });
+
+    logger.info(`📥 Starting Auth Login Consumer on topic: ${TOPICS.AUTH}`);
+
+    await runConsumer(
+      consumer,
+      {
+        groupId,
+        topics: [TOPICS.AUTH],
+        serviceName: 'user-service',
+      },
+      async (message: any) => {
+        try {
+          /**
+           * ============================
+           * NORMALIZE MESSAGE
+           * ============================
+           */
+          const event =
+            typeof message === 'string'
+              ? JSON.parse(message)
+              : message;
+
+          const eventType = event?.event || event?.type;
+          const payload = event?.data ?? event?.payload ?? event;
+
+          if (!eventType) {
+            logger.warn('⚠️ Missing event type in auth message', { message });
+            return;
+          }
+
+          /**
+           * ============================
+           * HANDLE LOGIN EVENT
+           * ============================
+           */
+          if (eventType === EVENTS.USER_LOGGED_IN) {
+            const userId = payload?.userId;
+            const email = payload?.email;
+
+            logger.info('📥 Processing user.logged_in event', {
+              userId,
+              email,
+            });
+
+            // =====================================
+            // BUSINESS LOGIC (SAFE PLACE)
+            // =====================================
+            // - update last login timestamp
+            // - login history
+            // - fraud detection hooks
+            // - analytics tracking
+
+            logger.info('✅ Login event processed successfully', {
+              userId,
+            });
+
+            return;
+          }
+
+          /**
+           * UNKNOWN EVENTS
+           */
+          logger.warn('⚠️ Unhandled auth event received', {
+            eventType,
+            payload,
+          });
+        } catch (error: any) {
+          logger.error('❌ Failed to handle auth login event', {
+            error: error.message,
+            rawMessage:
+              typeof message === 'string'
+                ? message.substring(0, 300)
+                : message,
           });
 
-          // TODO: Update last login timestamp, security audit, etc.
+          throw error;
         }
-      } catch (error: any) {
-        logger.error('Failed to handle login event', { error: error.message });
-        throw error;
       }
-    }
-  );
+    );
 
-  logger.info('✅ Auth Login Consumer is running');
+    logger.info('✅ Auth Login Consumer started and running');
+  } catch (error: any) {
+    logger.error('❌ Failed to start Auth Login Consumer', {
+      error: error.message,
+    });
+
+    throw error;
+  }
 };

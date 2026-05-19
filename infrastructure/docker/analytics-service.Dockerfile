@@ -10,7 +10,7 @@ COPY . .
 RUN npm ci
 
 # Build using Nx
-RUN npx nx build @org/analytics --configuration=production
+RUN npx nx build @org/analytics-service --configuration=production
 
 # ==================== RUNTIME STAGE ====================
 FROM node:20-alpine
@@ -18,16 +18,16 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy only built output
-COPY --from=builder /app/dist/apps/analytics ./dist
+COPY --from=builder /app/dist/apps/analytics-service ./dist
 
 # Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV=production
-ENV PORT=3007
+ENV PORT=3006
 ENV KAFKA_BROKERS=kafka:9092
 ENV MONGO_URI=mongodb://mongo:27017/flashstore
 
-EXPOSE 3007
+EXPOSE 3006
 
 CMD ["node", "dist/main.js"]

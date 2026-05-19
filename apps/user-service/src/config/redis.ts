@@ -1,6 +1,7 @@
 // apps/user-service/src/config/redis.ts
 
 //import { cacheService } from '../application/services/cache.service';
+import { getRedis as connectSharedRedis, disconnectRedis } from '@org/shared-redis';
 import logger from '@org/shared-logger';
 import { cacheService } from '../infrastructure/cache/cache.service';
 
@@ -11,6 +12,7 @@ export const connectRedis = async (): Promise<void> => {
   try {
     // The CacheService constructor already handles connection
     // We just trigger it here to ensure it's initialized
+    await connectSharedRedis();
     await cacheService.get('health-check'); // Simple ping to verify connection
 
     logger.info('✅ Redis connected successfully via CacheService');
@@ -25,8 +27,9 @@ export const connectRedis = async (): Promise<void> => {
 /**
  * Graceful shutdown - disconnect Redis
  */
-export const disconnectRedis = async (): Promise<void> => {
+export const disconnectRedisConnection = async (): Promise<void> => {
   try {
+    await disconnectRedis();
     await cacheService.disconnect();
     logger.info('🔌 Redis connection closed gracefully');
   } catch (error: any) {

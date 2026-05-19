@@ -11,11 +11,11 @@ import { connectRedis } from './config/redis';
 
 import app from './app';
 
-// Import from container
-import { 
-  analyticsConsumers,
-  aggregationJob,
-  cleanupJob 
+// ✅ NEW SINGLE CONSUMER ARCHITECTURE
+import {
+  analyticsConsumer,
+  //aggregationJob,
+ // cleanupJob,
 } from './container';
 
 const PORT = process.env.PORT || 3006;
@@ -24,28 +24,28 @@ const startServer = async () => {
   try {
     logger.info('🚀 Starting Analytics Service...');
 
-    // 1. Connect to MongoDB
+    // 1. DB
     await connectDatabase();
     logger.info('✅ MongoDB connected');
 
-    // 2. Connect to Redis
+    // 2. Redis
     await connectRedis();
     logger.info('✅ Redis connected');
 
-    // 3. Initialize Kafka
+    // 3. Kafka init
     await initKafka();
     logger.info('✅ Kafka initialized');
 
-    // 4. Start Kafka Consumers
-    await analyticsConsumers.startAll();
-    logger.info('✅ All Kafka Consumers started');
+    // 4. SINGLE CONSUMER START
+    await analyticsConsumer.start();
+    logger.info('✅ Analytics Consumer started');
 
-    // 5. Start Background Schedulers
-    aggregationJob.start();
-    cleanupJob.start();
-    logger.info('✅ Scheduler jobs (Aggregation + Cleanup) started');
+    // 5. Jobs
+   // aggregationJob.start();
+    //cleanupJob.start();
+    logger.info('✅ Scheduler jobs started');
 
-    // 6. Start Express Server
+    // 6. API
     app.listen(PORT, () => {
       logger.info(`🚀 Analytics Service running on http://localhost:${PORT}`);
     });
@@ -59,16 +59,16 @@ const startServer = async () => {
   }
 };
 
-// ====================== GRACEFUL SHUTDOWN ======================
+// ====================== SHUTDOWN ======================
+
 const gracefulShutdown = async (signal: string) => {
   logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
 
   try {
-    // Optional: stop schedulers if they have stop methods
     logger.info('✅ Graceful shutdown completed');
     process.exit(0);
   } catch (error: any) {
-    logger.error('Error during shutdown', { error: error.message });
+    logger.error('Shutdown error', { error: error.message });
     process.exit(1);
   }
 };
@@ -76,5 +76,4 @@ const gracefulShutdown = async (signal: string) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Start the application
 startServer();

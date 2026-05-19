@@ -50,5 +50,3 @@ export class OutboxService {
   }
 }
 
-// Do NOT instantiate here — we'll do it in main.ts with DI
-// export const outboxService = new OutboxService(...);

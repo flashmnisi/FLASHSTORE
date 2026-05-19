@@ -2,23 +2,60 @@
 
 import { Request, Response } from 'express';
 import { userService } from '../../container';
-import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import logger from '@org/shared-logger';
-import { LoginDto } from '../../application/dtos/create-user.dto';
+import { LoginDto, CreateUserDto } from '../../application/dtos/create-user.dto';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 
 export const authController = {
 
   /**
-   * LOGIN
+   * REGISTER NEW USER
+   * POST /api/auth/register
+   */
+  async register(req: Request, res: Response) {
+    try {
+      const dto = req.body as CreateUserDto;
+
+      const result = await userService.register(dto);
+
+      const { user, accessToken, refreshToken } = result;
+
+      logger.info('User registered successfully', { 
+        userId: user.id, 
+        email: user.email 
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isAdmin: user.isAdmin || false,
+        },
+      });
+    } catch (error: any) {
+      logger.error('Registration failed', { error: error.message });
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Registration failed',
+      });
+    }
+  },
+
+  /**
+   * LOGIN USER
    * POST /api/auth/login
    */
   async login(req: Request, res: Response) {
     try {
       const loginDto = req.body as LoginDto;
 
-      // userService.login() now returns { user, accessToken, refreshToken }
       const result = await userService.login(loginDto);
-
       const { user, accessToken, refreshToken } = result;
 
       logger.info('User logged in successfully', {
@@ -56,7 +93,7 @@ export const authController = {
    * LOGOUT
    * POST /api/auth/logout
    */
-  async logout(req: AuthenticatedRequest, res: Response) {
+  async logout(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -67,9 +104,7 @@ export const authController = {
 
       await userService.clearRefreshToken(req.user.userId);
 
-      logger.info('User logged out successfully', {
-        userId: req.user.userId,
-      });
+      logger.info('User logged out successfully', { userId: req.user.userId });
 
       return res.status(200).json({
         success: true,
@@ -89,10 +124,10 @@ export const authController = {
   },
 
   /**
-   * GET CURRENT USER (ME)
+   * GET CURRENT USER
    * GET /api/auth/me
    */
-  async getCurrentUser(req: AuthenticatedRequest, res: Response) {
+  async getCurrentUser(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -127,7 +162,7 @@ export const authController = {
   },
 
   /**
-   * REFRESH TOKEN (Optional - implement later)
+   * REFRESH TOKEN
    */
   async refreshToken(req: Request, res: Response) {
     try {

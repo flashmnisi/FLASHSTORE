@@ -4,7 +4,8 @@ const ACCESS_SECRET = process.env.JWT_SECRET || 'access-secret-key';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret-key';
 
 export interface JwtPayload {
-  userId: string;     
+  userId: string; 
+  id?:string,    
   email: string;
   role: string;
   iat?: number;

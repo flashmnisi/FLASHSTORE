@@ -32,11 +32,18 @@ export class OrderRepositoryImpl implements IOrderRepository {
   /**
    * Find by ID
    */
-  async findById(orderId: string): Promise<OrderEntity | null> {
-    const order = await OrderModel.findById(orderId);
+  async findById(
+  key: string
+): Promise<OrderEntity | null> {
+  const order =
+    await OrderModel.findOne({
+      idempotencyKey: key,
+    });
 
-    return order ? this.toEntity(order) : null;
-  }
+  return order
+    ? this.toEntity(order)
+    : null;
+}
 
   /**
    * Find orders by user

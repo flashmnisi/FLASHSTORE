@@ -13,24 +13,23 @@ import logger from '@org/shared-logger';
 
 const app = express();
 
-// ====================== GLOBAL MIDDLEWARE ======================
-app.use(helmet());                                   // Security
-app.use(cors());                                     // CORS
+// ====================== MIDDLEWARE ======================
+app.use(helmet());
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging in development
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
 // ====================== ROUTES ======================
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); 
+app.use('/api/users', userRoutes); 
 
-// Health check
+// Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     service: 'user-service',
     status: 'healthy',
@@ -38,8 +37,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ====================== ERROR HANDLING ======================
-// 404 Not Found
+// 404 Handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -47,9 +45,10 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler (must be last)
+// Global Error Handler
 app.use(errorMiddleware);
 
 logger.info('✅ Express app initialized with all routes');
+
 
 export default app;

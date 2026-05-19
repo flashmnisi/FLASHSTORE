@@ -28,9 +28,10 @@ export class AggregationJob {
       logger.info('Starting daily analytics aggregation', { date: yesterday });
 
       // Aggregate various metrics
-const [revenue, signups, orders, views] = await Promise.all([
+const [revenue, signups, logins, orders, views] = await Promise.all([
   this.analyticsRepository.getRevenueMetrics(yesterday, new Date()),
   this.analyticsRepository.countByEventType('user.registered', yesterday),
+  this.analyticsRepository.countByEventType('user.logged_in', yesterday),
   this.analyticsRepository.countByEventType('order.created', yesterday),
   this.analyticsRepository.countByEventType('product.viewed', yesterday),
 ]);
@@ -41,6 +42,7 @@ logger.info('Daily aggregation completed', {
   date: yesterday.toISOString().split('T')[0],
   revenue: revenueValue,
   newUsers: signups,
+  logins,
   orders,
   productViews: views,
 });

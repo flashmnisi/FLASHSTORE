@@ -10,26 +10,28 @@ export class CreateUserUseCase {
 
   async execute(dto: CreateUserDto) {
     try {
-      // Optional: Add extra validation or business logic here if needed
+      // userService.register() returns { user, accessToken, refreshToken }
+      const result = await this.userService.register(dto);
 
-      const createdUser = await this.userService.register(dto);
+      const { user, accessToken, refreshToken } = result;
 
-      // Note: Your current register() returns only the UserEntity
-      // If you want tokens returned from use case, you should either:
-      // Option A: Modify userService.register to also return tokens, OR
-      // Option B: Generate tokens here in the use case (recommended for separation)
+      logger.info('User created successfully via UseCase', {
+        userId: user.id,
+        email: user.email,
+      });
 
       return {
         success: true,
         message: 'User created successfully',
+        accessToken,
+        refreshToken,
         user: {
-          id: createdUser.id,
-          name: createdUser.name,
-          email: createdUser.email,
-          role: createdUser.role,
-          isAdmin: createdUser.isAdmin,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isAdmin: user.isAdmin || false,
         },
-        // tokens will be generated in controller or auth service layer
       };
     } catch (error: any) {
       logger.error('CreateUserUseCase failed', {
@@ -41,10 +43,7 @@ export class CreateUserUseCase {
         throw error;
       }
 
-      throw new AppError(
-        error.message || 'Failed to create user',
-        500
-      );
+      throw new AppError(error.message || 'Failed to create user', 500);
     }
   }
 }

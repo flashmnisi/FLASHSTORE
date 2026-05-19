@@ -6,8 +6,11 @@ networks:
 
 volumes:
   mongo-data:
+  kafka-data:
+  redis-data:
 
 services:
+  # ==================== MongoDB ====================
   mongo:
     image: mongo:7
     container_name: flashstore-mongo
@@ -25,9 +28,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
-  # ==================== Kafka KRaft ====================
+      # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: flashstore-redis
+    ports:
+     - "6379:6379"
+    command: >
+     redis-server 
+     --appendonly yes 
+     --maxmemory 256mb 
+     --maxmemory-policy allkeys-lru
+    volumes:
+    - redis-data:/data
+    networks:
+    - flashstore-net
+    restart: unless-stopped
+    healthcheck:
+     test: ["CMD", "redis-cli", "ping"]
+     interval: 5s
+     timeout: 3s
+     retries: 5
 
+  # ==================== Kafka (KRaft) ====================
   kafka:
     image: apache/kafka:3.8.0
     container_name: flashstore-kafka
@@ -58,30 +83,176 @@ services:
       timeout: 5s
       retries: 40
       start_period: 45s
-  # ==================== Kafka Topic Creator ====================
-  
+
+# ==================== Kafka Topic Creator ====================
   kafka-init:
-    image: apache/kafka:3.8.0
-    container_name: flashstore-kafka-init
-    depends_on:
-      kafka:
-        condition: service_healthy
-    networks:
-      - flashstore-net
-    command: >
-      bash -c "
-        echo 'Waiting for Kafka to be fully ready...';
-        sleep 50;
-        echo 'Creating topics...';
-        kafka-topics.sh --create --if-not-exists --topic flashstore.events --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
-        kafka-topics.sh --create --if-not-exists --topic flashstore.users --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
-        kafka-topics.sh --create --if-not-exists --topic flashstore.orders --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
-        kafka-topics.sh --create --if-not-exists --topic flashstore.payments --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
-        kafka-topics.sh --create --if-not-exists --topic flashstore.cart --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
-        echo '✅ All topics created!';
-        sleep infinity
-      "
-   # ==================== Gateway ====================
+   image: apache/kafka:3.8.0
+   container_name: flashstore-kafka-init
+
+   depends_on:
+    kafka:
+      condition: service_healthy
+
+   networks:
+    - flashstore-net
+
+   command: >
+    bash -c "
+      echo '⏳ Waiting for Kafka broker...';
+      sleep 35;
+
+      echo '🚀 Creating FlashStore Kafka topics...';
+
+      # ==============================
+      # AUTH
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.auth \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # USERS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.users \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # ORDERS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.orders \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # PAYMENTS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.payments \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # CARTS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.carts \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # PRODUCTS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.products \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # INVENTORY
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.inventory \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # NOTIFICATIONS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.notifications \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # SYSTEM
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.system \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # ANALYTICS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.analytics \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # METRICS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.metrics \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # RETRY TOPICS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.orders.retry \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.payments.retry \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.users.retry \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      # ==============================
+      # DLQ TOPICS
+      # ==============================
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.orders.dlq \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.payments.dlq \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      kafka-topics.sh --create --if-not-exists \
+        --topic flashstore.users.dlq \
+        --bootstrap-server kafka:9092 \
+        --partitions 3 \
+        --replication-factor 1;
+
+      echo '✅ All FlashStore Kafka topics created successfully!';
+
+      kafka-topics.sh \
+        --bootstrap-server kafka:9092 \
+        --list;
+
+      sleep infinity
+    "
+  # ==================== Gateway (Nginx + Proxy) ====================
   gateway:
     build:
       context: .
@@ -90,31 +261,29 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      KAFKA_BROKERS: kafka:9092
     depends_on:
-      mongo:
-        condition: service_healthy
       kafka:
         condition: service_healthy
       kafka-init:
-        condition: service_started     
+        condition: service_started
+      redis:
+       condition: service_healthy
     networks:
       - flashstore-net
     restart: unless-stopped
 
-  # ==================== analytics-servic ====================
-  analytics-service:
+  # ==================== Other Services ====================
+
+  user-service:
     build:
       context: .
-      dockerfile: infrastructure/docker/analytics.Dockerfile
-    container_name: flashstore-analytics-service
-    ports:
-      - "3007:3007"
+      dockerfile: infrastructure/docker/user-service.Dockerfile
+    container_name: flashstore-user-service
     environment:
       NODE_ENV: production
-      PORT: 3007
+      PORT: 3001
       KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore-analytics
+      MONGO_URI: mongodb://mongo:27017/flashstore
     depends_on:
       mongo:
         condition: service_healthy
@@ -122,10 +291,173 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_started
+      redis:
+       condition: service_healthy
     networks:
       - flashstore-net
     restart: unless-stopped
 
+  catalog-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/catalog-service.Dockerfile
+    container_name: flashstore-catalog-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/cart-service.Dockerfile
+    container_name: flashstore-cart-service
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/order-service.Dockerfile
+    container_name: flashstore-order-service
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/payment-service.Dockerfile
+    container_name: flashstore-payment-service
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/notification-service.Dockerfile
+    container_name: flashstore-notification-service
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  search-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/search-service.Dockerfile
+    container_name: flashstore-search-service
+    environment:
+      NODE_ENV: production
+      PORT: 4005
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/analytics-service.Dockerfile
+    container_name: flashstore-analytics-service
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      KAFKA_BROKERS: kafka:9092
+      MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
 
   # ==================== Kafka UI ====================
   kafka-ui:
@@ -143,162 +475,348 @@ services:
       - flashstore-net
     restart: unless-stopped
 
-  # ==================== User Service ====================
-  user-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/user-service.Dockerfile
-    container_name: flashstore-user-service
-    ports:
-      - "3001:3001"
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-  # ==================== Order Service ====================
-  order-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/order-service.Dockerfile
-    container_name: flashstore-order-service
-    ports:
-      - "3004:3004"
-    environment:
-      NODE_ENV: production
-      PORT: 3004
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-     # ==================== cart Service ====================
-  cart-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/cart-service.Dockerfile
-    container_name: flashstore-cart-service
-    ports:
-      - "3003:3003"
-    environment:
-      NODE_ENV: production
-      PORT: 3003
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-    # ==================== PAYMENT SERVICE ====================
-  payment-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/payment-service.Dockerfile
-    container_name: flashstore-payment-service
-    environment:
-      NODE_ENV: production
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-      PORT: 3005
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-    ports:
-      - "3005:3005"
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-  # ==================== NOTIFICATION SERVICE ====================
-  notification-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/notification-service.Dockerfile
-    container_name: flashstore-notification-service
-    environment:
-      NODE_ENV: production
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-      PORT: 3006
-    ports:
-      - "3006:3006"
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-    # ==================== catalog Service ====================
-
-  catalog-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/catalog-service.Dockerfile
-    container_name: flashstore-catalog-service
-    environment:
-      NODE_ENV: production
-      PORT: 3002
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-    ports:
-      - "3002:3002"          
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-    networks:
-      - flashstore-net
-    restart: unless-stopped
-
-  # ==================== Nginx ====================
+  # ==================== Nginx (Reverse Proxy) ====================
   nginx:
     image: nginx:stable-alpine
     container_name: flashstore-nginx
     ports:
       - "8080:80"
+      - "443:443"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl:ro   
     depends_on:
       - gateway
     networks:
       - flashstore-net
     restart: unless-stopped
+
+# version: '3.9'
+
+# networks:
+#   flashstore-net:
+#     driver: bridge
+
+# volumes:
+#   mongo-data:
+
+# services:
+#   mongo:
+#     image: mongo:7
+#     container_name: flashstore-mongo
+#     ports:
+#       - "27017:27017"
+#     environment:
+#       MONGO_INITDB_DATABASE: flashstore
+#     volumes:
+#       - mongo-data:/data/db
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+#     healthcheck:
+#       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # ==================== Kafka KRaft ====================
+
+#   kafka:
+#     image: apache/kafka:3.8.0
+#     container_name: flashstore-kafka
+#     ports:
+#       - "9092:9092"
+#     environment:
+#       KAFKA_NODE_ID: 1
+#       KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+#       KAFKA_PROCESS_ROLES: broker,controller
+#       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+#       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+#       KAFKA_NUM_PARTITIONS: 1
+#       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+#       KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+#       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+#       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+#     healthcheck:
+      
+#       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 40
+#       start_period: 45s
+#   # ==================== Kafka Topic Creator ====================
+  
+#   kafka-init:
+#     image: apache/kafka:3.8.0
+#     container_name: flashstore-kafka-init
+#     depends_on:
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - flashstore-net
+#     command: >
+#       bash -c "
+#         echo 'Waiting for Kafka to be fully ready...';
+#         sleep 50;
+#         echo 'Creating topics...';
+#         kafka-topics.sh --create --if-not-exists --topic flashstore.events --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
+#         kafka-topics.sh --create --if-not-exists --topic flashstore.users --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
+#         kafka-topics.sh --create --if-not-exists --topic flashstore.orders --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
+#         kafka-topics.sh --create --if-not-exists --topic flashstore.payments --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
+#         kafka-topics.sh --create --if-not-exists --topic flashstore.cart --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
+#         echo '✅ All topics created!';
+#         sleep infinity
+#       "
+#    # ==================== Gateway ====================
+#   gateway:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/gateway.Dockerfile
+#     container_name: flashstore-gateway
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3000
+#       KAFKA_BROKERS: kafka:9092
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started     
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#   # ==================== analytics-service ====================
+#   analytics-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/analytics.Dockerfile
+#     container_name: flashstore-analytics-service
+#     ports:
+#       - "3006:3006"
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3006
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore-analytics
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+
+#   # ==================== Kafka UI ====================
+#   kafka-ui:
+#     image: provectuslabs/kafka-ui:latest
+#     container_name: flashstore-kafka-ui
+#     ports:
+#       - "8081:8080"
+#     environment:
+#       KAFKA_CLUSTERS_0_NAME: flashstore
+#       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+#     depends_on:
+#       kafka:
+#         condition: service_healthy
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#   # ==================== User Service ====================
+#   user-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/user-service.Dockerfile
+#     container_name: flashstore-user-service
+#     ports:
+#       - "3001:3001"
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3001
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#   # ==================== Order Service ====================
+#   order-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/order-service.Dockerfile
+#     container_name: flashstore-order-service
+#     ports:
+#       - "3004:3004"
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3004
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#      # ==================== cart Service ====================
+#   cart-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/cart-service.Dockerfile
+#     container_name: flashstore-cart-service
+#     ports:
+#       - "3003:3003"
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3003
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#     # ==================== PAYMENT SERVICE ====================
+#   payment-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/payment-service.Dockerfile
+#     container_name: flashstore-payment-service
+#     environment:
+#       NODE_ENV: production
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#       PORT: 3005
+#       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+#     ports:
+#       - "3005:3005"
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#   # ==================== NOTIFICATION SERVICE ====================
+#   notification-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/notification-service.Dockerfile
+#     container_name: flashstore-notification-service
+#     environment:
+#       NODE_ENV: production
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#       PORT: 3007
+#     ports:
+#       - "3007:3007"
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#     # ==================== catalog Service ====================
+
+#   catalog-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/catalog-service.Dockerfile
+#     container_name: flashstore-catalog-service
+#     environment:
+#       NODE_ENV: production
+#       PORT: 3002
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#     ports:
+#       - "3002:3002"          
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+#       # ==================== NOTIFICATION SERVICE ====================
+#   search-service:
+#     build:
+#       context: .
+#       dockerfile: infrastructure/docker/search-service.Dockerfile
+#     container_name: flashstore-search-service
+#     environment:
+#       NODE_ENV: production
+#       KAFKA_BROKERS: kafka:9092
+#       MONGO_URI: mongodb://mongo:27017/flashstore
+#       PORT: 4005
+#     ports:
+#       - "4005:4005"
+#     depends_on:
+#       mongo:
+#         condition: service_healthy
+#       kafka:
+#         condition: service_healthy
+#       kafka-init:
+#         condition: service_started
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped
+
+
+#   # ==================== Nginx ====================
+#   nginx:
+#     image: nginx:stable-alpine
+#     container_name: flashstore-nginx
+#     ports:
+#       - "8080:80"
+#     volumes:
+#       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#     depends_on:
+#       - gateway
+#     networks:
+#       - flashstore-net
+#     restart: unless-stopped

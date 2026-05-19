@@ -5,39 +5,45 @@ import { MetricEntity } from '../entities/metric.entity';
 
 export interface IAnalyticsRepository {
   /**
-   * Save a raw analytics event
+   * Core Event Storage
    */
   saveEvent(event: AnalyticsEntity): Promise<AnalyticsEntity>;
 
   /**
-   * Find events by user
+   * Query Methods
    */
   findByUserId(userId: string, limit?: number): Promise<AnalyticsEntity[]>;
-
-  /**
-   * Find events by type
-   */
   findByEventType(eventType: string, limit?: number): Promise<AnalyticsEntity[]>;
-
-  /**
-   * Find events by date range
-   */
   findByDateRange(startDate: Date, endDate: Date): Promise<AnalyticsEntity[]>;
 
   /**
-   * Get aggregated metrics
+   * Metrics & Aggregations
    */
+  updateDailyStats(stats: {
+    date: Date;
+    totalRevenue: number;
+    orderCount: number;
+    itemCount?: number;
+  }): Promise<void>;
+
   getDailyMetrics(date: Date): Promise<MetricEntity[]>;
   getRevenueMetrics(startDate: Date, endDate: Date): Promise<MetricEntity[]>;
   getTopProducts(limit?: number): Promise<MetricEntity[]>;
 
   /**
-   * Get user engagement stats
+   * User Analytics
    */
   getUserEngagement(userId: string): Promise<MetricEntity[]>;
+  countByEventType(
+    eventType: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<number>;
 
   /**
-   * Count events by type
+   * Optional: General stats
    */
-  countByEventType(eventType: string, startDate?: Date, endDate?: Date): Promise<number>;
+  getDailyStats(date: Date): Promise<any>;
 }
+
+export default IAnalyticsRepository;

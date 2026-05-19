@@ -1,40 +1,71 @@
-import logger from '@org/shared-logger';
+// // apps/gateway/src/resilience/retry.ts
 
-export const retry = async <T>(
-  fn: () => Promise<T>,
-  retries: number = 2,
-  baseDelay: number = 300,
-  requestId?: string
-): Promise<T> => {
-  let lastError: any;
+// import logger from '@org/shared-logger';
 
-  for (let attempt = 1; attempt <= retries + 1; attempt++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      lastError = error;
+// export interface RetryOptions {
+//   retries?: number;
+//   baseDelay?: number;
+//   maxDelay?: number;
+//   requestId?: string;
+//   serviceName?: string;
+// }
 
-      // ❌ DO NOT retry client errors
-      if (error?.status && error.status < 500) {
-        throw error;
-      }
+// /**
+//  * Retry with exponential backoff + jitter
+//  */
+// export const retry = async <T>(
+//   fn: () => Promise<T>,
+//   options: RetryOptions = {}
+// ): Promise<T> => {
+//   const {
+//     retries = 2,
+//     baseDelay = 300,
+//     maxDelay = 3000,
+//     requestId,
+//     serviceName = 'unknown',
+//   } = options;
 
-      if (attempt > retries) break;
+//   let lastError: any;
 
-      const delay = baseDelay * Math.pow(2, attempt); // 🔥 exponential backoff
+//   for (let attempt = 1; attempt <= retries + 1; attempt++) {
+//     try {
+//       return await fn();
+//     } catch (error: any) {
+//       lastError = error;
 
-      logger.warn({
-        message: 'Retry attempt failed',
-        attempt,
-        retries,
-        delay,
-        error: error.message,
-        requestId,
-      });
+//       // Don't retry client errors (4xx)
+//       if (error?.status && error.status < 500) {
+//         throw error;
+//       }
 
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
+//       if (attempt > retries) break;
 
-  throw lastError;
-};
+//       // Exponential backoff with jitter
+//       const delay = Math.min(
+//         baseDelay * Math.pow(2, attempt - 1) + Math.random() * 100,
+//         maxDelay
+//       );
+
+//       // ✅ FIXED: Correct logger usage
+//       logger.warn(`Retry attempt ${attempt}/${retries + 1} failed`, {
+//         service: serviceName,
+//         attempt,
+//         retries: retries + 1,
+//         delay,
+//         error: error.message,
+//         requestId,
+//       });
+
+//       await new Promise((resolve) => setTimeout(resolve, delay));
+//     }
+//   }
+
+//   // Final error log
+//   logger.error(`All retries failed for ${serviceName}`, {
+//     requestId,
+//     attempts: retries + 1,
+//     lastError: lastError?.message,
+//   });
+
+//   throw lastError;
+// };

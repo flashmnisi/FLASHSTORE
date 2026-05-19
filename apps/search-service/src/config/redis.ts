@@ -1,47 +1,23 @@
-import { createClient, RedisClientType } from 'redis';
+// apps/search-service/src/config/redis.ts
+
+import { getRedis as connectSharedRedis, disconnectRedis } from '@org/shared-redis';
 import logger from '@org/shared-logger';
 
-let client: RedisClientType | null = null;
-
-export const connectRedis = async (): Promise<RedisClientType> => {
+export const connectRedis = async (): Promise<void> => {
   try {
-    if (client) return client;
-
-    client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-    });
-
-    client.on('error', (err) => {
-      logger.error('🔴 Redis error', { error: err.message });
-    });
-
-    client.on('connect', () => {
-      logger.info('🟡 Redis connecting...');
-    });
-
-    client.on('ready', () => {
-      logger.info('🟢 Redis ready');
-    });
-
-    await client.connect();
-
-    return client;
-
+    await connectSharedRedis();
+    logger.info('✅ Redis connected successfully');
   } catch (error: any) {
-    logger.error('🔴 Redis connection failed', {
-      error: error.message,
-    });
-
-    process.exit(1);
+    logger.error('❌ Redis connection failed', { error: error.message });
+    throw error;
   }
 };
 
-/**
- * Reuse existing connection
- */
-export const getRedisClient = (): RedisClientType => {
-  if (!client) {
-    throw new Error('Redis not initialized. Call connectRedis first.');
+export const disconnectRedisConnection = async (): Promise<void> => {
+  try {
+    await disconnectRedis();
+    logger.info('✅ Redis disconnected');
+  } catch (error: any) {
+    logger.warn('Failed to disconnect Redis gracefully', { error: error.message });
   }
-  return client;
 };

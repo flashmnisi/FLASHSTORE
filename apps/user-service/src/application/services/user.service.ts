@@ -1,3 +1,5 @@
+// apps/user-service/src/application/services/user.service.ts
+
 import { IUserRepository } from '../../domain/repositories/user.repository';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../dtos/create-user.dto';
@@ -6,18 +8,18 @@ import { UpdateProfileDto } from '../dtos/create-user.dto';
 import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 import { addressService, authService } from '../../container';
 import { AppError } from '../../middlewares/error.middleware';
-//import logger from '@org/shared-logger';
+import logger from '@org/shared-logger';
 import { UserEntity } from '../../domain/entities/user.entities';
 
 export class UserService {
-  constructor(private readonly userRepository: IUserRepository,
+  constructor(
+    private readonly userRepository: IUserRepository,
     private readonly outboxService: OutboxService
-  ) 
-  {}
+  ) {}
 
   async register(dto: CreateUserDto) {
     const existing = await this.userRepository.findByEmail(dto.email);
-    if (existing) throw new AppError('User exists', 400);
+    if (existing) throw new AppError('User with this email already exists', 400);
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
@@ -30,6 +32,7 @@ export class UserService {
 
     const createdUser = await this.userRepository.create(user);
 
+    // Publish event to Outbox
     await this.outboxService.write({
       event: 'user.registered',
       data: {
@@ -41,11 +44,24 @@ export class UserService {
       key: createdUser.id,
     });
 
-    return createdUser;
+    // Generate tokens
+    const { accessToken, refreshToken } = await authService.generateTokens(createdUser);
+
+    // Save refresh token
+    createdUser.setRefreshToken(refreshToken);
+    await this.userRepository.updateRefreshToken(createdUser.id, refreshToken);
+
+    logger.info('User registered successfully', { userId: createdUser.id });
+
+    return {
+      user: createdUser,
+      accessToken,
+      refreshToken,
+    };
   }
 
   async login(dto: LoginDto) {
-    return authService.login(dto);
+    return authService.login(dto);   // Let authService handle token generation
   }
 
   async getProfile(userId: string) {
@@ -86,6 +102,7 @@ export class UserService {
     return authService.logout(userId);
   }
 
+  // Address methods (delegated)
   async addAddress(userId: string, addressData: any) {
     return addressService.addAddress(userId, addressData);
   }

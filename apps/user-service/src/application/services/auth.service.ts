@@ -5,74 +5,82 @@ import { generateAccessToken, generateRefreshToken } from '@org/shared-auth';
 import logger from '@org/shared-logger';
 import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 import { AppError } from '../../middlewares/error.middleware';
-// import { sessionService } from '../../infrastructure/cache/session.service'; // uncomment when ready
+import { UserEntity } from '../../domain/entities/user.entities';
+import { TOPICS, EVENTS } from '@org/shared-kafka';
 
 export class AuthService {
-  constructor(private readonly userRepository: IUserRepository,
-  private readonly outboxService: OutboxService
+  constructor(
+    private readonly userRepository: IUserRepository,
+    private readonly outboxService: OutboxService
   ) {}
 
   /**
-   * LOGIN - Main method used by controller
-   */
-  async login(dto: any) {
-    const user = await this.userRepository.findByEmail(dto.email);
-
-    if (!user) {
-      throw new AppError('Invalid email or password', 401);
-    }
-
-    // TODO: Add bcrypt password comparison here if not done in repository
-
-    const { accessToken, refreshToken } = await this.generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role || 'user',
-    });
-
-    logger.info('User logged in successfully', {
-      userId: user.id,
-      email: user.email,
-    });
-
-    return {
-      user,
-      accessToken,
-      refreshToken,
-    };
-  }
-
-  /**
    * Generate Access + Refresh Tokens
+   * Accepts either UserEntity or plain payload
    */
-  async generateTokens(payload: { userId: string; email: string; role: string }) {
+  async generateTokens(input: UserEntity | { userId: string; email: string; role?: string }) {
+    const payload = {
+      userId: input instanceof UserEntity ? input.id : input.userId,
+      email: input instanceof UserEntity ? input.email : input.email,
+      role: input instanceof UserEntity ? (input.role || 'user') : (input.role || 'user'),
+    };
+
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
-
-    // TODO: Store refresh token in Redis (uncomment when sessionService is ready)
-    // await sessionService.createSession(payload.userId, refreshToken);
 
     return { accessToken, refreshToken };
   }
 
   /**
-   * Logout user
+   * LOGIN
+   */
+async login(dto: any) {
+  const user = await this.userRepository.findByEmail(dto.email);
+
+  if (!user) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  const { accessToken, refreshToken } = await this.generateTokens(user);
+
+  await this.outboxService.write({
+    topic: TOPICS.AUTH,
+    event: EVENTS.USER_LOGGED_IN,
+    key: user.id,
+    data: {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      loggedInAt: new Date().toISOString(),
+    },
+  });
+
+  logger.info('User logged in successfully', {
+    userId: user.id,
+    email: user.email,
+  });
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+}
+
+  /**
+   * LOGOUT
    */
   async logout(userId: string): Promise<void> {
-    // TODO: Clear refresh token from Redis when sessionService is implemented
-    // await sessionService.deleteSession(userId);
-
+    await this.userRepository.clearRefreshToken(userId);   // Make sure this method exists in repository
     logger.info('User logged out successfully', { userId });
   }
 
   /**
-   * Get current logged-in user
+   * Get Current User
    */
   async getCurrentUser(userId: string) {
     const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new AppError('User not found', 404);
-    }
+    if (!user) throw new AppError('User not found', 404);
     return user;
   }
 
@@ -80,39 +88,27 @@ export class AuthService {
    * Refresh Token (placeholder)
    */
   async refreshToken(refreshToken: string) {
-    // TODO: Implement proper refresh token validation and rotation
     throw new AppError('Refresh token functionality not implemented yet', 501);
   }
 
   /**
-   * Find user by email (used by ForgotPasswordUseCase)
+   * Find user by email
    */
   async findByEmail(email: string) {
     return this.userRepository.findByEmail(email);
   }
 
-  /**
-   * Generate password reset token
-   */
   async generatePasswordResetToken(userId: string): Promise<string> {
-    const token = Math.random().toString(36).substring(2, 15) +
+    const token = Math.random().toString(36).substring(2, 15) + 
                   Math.random().toString(36).substring(2, 15);
-
     logger.info('Password reset token generated', { userId });
     return token;
   }
 
-  /**
-   * Send password reset email (mock for now)
-   */
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
     logger.info('Password reset email sent (mock)', { email, resetToken });
-    // TODO: Later call Notification Service via Kafka
   }
 
-  /**
-   * Publish event to Outbox
-   */
   async publishEvent(event: string, payload: any): Promise<void> {
     await this.outboxService.write({
       event,

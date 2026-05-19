@@ -3,7 +3,7 @@
 import logger from '@org/shared-logger';
 import { Request, Response } from 'express';
 //import { addressService } from '../../application/services/address.service';
-import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 import { userService, authService, addressService } from '../../container';
 import { CreateUserDto } from '../../application/dtos/create-user.dto';
 
@@ -12,22 +12,18 @@ import { CreateUserDto } from '../../application/dtos/create-user.dto';
  */
 export const userController = {
 
-  /**
-   * Register new user
-   */
+/**
+ * Register new user
+ * POST /api/auth/register or /api/users/register
+ */
 async register(req: Request, res: Response) {
   try {
     const createUserDto = req.body as CreateUserDto;
 
-    // Step 1: Create user (returns only UserEntity)
-    const user = await userService.register(createUserDto);
+    // ✅ This returns { user, accessToken, refreshToken }
+    const result = await userService.register(createUserDto);
 
-    // Step 2: Generate tokens using AuthService
-    const { accessToken, refreshToken } = await authService.generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const { user, accessToken, refreshToken } = result;
 
     logger.info('User registered successfully', {
       userId: user.id,
@@ -93,7 +89,7 @@ async register(req: Request, res: Response) {
   /**
    * Get user profile (protected)
    */
-  async getProfile(req: AuthenticatedRequest, res: Response) {
+  async getProfile(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -129,7 +125,7 @@ async register(req: Request, res: Response) {
   /**
    * Update user profile (protected)
    */
-  async updateProfile(req: AuthenticatedRequest, res: Response) {
+  async updateProfile(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -165,7 +161,7 @@ async register(req: Request, res: Response) {
   /**
    * Delete user account (protected)
    */
-  async deleteUser(req: AuthenticatedRequest, res: Response) {
+  async deleteUser(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -197,7 +193,7 @@ async register(req: Request, res: Response) {
   /**
    * Get all addresses
    */
-  async getAddresses(req: AuthenticatedRequest, res: Response) {
+  async getAddresses(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -227,7 +223,7 @@ async register(req: Request, res: Response) {
   /**
    * Add new address
    */
-  async addAddress(req: AuthenticatedRequest, res: Response) {
+  async addAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -258,7 +254,7 @@ async register(req: Request, res: Response) {
   /**
    * Update address by index
    */
-  async updateAddress(req: AuthenticatedRequest, res: Response) {
+  async updateAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({
@@ -303,7 +299,7 @@ async register(req: Request, res: Response) {
   /**
    * Delete address by index
    */
-  async deleteAddress(req: AuthenticatedRequest, res: Response) {
+  async deleteAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
         return res.status(401).json({

@@ -1,22 +1,27 @@
+// apps/gateway/src/types/express.d.ts
+
 import { JwtPayload } from '@org/shared-auth';
 
 declare global {
   namespace Express {
     interface Request {
-      /**
-       * Attached by auth middleware
-       */
       user?: JwtPayload;
-
-      /**
-       * Attached by correlation-id middleware
-       */
+      
+      /** Correlation ID for distributed tracing */
       correlationId?: string;
+      
+      /** Alias for correlationId (used in your auth middleware) */
+      id?: string;
 
-      /**
-       * Optional API key info (if using api-key middleware)
-       */
-      apiKey?: string;
+      /** API Key info */
+      apiKey?: {
+        key: string;
+        permissions?: string[];
+        metadata?: Record<string, any>;
+      };
+
+      tenantId?: string;
+      startTime?: number;
     }
   }
 }

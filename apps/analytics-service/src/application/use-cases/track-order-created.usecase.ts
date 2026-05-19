@@ -4,44 +4,70 @@ import { AnalyticsEntity } from '../../domain/entities/analytics.entity';
 import { IAnalyticsRepository } from '../../domain/repositories/analytics.repository';
 import logger from '@org/shared-logger';
 
+export interface TrackOrderCreatedInput {
+  orderId: string;
+  userId: string;
+  totalAmount: number;
+  itemCount: number;
+  createdAt?: Date | string;
+  currency?: string;
+}
+
 export class TrackOrderCreatedUseCase {
   constructor(private readonly analyticsRepository: IAnalyticsRepository) {}
 
-  async execute(data: {
-    orderId: string;
-    userId: string;
-    totalAmount: number;
-    itemCount: number;
-    timestamp?: Date;
-  }) {
+  async execute(input: TrackOrderCreatedInput): Promise<void> {
     try {
-      const event = new AnalyticsEntity(
-        '',
+      const { 
+        orderId, 
+        userId, 
+        totalAmount, 
+        itemCount, 
+        createdAt = new Date(),
+        currency = 'ZAR' 
+      } = input;
+
+      const analyticsEvent = new AnalyticsEntity(
+        '', // ID will be generated in entity or repository
         'order.created',
-        data.userId,
-        undefined,
-        data.orderId,
+        userId,
+        undefined,           // productId (not needed for order level)
+        orderId,
         {
-          totalAmount: data.totalAmount,
-          itemCount: data.itemCount,
+          totalAmount,
+          itemCount,
+          currency,
         },
-        data.timestamp || new Date()
+        new Date(createdAt)
       );
 
-      await this.analyticsRepository.saveEvent(event);
+      await this.analyticsRepository.saveEvent(analyticsEvent);
 
-      logger.info('Tracked order created', { 
-        orderId: data.orderId, 
-        userId: data.userId 
+      // Optional: Update daily/monthly aggregates
+      await this.analyticsRepository.updateDailyStats?.({
+        date: new Date(createdAt),
+        totalRevenue: totalAmount,
+        orderCount: 1,
+        itemCount,
       });
 
-      return event;
+      logger.info('✅ Order tracked in analytics', {
+        orderId,
+        userId,
+        totalAmount,
+        itemCount,
+        currency,
+      });
+
     } catch (error: any) {
-      logger.error('Failed to track order created', {
-        orderId: data.orderId,
+      logger.error('❌ Failed to track order in analytics', {
+        orderId: input.orderId,
+        userId: input.userId,
+        totalAmount: input.totalAmount,
         error: error.message,
       });
-      throw error;
+
+      // Do NOT re-throw → prevent consumer crash
     }
   }
 }

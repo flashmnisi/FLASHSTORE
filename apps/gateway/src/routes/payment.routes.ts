@@ -1,10 +1,9 @@
 import { Router } from 'express';
-//import { createServiceProxy } from '../services/proxy';
-import { protect } from '../middlewares/auth';
-import { createServiceProxy } from '../services/proxy.factory';
+import { createServiceProxy } from '../infrastructure/proxy/proxy.factory';
+import { protect } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.use('/', protect,createServiceProxy('payment'));
+router.use('/',protect, createServiceProxy('payment'));
 
 export default router;

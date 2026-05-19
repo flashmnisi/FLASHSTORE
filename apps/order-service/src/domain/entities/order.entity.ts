@@ -1,10 +1,16 @@
 export class OrderEntity {
   public readonly id: string;
+
   public userId: string;
   public items: OrderItem[];
   public totalAmount: number;
-  public status: 'pending' | 'confirmed' | 'cancelled' | 'shipped';
+  public currency: string;
+
+  public status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   public paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+
+  public idempotencyKey: string;
+
   public createdAt: Date;
   public updatedAt: Date;
 
@@ -13,7 +19,9 @@ export class OrderEntity {
     userId: string,
     items: OrderItem[],
     totalAmount: number,
-    status: 'pending' | 'confirmed' | 'cancelled' | 'shipped' = 'pending',
+    idempotencyKey: string, // ✅ ADD THIS
+    currency: string = 'ZAR', // optional but recommended
+    status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending',
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' = 'pending',
     createdAt: Date = new Date()
   ) {
@@ -21,31 +29,48 @@ export class OrderEntity {
     this.userId = userId;
     this.items = items;
     this.totalAmount = totalAmount;
+    this.currency = currency;
+
+    this.idempotencyKey = idempotencyKey; // ✅ IMPORTANT
+
     this.status = status;
     this.paymentStatus = paymentStatus;
+
     this.createdAt = createdAt;
     this.updatedAt = new Date();
   }
 
-  // Helper method to calculate total (optional but useful)
+  /**
+   * Calculate total from items
+   */
   calculateTotal(): number {
-    return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return this.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
   }
 
-  // Business method example
+  /**
+   * Confirm order after payment success
+   */
   confirmOrder() {
     this.status = 'confirmed';
     this.paymentStatus = 'paid';
     this.updatedAt = new Date();
   }
 
+  /**
+   * Cancel order
+   */
   cancelOrder() {
     this.status = 'cancelled';
     this.updatedAt = new Date();
   }
 }
 
-// Optional: Separate Item type for better type safety
+/**
+ * Order item type
+ */
 export interface OrderItem {
   productId: string;
   name: string;

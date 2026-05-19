@@ -1,47 +1,150 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import routes from './routes';
 
-import routes from './routes/index';
-import { errorMiddleware } from './middlewares/error.middleware';
-import { requestLogger } from './middlewares/request-logger.middleware';
-import { correlationIdMiddleware } from './middlewares/correlation-id.middleware';
-import { rateLimiter, authLimiter } from './middlewares/rate-limit.middleware';
-import { protect } from './middlewares/auth.middleware';
+import { errorMiddleware }
+from './middlewares/error.middleware';
 
 const app = express();
 
-// ====================== SECURITY & CORE MIDDLEWARE ======================
-app.use(helmet());                                   // Security headers
-app.use(cors());                                     // CORS
-app.use(express.json({ limit: '50mb' }));            // JSON parsing
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+/**
+ * Security
+ */
+app.use(helmet());
+app.use(cors());
 
-// ====================== OBSERVABILITY & TRACING ======================
-app.use(correlationIdMiddleware);                    // Correlation ID (first)
-app.use(requestLogger);                              // Structured request logging
+app.use(express.urlencoded({
+  extended: true,
+  limit: '50mb',
+}));
 
-// ====================== RATE LIMITING ======================
-app.use(rateLimiter);                                // Global rate limit
+/**
+ * =========================
+ * PUBLIC ROUTES
+ * =========================
+ */
+// Main Routes
+app.use('/', routes);
+// app.use(
+//   '/api/auth',
+//   createServiceProxy('user')
+// );
 
-// ====================== ROUTES ======================
-// Public routes (with stricter auth rate limiting)
-app.use('/api/auth', authLimiter, routes);           // Login & Register
+// /**
+//  * =========================
+//  * PROTECTED USER ROUTES
+//  * =========================
+//  */
+// app.use(
+//   '/api/users',
+//   protect,
+//   createServiceProxy('user')
+// );
 
-// Protected routes (require JWT)
-app.use('/api', protect, routes);                    // All other services
+// /**
+//  * =========================
+//  * CATALOG
+//  * =========================
+//  */
+// app.use(
+//   '/api/products',
+//   createServiceProxy('catalog')
+// );
 
-// ====================== HEALTH CHECK ======================
-app.get('/health', (req, res) => {
+// app.use(
+//   '/api/categories',
+//   createServiceProxy('catalog')
+// );
+
+// /**
+//  * =========================
+//  * CART
+//  * =========================
+//  */
+// app.use(
+//   '/api/cart',
+//   protect,
+//   createServiceProxy('cart')
+// );
+
+// /**
+//  * =========================
+//  * ORDERS
+//  * =========================
+//  */
+// app.use(
+//   '/api/orders',
+//   protect,
+//   createServiceProxy('order')
+// );
+
+// /**
+//  * =========================
+//  * PAYMENTS
+//  * =========================
+//  */
+// app.use(
+//   '/api/payments',
+//   protect,
+//   createServiceProxy('payment')
+// );
+
+// /**
+//  * =========================
+//  * SEARCH
+//  * =========================
+//  */
+// app.use(
+//   '/api/search',
+//   createServiceProxy('search')
+// );
+
+// /**
+//  * =========================
+//  * NOTIFICATIONS
+//  * =========================
+//  */
+// app.use(
+//   '/api/notifications',
+//   protect,
+//   createServiceProxy('notification')
+// );
+
+// /**
+//  * =========================
+//  * ANALYTICS
+//  * =========================
+//  */
+// app.use(
+//   '/api/analytics',
+//   protect,
+//   createServiceProxy('analytics')
+// );
+
+/**
+ * =========================
+ * HEALTH CHECK
+ * =========================
+ */
+app.get('/health', (_req, res) => {
   res.json({
-    status: 'healthy',
-    service: 'gateway',
-    timestamp: new Date().toISOString(),
+    success: true,
   });
 });
 
-// ====================== GLOBAL ERROR HANDLER ======================
-// Must be the last middleware
+/**
+ * Body parsers
+ */
+app.use(express.json({
+  limit: '50mb',
+}));
+
+/**
+ * =========================
+ * GLOBAL ERROR HANDLER
+ * =========================
+ */
 app.use(errorMiddleware);
 
 export default app;

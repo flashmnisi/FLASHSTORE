@@ -2,15 +2,19 @@
 
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
-import { loginSchema } from '../../application/dtos/create-user.dto';
-import { authMiddleware } from '../../middlewares/auth.middleware';
 import { validate } from '../../utils/validator';
+import { loginSchema, createUserSchema } from '../../application/dtos/create-user.dto';
 
 const router = Router();
 
-/**
- * PUBLIC AUTH ROUTES
- */
+/** ====================== PUBLIC AUTH ROUTES ====================== */
+
+// Register
+router.post(
+  '/register',
+  validate(createUserSchema),
+  authController.register
+);
 
 // Login
 router.post(
@@ -19,25 +23,7 @@ router.post(
   authController.login
 );
 
-// Refresh Token (optional - if you implement later)
+// Refresh token (optional)
 router.post('/refresh-token', authController.refreshToken);
-
-/**
- * PROTECTED AUTH ROUTES
- */
-
-// Logout (invalidate refresh token)
-router.post(
-  '/logout',
-  authMiddleware,
-  authController.logout
-);
-
-// Get current user info (lightweight)
-router.get(
-  '/me',
-  authMiddleware,
-  authController.getCurrentUser
-);
 
 export default router;

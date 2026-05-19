@@ -20,4 +20,8 @@ export interface IOrderRepository {
    * Find orders for a user
    */
   findByUserId(userId: string): Promise<OrderEntity[]>;
+
+  //   findByIdempotencyKey(
+  //   key: string
+  // ): Promise<OrderEntity | null>;
 }

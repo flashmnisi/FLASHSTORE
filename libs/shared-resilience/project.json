@@ -1,0 +1,17 @@
+{
+  "name": "@org/shared-resilience",
+  "sourceRoot": "libs/shared-resilience/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared-resilience",
+        "main": "libs/shared-resilience/src/index.ts",
+        "tsConfig": "libs/shared-resilience/tsconfig.lib.json",
+        "assets": []
+      }
+    }
+  }
+}

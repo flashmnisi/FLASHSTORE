@@ -4,7 +4,7 @@ import app from './app';
 import env from './config/env';
 
 import { connectDatabase } from './config/database';
-import { connectRedis, disconnectRedis } from './config/redis';
+import { connectRedis, disconnectRedisConnection } from './config/redis';
 import { initializeKafka } from './infrastructure/kafka/index';
 import { outboxProcessor } from './infrastructure/outbox/outbox.processor';
 
@@ -48,7 +48,7 @@ const gracefulShutdown = async (signal: string) => {
   logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
 
   try {
-    await disconnectRedis();        // Close Redis connection
+    await disconnectRedisConnection();        // Close Redis connection
     // You can add more cleanup here (Kafka, DB, etc.)
     logger.info('✅ Graceful shutdown completed');
     process.exit(0);

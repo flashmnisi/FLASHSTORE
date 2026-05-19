@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createServiceProxy } from '../services/proxy';
+import { createServiceProxy } from '../infrastructure/proxy/proxy.factory';
 
 const router = Router();
 

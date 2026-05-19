@@ -31,3 +31,4 @@ export * from './resilience/indempotency/idempotency.service';
 // ===============================
 export * from './utils/header';
 export * from './events/base-event';
+export * from './config/topics';

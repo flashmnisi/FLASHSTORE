@@ -1,7 +1,7 @@
 // apps/user-service/src/infrastructure/kafka/producer/kafka.producer.ts
 
 import { publish } from '@org/shared-kafka';
-import { TOPICS } from '../topics/topics';
+import {TOPICS} from '@org/shared-kafka';
 import logger from '@org/shared-logger';
 
 export class KafkaProducer {
@@ -36,6 +36,7 @@ export class KafkaProducer {
           timestamp: new Date().toISOString(),
         },
       });
+      logger.info(`Event published to ${TOPICS.AUTH}`, { event, userId: payload.userId });
     } catch (error: any) {
       logger.error('Failed to publish auth event', { event, error: error.message });
     }

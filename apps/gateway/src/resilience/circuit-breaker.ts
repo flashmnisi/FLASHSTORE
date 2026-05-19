@@ -1,58 +1,55 @@
-import CircuitBreaker from 'opossum';
-import logger from '@org/shared-logger';
+// // apps/gateway/src/resilience/circuit-breaker.ts
 
-export const createCircuitBreaker = (
-  action: Function,
-  serviceName: string
-) => {
-  const breaker = new CircuitBreaker(action, {
-    timeout: 8000,
-    errorThresholdPercentage: 50,
-    resetTimeout: 15000,
-    rollingCountTimeout: 10000,
-    rollingCountBuckets: 10,
-  });
+// import CircuitBreaker from 'opossum';
+// import logger from '@org/shared-logger';
 
-  // 🔥 Structured logs
-  breaker.on('open', () => {
-    logger.warn({
-      message: 'Circuit opened',
-      service: serviceName,
-    });
-  });
+// export interface CircuitBreakerOptions {
+//   timeout?: number;
+//   errorThresholdPercentage?: number;
+//   resetTimeout?: number;
+// }
 
-  breaker.on('halfOpen', () => {
-    logger.info({
-      message: 'Circuit half-open (testing)',
-      service: serviceName,
-    });
-  });
+// export const createCircuitBreaker = (
+//   action: (...args: any[]) => Promise<any>,
+//   serviceName: string,
+//   options: CircuitBreakerOptions = {}
+// ) => {
+//   const breaker = new CircuitBreaker(action, {
+//     timeout: options.timeout || 8000,
+//     errorThresholdPercentage: options.errorThresholdPercentage || 50,
+//     resetTimeout: options.resetTimeout || 15000,
+//     rollingCountTimeout: 10000,
+//     rollingCountBuckets: 10,
+//   });
 
-  breaker.on('close', () => {
-    logger.info({
-      message: 'Circuit closed (recovered)',
-      service: serviceName,
-    });
-  });
+//   // Logging Events
+//   breaker.on('open', () => {
+//     logger.warn(`🟢 Circuit Breaker OPENED for ${serviceName} - failing fast now`);
+//   });
 
-  breaker.on('fallback', () => {
-    logger.warn({
-      message: 'Circuit fallback triggered',
-      service: serviceName,
-    });
-  });
+//   breaker.on('halfOpen', () => {
+//     logger.info(`Circuit Breaker HALF-OPEN for ${serviceName} - testing recovery`);
+//   });
 
-  // 🔥 REAL fallback (important)
-  breaker.fallback(() => {
-    return {
-      success: false,
-      fallback: true,
-      message: `${serviceName} temporarily unavailable`,
-    };
-  });
+//   breaker.on('close', () => {
+//     logger.info(`Circuit Breaker CLOSED for ${serviceName} - service recovered`);
+//   });
 
-  return breaker;
-};
+//   breaker.on('fallback', () => {
+//     logger.warn(`Circuit Breaker fallback triggered for ${serviceName}`);
+//   });
+
+//   // Default Fallback Response
+//   breaker.fallback(() => ({
+//     success: false,
+//     fallback: true,
+//     service: serviceName,
+//     message: `${serviceName} is temporarily unavailable. Please try again later.`,
+//   }));
+
+//   return breaker;
+// };
+
 
 // import CircuitBreaker from 'opossum';
 // import logger from '@org/shared-logger';

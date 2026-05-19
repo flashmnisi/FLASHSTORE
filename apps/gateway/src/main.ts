@@ -1,22 +1,21 @@
+// apps/gateway/src/main.ts
+
 import dotenv from 'dotenv';
 dotenv.config();
 
-import createServer from './core/server';
-import { bootstrap } from './core/bootstrap';
 import logger from '@org/shared-logger';
+import app from './app';
+//import { bootstrap } from './core/bootstrap';
 import env from './config/env';
 
 const startGateway = async () => {
   try {
-    logger.info('🚀 Flashstore Gateway is starting...');
+    logger.info('🚀 Starting Flashstore API Gateway...');
 
-    // 1. Bootstrap Phase - Initialize all core dependencies
-    await bootstrap();
+    // 1. Bootstrap all dependencies
+    //await bootstrap();
 
-    // 2. Create Express application
-    const app = createServer();
-
-    // 3. Start the HTTP server
+    // 2. Start the Express server
     const PORT = env.PORT || 3000;
 
     app.listen(PORT, () => {
@@ -31,13 +30,24 @@ const startGateway = async () => {
       error: error.message,
       stack: error.stack,
     });
-
-    // Graceful shutdown on fatal bootstrap error
     process.exit(1);
   }
 };
 
-// Start the gateway
+// ====================== GRACEFUL SHUTDOWN ======================
+const gracefulShutdown = (signal: string) => {
+  logger.warn(`⚠️ Received ${signal}. Shutting down Gateway gracefully...`);
+
+  setTimeout(() => {
+    logger.info('✅ Gateway shutdown completed');
+    process.exit(0);
+  }, 1500);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Start the Gateway
 startGateway();
 
 // import express from 'express';

@@ -16,8 +16,7 @@ export const correlationIdMiddleware = (
   req.id = requestId; // ✅ typed (from express.d.ts)
   res.setHeader('x-request-id', requestId);
 
-  logger.info({
-    message: 'Request started',
+  logger.info('Request started',{
     requestId,
     method: req.method,
     url: req.originalUrl,

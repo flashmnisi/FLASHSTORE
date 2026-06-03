@@ -1,3 +1,4 @@
+//apps/notification-service/src/infrastructure/kafka/providers/email/nodemailer.provider.ts
 import nodemailer from 'nodemailer';
 //import logger, { error, info } from '@org/shared-logger';
 import { NotificationEntity } from '../../../domain/entities/notification.entity';
@@ -61,28 +62,206 @@ export class NodemailerProvider implements IEmailProvider {
   }
 
   private buildTemplate(notification: NotificationEntity): string {
-    return `
-      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">${notification.title || 'Flashstore Notification'}</h2>
-        
-        ${notification.message ? `<p style="font-size: 16px; line-height: 1.6;">${notification.message}</p>` : ''}
 
-        ${
-          notification.templateData && Object.keys(notification.templateData).length > 0
-            ? `
-        <div style="background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0;">
-          <strong>Template Data:</strong><br>
-          <pre style="white-space: pre-wrap; font-size: 13px;">${JSON.stringify(notification.templateData, null, 2)}</pre>
-        </div>`
-            : ''
-        }
+  const data = notification.templateData || {};
 
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        
-        <small style="color: gray;">
-          This is an automated notification from Flashstore • ${new Date().toLocaleDateString()}
-        </small>
-      </div>
-    `;
+  /**
+   * =====================================
+   * ORDER ITEMS HTML
+   * =====================================
+   */
+  const itemsHtml = Array.isArray(data.items)
+    ? data.items.map((item: any) => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">
+          ${item.name || 'Product'}
+        </td>
+
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:center;">
+          ${item.quantity || 1}
+        </td>
+
+        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align:right;">
+          $${Number(item.price || 0).toFixed(2)}
+        </td>
+      </tr>
+    `).join('')
+    : '';
+
+  /**
+   * =====================================
+   * TEMPLATE TYPES
+   * =====================================
+   */
+
+  switch (notification.type) {
+
+    /**
+     * =====================================
+     * USER REGISTERED
+     * =====================================
+     */
+    case 'user.registered':
+
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #eee;">
+
+          <div style="background: #111827; padding: 24px; text-align: center;">
+            <h1 style="color: white; margin: 0;">
+              Welcome to Flashstore 🎉
+            </h1>
+          </div>
+
+          <div style="padding: 30px;">
+
+            <h2 style="margin-top:0;">
+              Hello ${data.name || 'there'},
+            </h2>
+
+            <p style="font-size: 16px; color: #444; line-height: 1.6;">
+              Your account has been created successfully.
+            </p>
+
+            <p style="font-size: 16px; color: #444; line-height: 1.6;">
+              You can now browse products, place orders, and track deliveries.
+            </p>
+
+            <a
+              href="#"
+              style="
+                display:inline-block;
+                background:#111827;
+                color:white;
+                padding:14px 24px;
+                border-radius:8px;
+                text-decoration:none;
+                margin-top:20px;
+              "
+            >
+              Start Shopping
+            </a>
+
+          </div>
+
+          <div style="padding:20px; text-align:center; color:#888; font-size:12px;">
+            Flashstore © ${new Date().getFullYear()}
+          </div>
+
+        </div>
+      `;
+
+    /**
+     * =====================================
+     * ORDER CREATED
+     * =====================================
+     */
+    case 'order.created':
+
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #eee;">
+
+          <div style="background: #16a34a; padding: 24px; text-align: center;">
+            <h1 style="color: white; margin: 0;">
+              Order Confirmed ✅
+            </h1>
+          </div>
+
+          <div style="padding: 30px;">
+
+            <h2 style="margin-top:0;">
+              Thank you for your order!
+            </h2>
+
+            <p style="font-size: 15px; color:#444;">
+              Your order has been successfully placed.
+            </p>
+
+            <div style="
+              background:#f9fafb;
+              padding:20px;
+              border-radius:8px;
+              margin:20px 0;
+            ">
+
+              <p>
+                <strong>Order ID:</strong>
+                ${data.orderId}
+              </p>
+
+              <p>
+                <strong>Status:</strong>
+                Pending
+              </p>
+
+              <p>
+                <strong>Total:</strong>
+                $${Number(data.totalAmount || 0).toFixed(2)}
+              </p>
+
+            </div>
+
+            <h3>
+              Order Items
+            </h3>
+
+            <table
+              width="100%"
+              cellspacing="0"
+              cellpadding="0"
+              style="
+                border-collapse: collapse;
+                margin-top: 10px;
+              "
+            >
+              <thead>
+                <tr style="background:#f3f4f6;">
+                  <th style="padding:12px; text-align:left;">
+                    Product
+                  </th>
+
+                  <th style="padding:12px; text-align:center;">
+                    Qty
+                  </th>
+
+                  <th style="padding:12px; text-align:right;">
+                    Price
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+          </div>
+
+          <div style="
+            padding:20px;
+            text-align:center;
+            color:#888;
+            font-size:12px;
+            border-top:1px solid #eee;
+          ">
+            Flashstore © ${new Date().getFullYear()}
+          </div>
+
+        </div>
+      `;
+
+    /**
+     * =====================================
+     * DEFAULT
+     * =====================================
+     */
+    default:
+
+      return `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>${notification.title}</h2>
+          <p>${notification.message}</p>
+        </div>
+      `;
   }
+}
 }

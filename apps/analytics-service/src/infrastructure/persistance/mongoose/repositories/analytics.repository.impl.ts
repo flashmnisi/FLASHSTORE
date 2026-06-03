@@ -1,17 +1,22 @@
-// apps/analytics-service/src/infrastructure/persistence/mongoose/repositories/analytics.repository.impl.ts
-
 import { AnalyticsEntity } from '../../../../domain/entities/analytics.entity';
 import { MetricEntity } from '../../../../domain/entities/metric.entity';
 import { IAnalyticsRepository } from '../../../../domain/repositories/analytics.repository';
 import { AnalyticsModel } from '../models/analytics.model';
-import { MetricModel } from '../models/metric.model';   // Make sure this exists
+import { MetricModel } from '../models/metric.model';
 import logger from '@org/shared-logger';
 
 export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
 
+  constructor(
+    private readonly analyticsModel: typeof AnalyticsModel,
+    private readonly metricModel: typeof MetricModel
+  ) {}
+
   async saveEvent(event: AnalyticsEntity): Promise<AnalyticsEntity> {
     try {
-      const doc = await AnalyticsModel.create(event.toJSON ? event.toJSON() : event);
+      const doc = await this.analyticsModel.create(
+        event.toJSON ? event.toJSON() : event
+      );
 
       logger.debug('Analytics event saved', { 
         eventType: event.eventType, 
@@ -33,38 +38,62 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
     }
   }
 
-  async updateDailyStats(stats: {
-    date: Date;
-    totalRevenue: number;
-    orderCount: number;
-    itemCount?: number;
-  }): Promise<void> {
-    try {
-      const dateStr = stats.date.toISOString().split('T')[0];
+async updateDailyStats(stats: {
+  date: Date;
+  totalRevenue: number;
+  orderCount: number;
+  itemCount?: number;
+}): Promise<void> {
+  try {
+    const dateStr = stats.date
+      .toISOString()
+      .split('T')[0];
 
-      await MetricModel.findOneAndUpdate(
-        { metricType: 'daily_sales', date: dateStr },
-        {
-          $inc: {
-            value: stats.totalRevenue,
-            'metadata.orderCount': stats.orderCount,
-            'metadata.itemCount': stats.itemCount || 0,
-          },
-          $setOnInsert: {
-            metricType: 'daily_sales',
-            date: dateStr,
-            dimensions: { type: 'revenue' }
-          }
+    await this.metricModel.findOneAndUpdate(
+      {
+        metricType: 'daily_sales',
+        date: dateStr,
+      },
+      {
+        $inc: {
+          value: stats.totalRevenue || 0,
+          'metadata.orderCount': stats.orderCount || 0,
+          'metadata.itemCount': stats.itemCount || 0,
         },
-        { upsert: true }
-      );
-    } catch (error: any) {
-      logger.error('Failed to update daily stats', { error: error.message });
-    }
+
+        $setOnInsert: {
+          metricType: 'daily_sales',
+          date: dateStr,
+          dimensions: {
+            type: 'revenue',
+          },
+          metadata: {
+            orderCount: 0,
+            itemCount: 0,
+          },
+        },
+      },
+      {
+        upsert: true,
+        returnDocument: 'after',
+      }
+    );
+
+    logger.debug('Daily stats updated', {
+      date: dateStr,
+      revenue: stats.totalRevenue,
+    });
+
+  } catch (error: any) {
+    logger.error('Failed to update daily stats', {
+      error: error.message,
+      date: stats.date,
+    });
   }
+}
 
   async getDailyMetrics(date: Date): Promise<MetricEntity[]> {
-    const metrics = await MetricModel.find({
+    const metrics = await this.metricModel.find({
       date: date.toISOString().split('T')[0]
     });
 
@@ -73,13 +102,13 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
       m.metricType,
       m.value,
       m.date,
-      m.dimensions || {},
-      m.metadata || {}
+      (m as any).dimensions || {},
+      (m as any).metadata || {}
     ));
   }
 
   async getRevenueMetrics(startDate: Date, endDate: Date): Promise<MetricEntity[]> {
-    const metrics = await MetricModel.find({
+    const metrics = await this.metricModel.find({
       metricType: 'daily_sales',
       date: {
         $gte: startDate.toISOString().split('T')[0],
@@ -92,8 +121,8 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
       m.metricType,
       m.value,
       m.date,
-      m.dimensions || {},
-      m.metadata || {}
+      (m as any).dimensions || {},
+      (m as any).metadata || {}
     ));
   }
 

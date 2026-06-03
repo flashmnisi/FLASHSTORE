@@ -18,7 +18,7 @@ export class CartRepositoryImpl implements ICartRepository {
           i.productId, 
           i.quantity, 
           i.price, 
-          i.name || '',           // ← Fixed: provide default
+          i.name || '',           
           i.image
         )
       ),
@@ -49,7 +49,7 @@ export class CartRepositoryImpl implements ICartRepository {
           i.productId, 
           i.quantity, 
           i.price, 
-          i.name || '',           // ← Fixed
+          i.name || '',           
           i.image
         )
       ),

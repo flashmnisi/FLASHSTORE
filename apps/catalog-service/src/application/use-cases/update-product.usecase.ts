@@ -2,50 +2,37 @@
 
 import { ProductEntity } from '../../domain/entities/product.entity';
 import { IProductRepository } from '../../domain/repositories/product.repository';
-import { CatalogProducer } from '../../infrastructure/kafka/producer/catalog.producer';
+import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 import { UpdateProductDto } from '../dtos/update-product.dto';
 import logger from '@org/shared-logger';
+import { EVENTS, TOPICS } from '@org/shared-kafka';
 
 export class UpdateProductUseCase {
   constructor(
     private readonly productRepository: IProductRepository,
-    private readonly producer: CatalogProducer
+    private readonly outboxService: OutboxService
   ) {}
 
   async execute(productId: string, dto: UpdateProductDto): Promise<ProductEntity> {
     try {
-      const existing = await this.productRepository.findById(productId);
-      if (!existing) {
-        throw new Error('Product not found');
-      }
-
-      const updatedProduct = await this.productRepository.update(productId, {
-        name: dto.name,
-        description: dto.description,
-        price: dto.price,
-        currency: dto.currency,
-        brand: dto.brand,
-        images: dto.images,
-        tags: dto.tags,
-        stockQuantity: dto.stockQuantity,
-        isActive: dto.isActive,
-      });
+      const updatedProduct = await this.productRepository.update(productId, dto);
 
       if (!updatedProduct) {
         throw new Error('Failed to update product');
       }
 
-      // Publish update event
-      await this.producer.productUpdated(updatedProduct);
-
-      logger.info('Product updated successfully', {
-        productId: updatedProduct.id,
-        name: updatedProduct.name,
+      await this.outboxService.write({
+        topic: TOPICS.PRODUCTS,
+        event: EVENTS.PRODUCT_UPDATED,
+        data: updatedProduct,
+        key: updatedProduct.id,
       });
+
+      logger.info('✅ Product updated and queued in outbox', { productId });
 
       return updatedProduct;
     } catch (error: any) {
-      logger.error('Failed to update product', {
+      logger.error('❌ Failed to update product', {
         productId,
         error: error.message,
       });

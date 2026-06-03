@@ -1,39 +1,48 @@
 // apps/payment-service/src/infrastructure/outbox/outbox.service.ts
 
-import { IOutboxRepository } from '../../domain/repositories/outbox.repository';
+import { OutboxEntity } from '../../domain/entities/outbox.entity';
 import logger from '@org/shared-logger';
+import { IOutboxRepository } from '../persistence/repositories/outbox.repository.impl';
 
 export class OutboxService {
-  constructor(private readonly outboxRepository: IOutboxRepository) {}
+  constructor(
+    private readonly outboxRepository: IOutboxRepository
+  ) {}
 
   /**
-   * Write a new event to the Outbox (reliable delivery)
+   * Write event to Outbox
    */
   async write(event: {
     topic: string;
     event: string;
-    payload: any;
+    data: any;
     key?: string;
-  }) {
+    correlationId?: string;
+  }): Promise<OutboxEntity> {
     try {
-      const outboxEntry = await this.outboxRepository.create({
+      const outbox = new OutboxEntity({
         topic: event.topic,
         event: event.event,
-        payload: event.payload,
+        payload: event.data,
         key: event.key,
+        correlationId: event.correlationId,
         status: 'pending',
         retries: 0,
+        nextRetryAt: new Date(),
       });
 
-      logger.info('Event written to Outbox', {
-        event: event.event,
-        outboxId: outboxEntry._id || outboxEntry.id,
-        topic: event.topic,
+      const saved = await this.outboxRepository.create(outbox);
+
+      logger.info('📤 Event written to Outbox', {
+        outboxId: saved.id,
+        topic: saved.topic,
+        event: saved.event,
       });
 
-      return outboxEntry;
+      return saved;
     } catch (error: any) {
-      logger.error('Failed to write event to Outbox', {
+      logger.error('❌ Failed to write to Outbox', {
+        topic: event.topic,
         event: event.event,
         error: error.message,
       });
@@ -42,40 +51,47 @@ export class OutboxService {
   }
 
   /**
-   * Get pending events for processing
+   * Get pending events
    */
-  async getPendingEvents(limit = 50) {
-    try {
-      return await this.outboxRepository.findPending(limit);
-    } catch (error: any) {
-      logger.error('Failed to fetch pending outbox events', { error: error.message });
-      throw error;
-    }
+  async getPendingEvents(limit = 50): Promise<OutboxEntity[]> {
+    return this.outboxRepository.findPending(limit);
   }
 
   /**
-   * Mark event as successfully processed
+   * Lock event for processing
+   */
+  async lockForProcessing(id: string): Promise<OutboxEntity | null> {
+    return this.outboxRepository.lockForProcessing(id);
+  }
+
+  /**
+   * Mark success
    */
   async markAsProcessed(id: string): Promise<void> {
-    try {
-      await this.outboxRepository.markAsProcessed(id);
-    } catch (error: any) {
-      logger.error('Failed to mark outbox event as processed', { id, error: error.message });
-    }
+    await this.outboxRepository.markAsProcessed(id);
+
+    logger.info('✅ Outbox processed', {
+      outboxId: id,
+    });
   }
 
   /**
-   * Mark event as failed with retry count
+   * Mark failure
    */
-  async markAsFailed(id: string, errorMessage: string, retries: number): Promise<void> {
-    try {
-      await this.outboxRepository.markAsFailed(id, errorMessage, retries);
-    } catch (error: any) {
-      logger.error('Failed to mark outbox event as failed', { 
-        id, 
-        retries, 
-        error: errorMessage 
-      });
-    }
+  async markAsFailed(
+    id: string,
+    errorMessage: string,
+    retries: number
+  ): Promise<void> {
+    await this.outboxRepository.markAsFailed(
+      id,
+      errorMessage,
+      retries
+    );
+
+    logger.warn('⚠️ Outbox failed', {
+      outboxId: id,
+      retries,
+    });
   }
 }

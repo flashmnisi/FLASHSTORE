@@ -6,10 +6,12 @@ export const dlqMiddleware: EventMiddleware = async (ctx, next) => {
     await next();
   } catch (err: any) {
     await sendToDLQ({
-      topic: ctx.topic,
-      message: ctx.event,
-      error: err.message,
-    });
+  topic: ctx.topic,
+  event: ctx.event?.event,
+  payload: ctx.event,
+  error: err.message,
+  correlationId: ctx.event?.correlationId,
+});
 
     throw err;
   }

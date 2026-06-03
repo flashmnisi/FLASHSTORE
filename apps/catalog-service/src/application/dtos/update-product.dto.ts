@@ -1,17 +1,33 @@
 // apps/catalog-service/src/application/dtos/update-product.dto.ts
 
-import { z } from 'zod';
+// apps/catalog-service/src/application/dtos/update-product.dto.ts
 
-export const updateProductSchema = z.object({
-  name: z.string().min(3).max(255).optional(),
-  description: z.string().min(10).max(2000).optional(),
-  price: z.number().positive().optional(),
-  currency: z.enum(['ZAR', 'USD', 'EUR', 'GBP']).optional(),
-  brand: z.string().optional(),
-  images: z.array(z.string().url()).optional(),
-  tags: z.array(z.string()).optional(),
-  stockQuantity: z.number().int().nonnegative().optional(),
-  isActive: z.boolean().optional(),
-});
+export interface UpdateProductDto {
+  name?: string;
+  slug?: string;
+  description?: string;
 
-export type UpdateProductDto = z.infer<typeof updateProductSchema>;
+  price?: number;
+  currency?: string;
+
+  categoryId?: string;
+  subCategory?: string;
+
+  brand?: string;
+
+  images?: string[];
+  tags?: string[];
+
+  // Marketing
+  isFeatured?: boolean;
+  isHotDeal?: boolean;
+  isNewArrival?: boolean;
+
+  discountPercentage?: number;
+
+  // Inventory
+  stockQuantity?: number;
+  inStock?: boolean;
+
+  isActive?: boolean;
+};

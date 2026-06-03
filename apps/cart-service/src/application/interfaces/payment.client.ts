@@ -1,3 +1,5 @@
+// apps/cart-service/src/application/interface/payment.client.ts
+
 export interface IPaymentClient {
   processPayment(dto: {
     orderId: string;

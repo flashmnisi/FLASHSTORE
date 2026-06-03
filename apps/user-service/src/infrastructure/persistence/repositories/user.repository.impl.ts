@@ -21,10 +21,10 @@ export class UserRepositoryImpl implements IUserRepository {
         userDoc.password,
         userDoc.role || 'user',
         userDoc.isAdmin || false,
-        userDoc.createdAt,           // ← 7th param: createdAt (Date)
-        userDoc.updatedAt,           // ← 8th param: updatedAt
-        userDoc.addresses || [],     // ← 9th param: addresses
-        userDoc.phone,               // ← 10th param: phone
+        userDoc.createdAt,         
+        userDoc.updatedAt,          
+        userDoc.addresses || [],     
+        userDoc.phone,              
         userDoc.refreshToken 
       );
     } catch (error: any) {

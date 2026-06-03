@@ -8,17 +8,19 @@ import { initMailTransporter } from './infrastructure/config/mail';
 
 import { startNotificationConsumer } from './infrastructure/kafka/consumer';
 import { NotificationService } from './application/services/notification.service';
-import { NotificationRepositoryImpl } from './infrastructure/persistence/repositories/notification.repository.impl';
+import { NotificationRepositoryImpl } from './infrastructure/persistence/database/repositories/notification.repository.impl';
 import { NodemailerProvider } from './infrastructure/providers/email/nodemailer.provider';
 import { TwilioProvider } from './infrastructure/providers/sms/twilio.provider';
 import { FirebaseProvider } from './infrastructure/providers/push/firebase.provider';
 
 import { RetryJob } from './jobs/retry.job';
 import { DeadLetterJob } from './jobs/dead-letter.job';
-//import { OutboxWorker } from './jobs/outbox.worker';   // ← Fixed typo: "werker" → "worker"
 
 import logger from '@org/shared-logger';
 import { OutboxWorker } from './jobs/outbox.werker';
+import { OutboxService } from './infrastructure/outbox/outbox.service';
+import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 
 const PORT = process.env.PORT || 3006;
 
@@ -38,15 +40,24 @@ const start = async () => {
 
     // 3. Initialize repository and core service
     const repository = new NotificationRepositoryImpl();
+    const outboxRepository = new OutboxRepository();
+    
+    const outboxService = new OutboxService(outboxRepository);
+
     const notificationService = new NotificationService(
       repository,
       emailProvider,
       smsProvider,
-      pushProvider
+      pushProvider,
+      outboxService
     );
 
     // 4. Start Kafka consumer
     await startNotificationConsumer(notificationService);
+
+    const outboxProcessor = new OutboxProcessor(outboxService);
+    outboxProcessor.start();
+    logger.info('✅ Order Outbox Processor started');
 
     // 5. Start background jobs
     const retryJob = new RetryJob(notificationService);

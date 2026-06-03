@@ -2,14 +2,17 @@
 
 import { ProductEntity } from '../../domain/entities/product.entity';
 import { IProductRepository } from '../../domain/repositories/product.repository';
+import { OutboxService } from '../../infrastructure/outbox/outbox.service';
+
 import { CreateProductDto } from '../dtos/create-product.dto';
 import { UpdateProductDto } from '../dtos/update-product.dto';
 import { SearchProductsDto } from '../dtos/search-products.dto';
+
 import { CreateProductUseCase } from '../use-cases/create-product.usecase';
 import { UpdateProductUseCase } from '../use-cases/update-product.usecase';
 import { DeleteProductUseCase } from '../use-cases/delete-product.usecase';
 import { SearchProductsUseCase } from '../use-cases/search-products.usecase';
-import { CatalogProducer } from '../../infrastructure/kafka/producer/catalog.producer';
+
 import logger from '@org/shared-logger';
 
 export class ProductService {
@@ -20,35 +23,40 @@ export class ProductService {
 
   constructor(
     private readonly productRepository: IProductRepository,
-    private readonly producer: CatalogProducer
+    private readonly outboxService: OutboxService   
   ) {
-    this.createProductUseCase = new CreateProductUseCase(productRepository, producer);
-    this.updateProductUseCase = new UpdateProductUseCase(productRepository, producer);
-    this.deleteProductUseCase = new DeleteProductUseCase(productRepository, producer);
-    
-    // FIXED: SearchProductsUseCase takes no arguments (uses singleton repository)
-    this.searchProductsUseCase = new SearchProductsUseCase();
+    this.createProductUseCase = new CreateProductUseCase(
+      this.productRepository,
+      this.outboxService
+    );
+
+    this.updateProductUseCase = new UpdateProductUseCase(
+      this.productRepository,
+      this.outboxService
+    );
+
+    this.deleteProductUseCase = new DeleteProductUseCase(
+      this.productRepository,
+      this.outboxService
+    );
+
+    this.searchProductsUseCase = new SearchProductsUseCase(
+      
+    );
   }
 
-  /**
-   * Create Product with Images
-   */
-  async createProduct(
-    dto: CreateProductDto, 
-    images: string[] = []
-  ): Promise<ProductEntity> {
+  async createProduct(dto: CreateProductDto): Promise<ProductEntity> {
     try {
-      const product = await this.createProductUseCase.execute(dto, images);
+      const product = await this.createProductUseCase.execute(dto);
 
-      logger.info('Product created with images', {
+      logger.info('✅ Product created successfully', {
         productId: product.id,
         name: product.name,
-        imageCount: images.length,
       });
 
       return product;
     } catch (error: any) {
-      logger.error('Product creation failed in service', {
+      logger.error('❌ Product creation failed', {
         error: error.message,
         name: dto.name,
       });
@@ -56,53 +64,65 @@ export class ProductService {
     }
   }
 
-  /**
-   * Update Product
-   */
   async updateProduct(productId: string, dto: UpdateProductDto): Promise<ProductEntity> {
-    return this.updateProductUseCase.execute(productId, dto);
+    try {
+      const product = await this.updateProductUseCase.execute(productId, dto);
+
+      logger.info('✅ Product updated successfully', { productId });
+      return product;
+    } catch (error: any) {
+      logger.error('❌ Product update failed', { productId, error: error.message });
+      throw error;
+    }
   }
 
-  /**
-   * Delete Product
-   */
   async deleteProduct(productId: string): Promise<boolean> {
-    return this.deleteProductUseCase.execute(productId);
+    try {
+      const deleted = await this.deleteProductUseCase.execute(productId);
+
+      logger.info('🗑️ Product deleted successfully', { productId });
+      return deleted;
+    } catch (error: any) {
+      logger.error('❌ Product deletion failed', { productId, error: error.message });
+      throw error;
+    }
   }
 
-  /**
-   * Search Products (using Elasticsearch)
-   */
   async searchProducts(dto: SearchProductsDto) {
-    return this.searchProductsUseCase.execute(dto);
+    try {
+      return await this.searchProductsUseCase.execute(dto);
+    } catch (error: any) {
+      logger.error('❌ Product search failed', { error: error.message });
+      throw error;
+    }
   }
 
-  /**
-   * Get Product by ID
-   */
+  // Other methods remain unchanged
   async getProductById(id: string): Promise<ProductEntity> {
     const product = await this.productRepository.findById(id);
     if (!product) throw new Error('Product not found');
     return product;
   }
 
-  /**
-   * Get Product by Slug
-   */
   async getProductBySlug(slug: string): Promise<ProductEntity> {
     const product = await this.productRepository.findBySlug(slug);
     if (!product) throw new Error('Product not found');
     return product;
   }
 
-  /**
-   * Update Stock
-   */
-  async updateStock(productId: string, quantity: number): Promise<ProductEntity> {
-    const product = await this.productRepository.updateStock(productId, quantity);
-    if (!product) throw new Error('Product not found');
+  async getFeaturedProducts(): Promise<ProductEntity[]> {
+    return this.productRepository.findFeatured();
+  }
 
-    await this.producer.stockUpdated(product);
-    return product;
+  async getHotDeals(): Promise<ProductEntity[]> {
+    return this.productRepository.findHotDeals();
+  }
+
+  async getNewArrivals(): Promise<ProductEntity[]> {
+    return this.productRepository.findNewArrivals();
+  }
+
+  async getProductsByCategory(categoryId: string): Promise<ProductEntity[]> {
+    return this.productRepository.findByCategory(categoryId);
   }
 }

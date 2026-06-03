@@ -1,58 +1,75 @@
 // apps/catalog-service/src/presentation/routes/category.routes.ts
-
 import { Router } from 'express';
 
 import { CategoryController } from '../controllers/category.controller';
 import { protect } from '../../middlewares/auth.middleware';
 
-// Import infrastructure for DI
 import { CategoryRepositoryImpl } from '../../infrastructure/persistence/mongoose/repositories/category.repository.impl';
-import { CatalogProducer } from '../../infrastructure/kafka/producer/catalog.producer';
 import { CategoryService } from '../../application/services/category.service';
+import { categoryUpload } from '../../middlewares/category-upload.middleware';
+import { outboxService } from '../../container';
 
 const router = Router();
 
 /**
- * ====================== DEPENDENCY INJECTION ======================
+ * =====================================
+ * DEPENDENCY INJECTION
+ * =====================================
  */
-const categoryRepository = new CategoryRepositoryImpl();
-const catalogProducer = new CatalogProducer();   // or import from container if you have one
 
-const categoryService = new CategoryService(
-  categoryRepository,
-  catalogProducer
-);
+const categoryRepository =
+  new CategoryRepositoryImpl();
 
-const controller = new CategoryController(categoryService);
+const categoryService =
+  new CategoryService(
+    categoryRepository,
+    outboxService
+  );
+
+const controller =
+  new CategoryController(categoryService);
 
 /**
- * ====================== CATEGORY ROUTES ======================
+ * =====================================
+ * CATEGORY ROUTES
+ * =====================================
  */
 
-// Create Category (Protected)
+// Create Category
 router.post(
   '/',
   protect,
+  categoryUpload.single('image'),
   controller.createCategory
 );
 
-// Get All Categories (Public)
-router.get('/', controller.getAllCategories);
+// Get All Categories
+router.get(
+  '/',
+  controller.getAllCategories
+);
 
-// Get Category Tree (Public)
-router.get('/tree', controller.getCategoryTree);
+// Get Category Tree
+router.get(
+  '/tree',
+  controller.getCategoryTree
+);
 
-// Get Category by ID (Public)
-router.get('/:id', controller.getCategoryById);
+// Get Category By ID
+router.get(
+  '/:id',
+  controller.getCategoryById
+);
 
-// Update Category (Protected)
+// Update Category
 router.put(
   '/:id',
   protect,
+ categoryUpload.single('image'),
   controller.updateCategory
 );
 
-// Delete Category (Protected)
+// Delete Category
 router.delete(
   '/:id',
   protect,

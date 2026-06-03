@@ -3,28 +3,72 @@
 export class CategoryEntity {
   constructor(
     public readonly id: string = '',
+
     private _name: string,
     private _slug: string,
+
     private _description?: string,
     private _parentId?: string,
+
     private _imageUrl?: string,
+    private _icon?: string,
+
+    private _isFeatured: boolean = false,
+    private _sortOrder: number = 0,
+
     private _isActive: boolean = true,
+
     public readonly createdAt: Date = new Date(),
     private _updatedAt?: Date
   ) {}
 
-  get name(): string { return this._name; }
-  get slug(): string { return this._slug; }
-  get description(): string | undefined { return this._description; }
-  get parentId(): string | undefined { return this._parentId; }
-  get imageUrl(): string | undefined { return this._imageUrl; }
-  get isActive(): boolean { return this._isActive; }
-  get updatedAt(): Date | undefined { return this._updatedAt; }
+  // =========================
+  // GETTERS
+  // =========================
 
-  updateName(name: string): void {
-    this._name = name.trim();
-    this._updatedAt = new Date();
+  get name(): string {
+    return this._name;
   }
+
+  get slug(): string {
+    return this._slug;
+  }
+
+  get description(): string | undefined {
+    return this._description;
+  }
+
+  get parentId(): string | undefined {
+    return this._parentId;
+  }
+
+  get imageUrl(): string | undefined {
+    return this._imageUrl;
+  }
+
+  get icon(): string | undefined {
+    return this._icon;
+  }
+
+  get isFeatured(): boolean {
+    return this._isFeatured;
+  }
+
+  get sortOrder(): number {
+    return this._sortOrder;
+  }
+
+  get isActive(): boolean {
+    return this._isActive;
+  }
+
+  get updatedAt(): Date | undefined {
+    return this._updatedAt;
+  }
+
+  // =========================
+  // METHODS
+  // =========================
 
   activate(): void {
     this._isActive = true;
@@ -36,6 +80,10 @@ export class CategoryEntity {
     this._updatedAt = new Date();
   }
 
+  // =========================
+  // SERIALIZATION
+  // =========================
+
   toJSON() {
     return {
       id: this.id,
@@ -44,6 +92,9 @@ export class CategoryEntity {
       description: this._description,
       parentId: this._parentId,
       imageUrl: this._imageUrl,
+      icon: this._icon,
+      isFeatured: this._isFeatured,
+      sortOrder: this._sortOrder,
       isActive: this._isActive,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,

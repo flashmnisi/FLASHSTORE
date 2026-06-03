@@ -1,71 +1,199 @@
 // apps/gateway/src/infrastructure/kafka/producer.ts
 
 import { publish } from '@org/shared-kafka';
-import { TOPICS, EVENTS } from './topics';
+
 import logger from '@org/shared-logger';
 
+import { TOPICS } from './topics';
+
+
+import {
+  buildGatewayErrorEvent,
+} from './events/gateway-error.event';
+import { buildGatewayRequestEvent } from './events/gatway-request.event';
+import { buildServiceUnavailableEvent } from './events/service-unavailable.even';
+
 export class GatewayProducer {
+
   /**
-   * Publish event when a request is made (optional analytics)
+   * =====================================
+   * SAFE PUBLISH
+   * =====================================
    */
-  async publishRequestEvent(req: any, serviceName: string, status: number) {
-    try {
-      await publish({
-        topic: TOPICS.GATEWAY,
-        key: req.correlationId || 'unknown',
-        message: {
-          event: EVENTS.REQUEST_PROXIED,
-          data: {
-            service: serviceName,
-            method: req.method,
-            path: req.originalUrl,
-            status,
-            userId: req.user?.id || req.user?.userId,
-            duration: Date.now() - (req.startTime || Date.now()),
-          },
-          metadata: {
-            source: 'api-gateway',
-            timestamp: new Date().toISOString(),
-            correlationId: req.correlationId,
-          },
-        },
-      });
-    } catch (error: any) {
-      logger.warn('Failed to publish gateway request event', {
-        error: error.message,
-        service: serviceName,
-      });
+  private async safePublish(
+    payload: any
+  ) {
+
+    let retries = 3;
+
+    while (retries > 0) {
+
+      try {
+
+        await publish(payload);
+
+        return;
+
+      } catch (error: any) {
+
+        retries--;
+
+        logger.warn(
+          '⚠️ Kafka publish retry',
+          {
+            retries,
+            error: error.message,
+          }
+        );
+
+        if (retries === 0) {
+          throw error;
+        }
+
+        await new Promise(resolve =>
+          setTimeout(resolve, 500)
+        );
+
+      }
+
     }
+
   }
 
   /**
-   * Publish error events
+   * =====================================
+   * REQUEST EVENT
+   * =====================================
    */
-  async publishErrorEvent(req: any, serviceName: string, error: any) {
+  async publishRequestEvent(
+    req: any,
+    serviceName: string,
+    status: number
+  ) {
+
     try {
-      await publish({
+
+      const event =
+        buildGatewayRequestEvent(
+          req,
+          serviceName,
+          status
+        );
+
+      await this.safePublish({
         topic: TOPICS.GATEWAY,
-        key: req.correlationId || 'error',
-        message: {
-          event: EVENTS.GATEWAY_ERROR,
-          data: {
-            service: serviceName,
-            path: req.originalUrl,
-            error: error.message,
-            status: error.status || 502,
-          },
-          metadata: {
-            source: 'api-gateway',
-            timestamp: new Date().toISOString(),
-            correlationId: req.correlationId,
-          },
-        },
+
+        key:
+          req.correlationId ||
+          req.id ||
+          'unknown',
+
+        message: event,
       });
-    } catch (e) {
-      // Silent fail - don't break the flow
+
+    } catch (error: any) {
+
+      logger.error(
+        '❌ Failed to publish request event',
+        {
+          service: serviceName,
+          error: error.message,
+        }
+      );
+
     }
+
   }
+
+  /**
+   * =====================================
+   * ERROR EVENT
+   * =====================================
+   */
+  async publishErrorEvent(
+    req: any,
+    serviceName: string,
+    error: any
+  ) {
+
+    try {
+
+      const event =
+        buildGatewayErrorEvent(
+          req,
+          serviceName,
+          error
+        );
+
+      await this.safePublish({
+        topic: TOPICS.GATEWAY,
+
+        key:
+          req.correlationId ||
+          req.id ||
+          'error',
+
+        message: event,
+      });
+
+    } catch (err: any) {
+
+      logger.error(
+        '❌ Failed to publish error event',
+        {
+          service: serviceName,
+          error: err.message,
+        }
+      );
+
+    }
+
+  }
+
+  /**
+   * =====================================
+   * SERVICE UNAVAILABLE EVENT
+   * =====================================
+   */
+  async publishServiceUnavailableEvent(
+    req: any,
+    serviceName: string
+  ) {
+
+    try {
+
+      const event =
+        buildServiceUnavailableEvent(
+          req,
+          serviceName
+        );
+
+      await this.safePublish({
+        topic: TOPICS.GATEWAY,
+
+        key:
+          req.correlationId ||
+          req.id ||
+          'unavailable',
+
+        message: event,
+      });
+
+    } catch (error: any) {
+
+      logger.error(
+        '❌ Failed to publish unavailable event',
+        {
+          service: serviceName,
+          error: error.message,
+        }
+      );
+
+    }
+
+  }
+
 }
 
-// Singleton
-export const gatewayProducer = new GatewayProducer();
+export const gatewayProducer =
+  new GatewayProducer();

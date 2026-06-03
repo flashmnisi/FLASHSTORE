@@ -14,5 +14,5 @@ export interface IOutboxRepository {
   markAsProcessed(id: string): Promise<void>;
   markAsFailed(id: string, errorMessage: string, retries: number): Promise<void>;
   lockForProcessing(id: string): Promise<boolean>;
-  delete(id: string): Promise<boolean>;
+  
 }

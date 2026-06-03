@@ -2,6 +2,7 @@
 
 import { ProductService } from './product.service';
 import { CategoryService } from './category.service';
+
 import logger from '@org/shared-logger';
 
 export class CatalogService {
@@ -10,27 +11,43 @@ export class CatalogService {
     private readonly categoryService: CategoryService
   ) {}
 
-  // Product related
-  get products() {
+  /**
+   * =========================================
+   * PRODUCT ACCESS
+   * =========================================
+   */
+  get products(): ProductService {
     return this.productService;
   }
 
-  // Category related
-  get categories() {
+  /**
+   * =========================================
+   * CATEGORY ACCESS
+   * =========================================
+   */
+  get categories(): CategoryService {
     return this.categoryService;
   }
 
   /**
-   * Health check for catalog service
+   * =========================================
+   * HEALTH CHECK
+   * =========================================
    */
   async healthCheck() {
-    logger.info('Catalog service health check');
+    logger.info('🩺 Catalog service health check');
+
     return {
+      success: true,
+      service: 'catalog-service',
       status: 'healthy',
+
       services: {
         products: 'operational',
         categories: 'operational',
       },
+
+      timestamp: new Date().toISOString(),
     };
   }
 }

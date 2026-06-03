@@ -17,6 +17,6 @@ const start = async () => {
 };
 
 start().catch((err) => {
-  logger.error({ error: err.message }, 'Failed to start analytics service');
+  logger.error('Failed to start analytics service',{ error: err.message });
   process.exit(1);
 });

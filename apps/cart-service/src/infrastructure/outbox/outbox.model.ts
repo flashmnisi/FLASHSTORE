@@ -1,28 +1,48 @@
 // apps/cart-service/src/infrastructure/outbox/outbox.model.ts
 
-import mongoose, { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
-const outboxSchema = new Schema(
+const OutboxSchema = new mongoose.Schema(
   {
-    topic: { type: String, required: true },
-    event: { type: String, required: true },
-    payload: { type: Schema.Types.Mixed, required: true },
+    topic: String,
+    event: String,
+    payload: Object,
     key: String,
+    correlationId: String,
 
     status: {
       type: String,
-      enum: ['pending', 'processing', 'processed', 'failed'],
+      enum: [
+        'pending',
+        'processing',
+        'processed',
+        'failed',
+      ],
       default: 'pending',
     },
 
-    retries: { type: Number, default: 0 },
+    retries: {
+      type: Number,
+      default: 0,
+    },
 
-    nextRetryAt: { type: Date, default: Date.now },
+    errorMessage: String,
+
+    nextRetryAt: Date,
+
+    processedAt: Date,
+
+    failedAt: Date,
+
     lockedAt: Date,
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-outboxSchema.index({ status: 1, nextRetryAt: 1 });
-
-export const OutboxModel = mongoose.model('Outbox', outboxSchema);
+export const OutboxModel =
+  mongoose.model(
+    'Outbox',
+    OutboxSchema
+  );

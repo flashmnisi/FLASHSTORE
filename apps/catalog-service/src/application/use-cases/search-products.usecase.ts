@@ -6,14 +6,18 @@ import logger from '@org/shared-logger';
 
 export class SearchProductsUseCase {
   constructor() {
-    // Using the singleton Elasticsearch repository
+    // Using singleton Elasticsearch repository (as you prefer)
   }
 
   async execute(dto: SearchProductsDto) {
     try {
-      logger.info('Executing product search', {
+      logger.info('🔍 Executing product search', {
         query: dto.query,
         categoryId: dto.categoryId,
+        brand: dto.brand,
+        minPrice: dto.minPrice,
+        maxPrice: dto.maxPrice,
+        inStock: dto.inStock,
         page: dto.page,
         limit: dto.limit,
       });
@@ -27,8 +31,8 @@ export class SearchProductsUseCase {
           maxPrice: dto.maxPrice,
           inStock: dto.inStock,
         },
-        dto.page,
-        dto.limit
+        dto.page || 1,
+        dto.limit || 20
       );
 
       return {
@@ -42,7 +46,7 @@ export class SearchProductsUseCase {
         },
       };
     } catch (error: any) {
-      logger.error('Search products use case failed', {
+      logger.error('❌ Search products use case failed', {
         query: dto.query,
         error: error.message,
       });

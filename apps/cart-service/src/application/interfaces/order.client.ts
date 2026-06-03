@@ -1,3 +1,5 @@
+// apps/cart-service/src/application/interface/order.client.ts
+
 export interface IOrderClient {
   createOrder(dto: {
     userId: string;
@@ -7,8 +9,8 @@ export interface IOrderClient {
       price: number;
     }>;
     totalAmount: number;
-    idempotencyKey?: string;      // ← Added
-    correlationId?: string;       // ← Added
+    idempotencyKey?: string;      
+    correlationId?: string;       
   }): Promise<{
     orderId: string;
     // other fields returned by order service

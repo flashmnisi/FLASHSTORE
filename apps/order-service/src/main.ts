@@ -16,7 +16,10 @@ import { startOrderConsumer } from './infrastructure/kafka/consumer';
 
 import { OrderService } from './application/sevices/order.service';
 import { OrderRepositoryImpl } from './infrastructure/persistance/repositories/oder.repository.impl';
-import { startOrderOutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { OutboxService } from './infrastructure/outbox/outbox.service';
+import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
+//import { OutboxRepository } from './infrastructure/persistance/repositories/outbox.repository';
 
 const PORT = process.env.PORT || 3004;
 
@@ -56,9 +59,12 @@ const startServer = async () => {
      * DEPENDENCY INJECTION
      * =========================
      */
+    const outboxRepository = new OutboxRepository();
     const orderRepository = new OrderRepositoryImpl();
+    const outboxService = new OutboxService(outboxRepository);
+    
 
-    const orderService = new OrderService(orderRepository);
+    const orderService = new OrderService(orderRepository,outboxService);
 
     /**
      * =========================
@@ -74,7 +80,14 @@ const startServer = async () => {
      * OUTBOX PROCESSOR
      * =========================
      */
-    startOrderOutboxProcessor();
+    // create outbox service (depends on your repo)
+
+
+// create processor
+const outboxProcessor = new OutboxProcessor(outboxService);
+
+// start processor
+outboxProcessor.start();
 
     logger.info('✅ Order Outbox Processor started');
 

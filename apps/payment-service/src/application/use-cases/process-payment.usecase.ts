@@ -6,7 +6,7 @@ import {
 } from '../dtos/process-payment.dto';
 import { IPaymentRepository } from '../interfaces/payment.repository';
 import { IPaymentProvider } from '../interfaces/payment.provider';
-import { PaymentProducer } from '../../infrastructure/kafka/payment.producer';
+//import { PaymentProducer } from '../../infrastructure/kafka/payment.producer';
 import { Money } from '../../domain/value-objects/money.vo';
 import { PaymentEntity } from '../../domain/entities/payment.entity';
 import logger from '@org/shared-logger';
@@ -15,7 +15,6 @@ export class ProcessPaymentUseCase {
   constructor(
     private readonly repository: IPaymentRepository,
     private readonly provider: IPaymentProvider,
-    private readonly producer: PaymentProducer
   ) {}
 
   async execute(
@@ -74,8 +73,7 @@ export class ProcessPaymentUseCase {
 
       await this.repository.update(savedPayment);
 
-      // Outbox event
-      await this.producer.paymentInitiatedOutbox(savedPayment);
+     
 
       logger.info('Payment initiated successfully', {
         paymentId: savedPayment.id,

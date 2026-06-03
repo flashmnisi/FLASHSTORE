@@ -1,77 +1,177 @@
 // apps/user-service/src/infrastructure/outbox/outbox.processor.ts
+import {
+  publish,
+  sendToDLQ,
+} from '@org/shared-kafka';
 
-import { OutboxService } from './outbox.service';
-import { outboxService } from '../../container';
-import { publish } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
 
-const BATCH_SIZE = 30;
-const MAX_RETRIES = 5;     // ← Now properly used
+import { OutboxService } from './outbox.service';
+
+const BATCH_SIZE = 50;
+const MAX_RETRIES = 5;
+const INTERVAL_MS = 2000;
 
 export class OutboxProcessor {
-  constructor(private readonly outboxService: OutboxService) {}
+  private isProcessing = false;
 
-  start(): void {
-    setInterval(() => {
-      this.processPendingEvents().catch((err) => {
-        logger.error('Outbox processor interval error', { error: err.message });
-      });
-    }, 5000);
+  constructor(
+    private readonly outboxService: OutboxService
+  ) {}
 
-    logger.info('🚀 Outbox Processor started (every 5s)');
+  start() {
+    setInterval(async () => {
+      if (this.isProcessing) {
+        return;
+      }
+
+      this.isProcessing = true;
+
+      try {
+        await this.processPendingEvents();
+      } catch (error: any) {
+        logger.error(
+          '❌ Outbox processor failed',
+          {
+            error: error.message,
+          }
+        );
+      } finally {
+        this.isProcessing = false;
+      }
+    }, INTERVAL_MS);
+
+    logger.info(
+      '🚀 Order Outbox Processor started'
+    );
   }
 
   private async processPendingEvents() {
-    try {
-      const events = await this.outboxService.getPendingEvents(BATCH_SIZE);
+    const events =
+      await this.outboxService.getPendingEvents(
+        BATCH_SIZE
+      );
 
-      for (const event of events) {
-        try {
-          await publish({
-            topic: event.topic,
-            key: event.key,
-            message: {
-              event: event.event,
-              data: event.payload,
-              timestamp: new Date().toISOString(),
-            },
-          });
+    if (!events.length) {
+      return;
+    }
 
-          await this.outboxService.markAsProcessed(event._id);
-
-          logger.info('✅ Outbox event processed', {
-            event: event.event,
-            outboxId: event._id,
-          });
-
-        } catch (error: any) {
-          const retries = (event.retries || 0) + 1;
-
-          // Use MAX_RETRIES constant here
-          if (retries >= MAX_RETRIES) {
-            logger.error('❌ Outbox event reached maximum retries', {
-              event: event.event,
-              outboxId: event._id,
-              retries,
-            });
-            // Optionally move to Dead Letter Queue here later
-          } else {
-            logger.warn('⚠️ Outbox event failed, will retry', {
-              event: event.event,
-              outboxId: event._id,
-              retries,
-              nextRetry: retries + 1,
-            });
-          }
-
-          await this.outboxService.markAsFailed(event._id, error.message, retries);
-        }
+    logger.info(
+      '📦 Processing outbox events',
+      {
+        count: events.length,
       }
-    } catch (error: any) {
-      logger.error('❌ Outbox processor failed', { error: error.message });
+    );
+
+    for (const event of events) {
+      try {
+        const locked =
+          await this.outboxService.lockForProcessing(
+            event.id!.toString()
+          );
+
+        if (!locked) {
+          continue;
+        }
+
+        await this.publishEvent(locked);
+
+      } catch (error: any) {
+        logger.error(
+          'Failed processing outbox event',
+          {
+            outboxId: event.id,
+            error: error.message,
+          }
+        );
+      }
     }
   }
-}
 
-// Singleton instance
-export const outboxProcessor = new OutboxProcessor(outboxService);
+  private async publishEvent(
+    event: any
+  ) {
+    try {
+      await publish({
+        topic: event.topic,
+        key: event.key,
+        message: {
+          event: event.event,
+          data: event.payload,
+          correlationId:
+            event.correlationId,
+        },
+      });
+
+      await this.outboxService.markAsProcessed(
+        event._id.toString()
+      );
+
+      logger.info(
+        '✅ Outbox event published',
+        {
+          outboxId: event._id,
+          event: event.event,
+        }
+      );
+
+    } catch (error: any) {
+      await this.handleFailure(
+        event,
+        error
+      );
+    }
+  }
+
+  private async handleFailure(
+    event: any,
+    error: any
+  ) {
+    const retries =
+      (event.retries || 0) + 1;
+
+    if (retries >= MAX_RETRIES) {
+
+      await sendToDLQ({
+        topic: event.topic,
+        event: event.event,
+        payload: event.payload,
+        error: error.message,
+        retryCount: retries,
+        correlationId:
+          event.correlationId,
+      });
+
+      await this.outboxService.markAsFailed(
+        event._id.toString(),
+        error.message,
+        retries
+      );
+
+      logger.error(
+        '💀 Event moved to DLQ',
+        {
+          outboxId: event._id,
+          event: event.event,
+        }
+      );
+
+      return;
+    }
+
+    await this.outboxService.markAsFailed(
+      event._id.toString(),
+      error.message,
+      retries
+    );
+
+    logger.warn(
+      '⚠️ Outbox event failed. Will retry.',
+      {
+        outboxId: event._id,
+        retries,
+        event: event.event,
+      }
+    );
+  }
+}

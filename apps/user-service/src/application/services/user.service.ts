@@ -10,6 +10,7 @@ import { addressService, authService } from '../../container';
 import { AppError } from '../../middlewares/error.middleware';
 import logger from '@org/shared-logger';
 import { UserEntity } from '../../domain/entities/user.entities';
+import { TOPICS, EVENTS } from '@org/shared-kafka';
 
 export class UserService {
   constructor(
@@ -33,16 +34,17 @@ export class UserService {
     const createdUser = await this.userRepository.create(user);
 
     // Publish event to Outbox
-    await this.outboxService.write({
-      event: 'user.registered',
-      data: {
-        userId: createdUser.id,
-        email: createdUser.email,
-        name: createdUser.name,
-        role: createdUser.role,
-      },
-      key: createdUser.id,
-    });
+   await this.outboxService.write({
+  topic: TOPICS.USERS,
+  event: EVENTS.USER_REGISTERED,
+  data: {
+    userId: createdUser.id,
+    email: createdUser.email,
+    name: createdUser.name,
+    role: createdUser.role,
+  },
+  key: createdUser.id,
+});
 
     // Generate tokens
     const { accessToken, refreshToken } = await authService.generateTokens(createdUser);
@@ -73,15 +75,16 @@ export class UserService {
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const updatedUser = await this.userRepository.update(userId, dto);
 
-    await this.outboxService.write({
-      event: 'user.updated',
-      data: {
-        userId: updatedUser.id,
-        email: updatedUser.email,
-        name: updatedUser.name,
-      },
-      key: updatedUser.id,
-    });
+ await this.outboxService.write({
+  topic: TOPICS.USERS,
+  event: EVENTS.USER_UPDATED,
+  data: {
+    userId: updatedUser.id,
+    email: updatedUser.email,
+    name: updatedUser.name,
+  },
+  key: updatedUser.id,
+});
 
     return updatedUser;
   }
@@ -89,11 +92,14 @@ export class UserService {
   async deleteUser(userId: string) {
     await this.userRepository.delete(userId);
 
-    await this.outboxService.write({
-      event: 'user.deleted',
-      data: { userId },
-      key: userId,
-    });
+   await this.outboxService.write({
+  topic: TOPICS.USERS,
+  event: EVENTS.USER_DELETED,
+  data: {
+    userId,
+  },
+  key: userId,
+});
 
     return true;
   }

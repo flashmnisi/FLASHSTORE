@@ -1,3 +1,5 @@
+// apps/cart-service/src/application/interface/cart.repository.ts
+
 import { CartEntity } from '../../domain/entities/cart.entity';
 
 export interface ICartRepository {
@@ -6,4 +8,5 @@ export interface ICartRepository {
   save(cart: CartEntity): Promise<CartEntity>;
 
   delete(userId: string): Promise<void>;
+
 }

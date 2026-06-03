@@ -8,6 +8,7 @@ volumes:
   mongo-data:
   kafka-data:
   redis-data:
+  uploads:
 
 services:
   # ==================== MongoDB ====================
@@ -66,7 +67,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_NUM_PARTITIONS: 3
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -103,151 +104,22 @@ services:
 
       echo '🚀 Creating FlashStore Kafka topics...';
 
-      # ==============================
-      # AUTH
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.auth \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # USERS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.users \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # ORDERS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.orders \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # PAYMENTS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.payments \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # CARTS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.carts \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # PRODUCTS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.products \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # INVENTORY
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.inventory \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # NOTIFICATIONS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.notifications \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # SYSTEM
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.system \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # ANALYTICS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.analytics \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # METRICS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.metrics \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # RETRY TOPICS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.orders.retry \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.payments.retry \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.users.retry \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      # ==============================
-      # DLQ TOPICS
-      # ==============================
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.orders.dlq \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.payments.dlq \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
-
-      kafka-topics.sh --create --if-not-exists \
-        --topic flashstore.users.dlq \
-        --bootstrap-server kafka:9092 \
-        --partitions 3 \
-        --replication-factor 1;
+    kafka-topics.sh --create --if-not-exists --topic flashstore.users --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.auth --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.orders --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.payments --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.products --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.categories --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.carts --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.inventory --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+    kafka-topics.sh --create --if-not-exists --topic flashstore.notifications --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
+    kafka-topics.sh --create --if-not-exists --topic flashstore.analytics --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+    kafka-topics.sh --create --if-not-exists --topic flashstore.search --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
 
       echo '✅ All FlashStore Kafka topics created successfully!';
 
       kafka-topics.sh \
-        --bootstrap-server kafka:9092 \
+        --bootstrap-server kafka:9092 \ 
         --list;
 
       sleep infinity
@@ -298,27 +170,29 @@ services:
     restart: unless-stopped
 
   catalog-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/catalog-service.Dockerfile
-    container_name: flashstore-catalog-service
-    environment:
-      NODE_ENV: production
-      PORT: 3002
-      KAFKA_BROKERS: kafka:9092
-      MONGO_URI: mongodb://mongo:27017/flashstore
-    depends_on:
-      mongo:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_started
-      redis:
-       condition: service_healthy
-    networks:
-      - flashstore-net
-    restart: unless-stopped
+   build:
+    context: .
+    dockerfile: infrastructure/docker/catalog-service.Dockerfile
+   container_name: flashstore-catalog-service
+   environment:
+    NODE_ENV: production
+    PORT: 3002
+    KAFKA_BROKERS: kafka:9092
+    MONGO_URI: mongodb://mongo:27017/flashstore
+   volumes:
+    - ./uploads:/app/uploads          
+   depends_on:
+    mongo:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+    kafka-init:
+      condition: service_started
+    redis:
+      condition: service_healthy
+   networks:
+    - flashstore-net
+   restart: unless-stopped
 
   cart-service:
     build:

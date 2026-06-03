@@ -1,24 +1,63 @@
-import Redis from 'ioredis';
-import { env } from './env';
+import {
+  getRedis as connectSharedRedis,
+  disconnectRedis,
+}
+from '@org/shared-redis';
+
 import logger from '@org/shared-logger';
 
-export const redis = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
-});
+/**
+ * =====================================
+ * CONNECT REDIS
+ * =====================================
+ */
+export const connectRedis =
+  async (): Promise<void> => {
 
-export const connectRedis = async () => {
-  return new Promise<void>((resolve, reject) => {
-    redis.on('connect', () => {
-      logger.info('Redis connected');
-      resolve();
-    });
+  try {
 
-    redis.on('error', (err) => {
-      logger.error('Redis connection error', { error: err.message });
-      reject(err);
-    });
-  });
+    await connectSharedRedis();
+
+    logger.info(
+      '✅ Redis connected successfully'
+    );
+
+  } catch (error: any) {
+
+    logger.error(
+      '❌ Redis connection failed',
+      {
+        error: error.message,
+      }
+    );
+
+    throw error;
+  }
 };
 
-export default redis;
+/**
+ * =====================================
+ * DISCONNECT REDIS
+ * =====================================
+ */
+export const disconnectRedisConnection =
+  async (): Promise<void> => {
+
+  try {
+
+    await disconnectRedis();
+
+    logger.info(
+      '✅ Redis disconnected'
+    );
+
+  } catch (error: any) {
+
+    logger.warn(
+      'Failed to disconnect Redis gracefully',
+      {
+        error: error.message,
+      }
+    );
+  }
+};

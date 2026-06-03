@@ -1,3 +1,5 @@
+// apps/cart-service/src/application/interface/product.client.ts
+
 export interface ProductDto {
   id: string;
   name: string;

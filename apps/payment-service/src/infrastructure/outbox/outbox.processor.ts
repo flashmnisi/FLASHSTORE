@@ -1,210 +1,178 @@
 // apps/payment-service/src/infrastructure/outbox/outbox.processor.ts
 
-import { OutboxModel } from './outbox.model';
-import { publish } from '@org/shared-kafka';
-import { sendToDLQ } from '@org/shared-kafka';
+import {
+  publish,
+  sendToDLQ,
+} from '@org/shared-kafka';
+
 import logger from '@org/shared-logger';
+
+import { OutboxService } from './outbox.service';
 
 const BATCH_SIZE = 50;
 const MAX_RETRIES = 5;
-const POLL_INTERVAL = 2000; // 2 seconds
-const LOCK_TIMEOUT = 30000; // 30 seconds
+const INTERVAL_MS = 2000;
 
-let isRunning = true;
+export class OutboxProcessor {
+  private isProcessing = false;
 
-/**
- * Write event to Outbox
- */
-export const sendToOutbox = async (data: {
-  topic: string;
-  event: string;
-  payload: any;
-  key?: string;
-}) => {
-  try {
-    const outboxEntry = await OutboxModel.create({
-      topic: data.topic,
-      event: data.event,
-      payload: data.payload,
-      key: data.key,
-      status: 'pending',
-      retries: 0,
-      nextRetryAt: new Date(),
-    });
+  constructor(
+    private readonly outboxService: OutboxService
+  ) {}
 
-    logger.info('Event written to Outbox', {
-      event: data.event,
-      outboxId: outboxEntry._id,
-    });
+  start() {
+    setInterval(async () => {
+      if (this.isProcessing) {
+        return;
+      }
 
-    return outboxEntry;
-  } catch (error: any) {
-    logger.error('Failed to write to Outbox', {
-      event: data.event,
-      error: error.message,
-    });
-    throw error;
+      this.isProcessing = true;
+
+      try {
+        await this.processPendingEvents();
+      } catch (error: any) {
+        logger.error(
+          '❌ Outbox processor failed',
+          {
+            error: error.message,
+          }
+        );
+      } finally {
+        this.isProcessing = false;
+      }
+    }, INTERVAL_MS);
+
+    logger.info(
+      '🚀 Order Outbox Processor started'
+    );
   }
-};
 
-/**
- * Start the Outbox Processor
- */
-export const startOutboxProcessor = () => {
-  logger.info('🚀 Outbox Processor started');
-
-  const interval = setInterval(async () => {
-    if (!isRunning) return;
-
-    try {
-      await reclaimStuckMessages();
-      await processPendingBatch();
-    } catch (error: any) {
-      logger.error('Outbox processor error', { error: error.message });
-    }
-  }, POLL_INTERVAL);
-
-  // Graceful shutdown
-  const shutdown = () => {
-    logger.warn('🛑 Shutting down Outbox Processor...');
-    isRunning = false;
-    clearInterval(interval);
-  };
-
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-};
-
-/**
- * Process a batch of pending events
- */
-const processPendingBatch = async () => {
-  const messages = await OutboxModel.find({
-    status: 'pending',
-    nextRetryAt: { $lte: new Date() },
-  })
-    .sort({ createdAt: 1 })
-    .limit(BATCH_SIZE)
-    .lean();
-
-  if (messages.length === 0) return;
-
-  await Promise.allSettled(
-    messages.map(async (msg) => {
-      const locked = await OutboxModel.findOneAndUpdate(
-        { _id: msg._id, status: 'pending' },
-        { 
-          status: 'processing',
-          lockedAt: new Date() 
-        },
-        { new: true }
+  private async processPendingEvents() {
+    const events =
+      await this.outboxService.getPendingEvents(
+        BATCH_SIZE
       );
 
-      if (!locked) return; // already being processed
+    if (!events.length) {
+      return;
+    }
 
-      await processSingleMessage(locked);
-    })
-  );
-};
-
-/**
- * Process a single outbox message
- */
-const processSingleMessage = async (msg: any) => {
-  try {
-    await publish({
-      topic: msg.topic,
-      key: msg.key || msg.payload?.orderId || msg.payload?.userId,
-      message: {
-        event: msg.event,
-        data: msg.payload,
-        timestamp: new Date().toISOString(),
-      },
-    });
-
-    await OutboxModel.updateOne(
-      { _id: msg._id },
-      { 
-        status: 'processed',
-        $unset: { lockedAt: '' }
+    logger.info(
+      '📦 Processing outbox events',
+      {
+        count: events.length,
       }
     );
 
-    logger.info('✅ Outbox message processed', {
-      id: msg._id,
-      event: msg.event,
-    });
+    for (const event of events) {
+      try {
+        const locked =
+          await this.outboxService.lockForProcessing(
+            event.id!.toString()
+          );
 
-  } catch (error: any) {
-    await handleFailure(msg, error);
-  }
-};
+        if (!locked) {
+          continue;
+        }
 
-/**
- * HANDLE FAILURE + RETRY + DLQ
- */
-const handleFailure = async (msg: any, error: any) => {
-  const retries = (msg.retries || 0) + 1;
-  const backoffMs = Math.min(1000 * Math.pow(2, retries), 60000);
+        await this.publishEvent(locked);
 
-  const update: any = {
-    retries,
-    nextRetryAt: new Date(Date.now() + backoffMs),
-    $unset: { lockedAt: '' },
-  };
-
-  if (retries >= MAX_RETRIES) {
-    update.status = 'failed';
-
-    // ✅ Correct DLQ call - match the expected DLQEvent shape
-await sendToDLQ({
-  topic: msg.topic,
-  event: msg.event,
-  payload: msg.payload,
-  error: error,
-  retryCount: retries,
-  serviceName: 'payment-service',
-  correlationId: msg.payload?.metadata?.correlationId,
-});
-
-    logger.error('💀 Message moved to DLQ', {
-      id: msg._id,
-      event: msg.event,
-      retries,
-    });
-  } else {
-    update.status = 'pending';
-
-    logger.warn('⚠️ Outbox message failed, retry scheduled', {
-      id: msg._id,
-      event: msg.event,
-      retries,
-      backoffMs,
-    });
-  }
-
-  await OutboxModel.updateOne({ _id: msg._id }, update);
-};
-/**
- * Reclaim messages stuck in 'processing' state
- */
-const reclaimStuckMessages = async () => {
-  const timeout = new Date(Date.now() - LOCK_TIMEOUT);
-
-  const result = await OutboxModel.updateMany(
-    {
-      status: 'processing',
-      lockedAt: { $lt: timeout },
-    },
-    {
-      status: 'pending',
-      $unset: { lockedAt: '' },
+      } catch (error: any) {
+        logger.error(
+          'Failed processing outbox event',
+          {
+            outboxId: event.id,
+            error: error.message,
+          }
+        );
+      }
     }
-  );
-
-  if (result.modifiedCount > 0) {
-    logger.warn('♻️ Reclaimed stuck outbox messages', {
-      count: result.modifiedCount,
-    });
   }
-};
+
+  private async publishEvent(
+    event: any
+  ) {
+    try {
+      await publish({
+        topic: event.topic,
+        key: event.key,
+        message: {
+          event: event.event,
+          data: event.payload,
+          correlationId:
+            event.correlationId,
+        },
+      });
+
+      await this.outboxService.markAsProcessed(
+        event._id.toString()
+      );
+
+      logger.info(
+        '✅ Outbox event published',
+        {
+          outboxId: event._id,
+          event: event.event,
+        }
+      );
+
+    } catch (error: any) {
+      await this.handleFailure(
+        event,
+        error
+      );
+    }
+  }
+
+  private async handleFailure(
+    event: any,
+    error: any
+  ) {
+    const retries =
+      (event.retries || 0) + 1;
+
+    if (retries >= MAX_RETRIES) {
+
+      await sendToDLQ({
+        topic: event.topic,
+        event: event.event,
+        payload: event.payload,
+        error: error.message,
+        retryCount: retries,
+        correlationId:
+          event.correlationId,
+      });
+
+      await this.outboxService.markAsFailed(
+        event._id.toString(),
+        error.message,
+        retries
+      );
+
+      logger.error(
+        '💀 Event moved to DLQ',
+        {
+          outboxId: event._id,
+          event: event.event,
+        }
+      );
+
+      return;
+    }
+
+    await this.outboxService.markAsFailed(
+      event._id.toString(),
+      error.message,
+      retries
+    );
+
+    logger.warn(
+      '⚠️ Outbox event failed. Will retry.',
+      {
+        outboxId: event._id,
+        retries,
+        event: event.event,
+      }
+    );
+  }
+}

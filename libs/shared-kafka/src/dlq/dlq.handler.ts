@@ -1,82 +1,115 @@
+// shared-kafka/src/dlq/dlq.handler.ts
+
 import { publish } from '../client/producer';
 import logger from '@org/shared-logger';
 
-interface DLQOptions {
+export interface DLQOptions {
   topic: string;
-  message: any;
+  event: string;
+  payload: any;
+
   key?: string;
+
+  error: string;
+
+  retryCount?: number;
+
+  correlationId?: string;
+
+  traceId?: string;
+
+  serviceName?: string;
+
   headers?: Record<string, any>;
-  error?: string;
 }
 
 export const sendToDLQ = async ({
   topic,
-  message,
+  event,
+  payload,
   key,
-  headers = {},
   error,
+  retryCount = 0,
+  correlationId,
+  traceId,
+  serviceName,
+  headers = {},
 }: DLQOptions) => {
   const dlqTopic = `${topic}.dlq`;
 
-  const retryCount = headers['x-retry-count'] || '0';
-  const requestId = headers['x-request-id'];
-  const correlationId = headers['x-correlation-id'];
-
   const dlqPayload = {
     originalTopic: topic,
+
+    originalEvent: event,
+
     originalKey: key,
-    originalMessage: message,
+
+    originalPayload: payload,
 
     metadata: {
       retryCount,
-      requestId,
+
       correlationId,
+
+      traceId,
+
+      serviceName,
+
       failedAt: new Date().toISOString(),
     },
 
     error: {
-      message: error || 'Unknown error',
+      message: error,
     },
   };
 
   try {
     await publish({
       topic: dlqTopic,
-      message: dlqPayload,
+
       key,
+
+      message: dlqPayload,
+
       headers: {
         ...headers,
-        'x-failed-reason': error || 'unknown',
-        'x-retry-count': retryCount,
+
+        'x-retry-count': String(retryCount),
+
+        'x-correlation-id': correlationId || '',
+
+        'x-trace-id': traceId || '',
+
+        'x-failed-reason': error,
       },
     });
 
-    // ✅ FIXED LOGGER
-    logger.error('💀 Message sent to DLQ',
-      {
-        topic: dlqTopic,
-        key,
-        retryCount,
-        correlationId,
-      },
-    );
-
+    logger.error('💀 Message sent to DLQ', {
+      dlqTopic,
+      originalTopic: topic,
+      event,
+      key,
+      retryCount,
+      correlationId,
+      traceId,
+      serviceName,
+    });
   } catch (err: any) {
-    // ✅ FIXED LOGGER
-    logger.error('🚨 CRITICAL: Failed to send message to DLQ',
-      {
-        originalTopic: topic,
-        key,
-        error: err.message,
-      },
-    );
+    logger.error('🚨 CRITICAL: Failed to send message to DLQ', {
+      originalTopic: topic,
+      event,
+      key,
+      error: err.message,
+    });
 
     /**
-     * 🔥 PRODUCTION UPGRADE
-     * If DLQ fails → fallback persistence
+     * Future Enterprise Upgrades
+     *
+     * 1. Write to Mongo fallback collection
+     * 2. Write to Redis emergency queue
+     * 3. Send Slack alert
+     * 4. Send PagerDuty alert
+     * 5. Send email to DevOps
      */
-    // TODO:
-    // - write to local file
-    // - send alert (Slack / PagerDuty)
   }
 };

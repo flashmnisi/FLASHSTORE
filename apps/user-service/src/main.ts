@@ -6,11 +6,12 @@ import env from './config/env';
 import { connectDatabase } from './config/database';
 import { connectRedis, disconnectRedisConnection } from './config/redis';
 import { initializeKafka } from './infrastructure/kafka/index';
-import { outboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 
-import './container';                    // Initialize all services (UserService, AuthService, etc.)
+import './container';                    
 
 import logger from '@org/shared-logger';
+import { outboxService } from './container';
 
 const startServer = async () => {
   try {
@@ -24,7 +25,7 @@ const startServer = async () => {
 
     // 3. Initialize Kafka + Consumers
     await initializeKafka();
-
+const outboxProcessor = new OutboxProcessor(outboxService);
     // 4. Start Outbox Processor
     outboxProcessor.start();
 

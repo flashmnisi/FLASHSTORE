@@ -15,14 +15,12 @@ export class AnalyticsService {
 
       await event.save();
 
-      logger.info(
-        { event: eventData.event, userId: eventData.userId },
-        'Analytics event stored successfully'
+      logger.info('Analytics event stored successfully',
+        { event: eventData.event, userId: eventData.userId }
       );
     } catch (error: any) {
-      logger.error(
+      logger.error('Failed to store analytics event',
         { error: error.message, event: eventData.event },
-        'Failed to store analytics event'
       );
     }
   }

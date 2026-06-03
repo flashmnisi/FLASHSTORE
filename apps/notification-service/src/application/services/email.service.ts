@@ -1,3 +1,4 @@
+//apps/notification-service/application/services/email/service
 import { NotificationEntity } from '../../domain/entities/notification.entity';
 
 export interface IEmailProvider {

@@ -1,5 +1,5 @@
 import logger from '@org/shared-logger';
-import { OutboxModel } from '../infrastructure/persistence/models/outbox.model';
+import { OutboxModel } from '../infrastructure/persistence/database/models/outbox.model';
 
 export class DeadLetterJob {
   /**

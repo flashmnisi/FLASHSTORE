@@ -9,10 +9,12 @@ import { OrderClient } from './infrastructure/client/order.client';
 import { PaymentClient } from './infrastructure/client/payment.client';
 
 import { CartRepositoryImpl } from './infrastructure/persistence/repositories/cart.repository.impl';
-import { CartCacheRepository } from './infrastructure/cache/cart.cache';           // ← Use the correct cache class
+import { CartCacheRepository } from './infrastructure/cache/cart.cache';          
 import { CouponService } from './application/services/coupon.service';
 import { CouponRepositoryImpl } from './infrastructure/persistence/repositories/coupon.repository.impl';
-//import { CouponRepositoryImpl } from './infrastructure/persistence/repositories/coupon.repository.impl'; // ← New
+import { connectKafka } from './config/kafka';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { outboxService } from './infrastructure/container/cart.container';
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cart';
@@ -25,6 +27,9 @@ const start = async () => {
     await connectRedis();
     logger.info('✅ Redis connected');
 
+    await connectKafka();
+    logger.info('✅ Kafka initialized');
+
     // ============================
     // DI SETUP - All Dependencies
     // ============================
@@ -32,9 +37,9 @@ const start = async () => {
     const paymentClient = new PaymentClient();
 
     const cartRepo = new CartRepositoryImpl();
-    const cartCache = new CartCacheRepository();           // ← Use CartCacheRepository
-    const couponRepo = new CouponRepositoryImpl();         // ← New
-    const couponService = new CouponService(couponRepo);   // ← Pass repository
+    const cartCache = new CartCacheRepository();           
+    const couponRepo = new CouponRepositoryImpl();         
+    const couponService = new CouponService(couponRepo);   
 
     const orchestrator = new CartCheckoutOrchestrator(
       orderClient,
@@ -48,6 +53,10 @@ const start = async () => {
     // Start Kafka Consumer
     // ============================
     await startCartConsumer(orchestrator);
+
+    const outboxProcessor = new OutboxProcessor(outboxService);
+    outboxProcessor.start();
+    logger.info('✅ Order Outbox Processor started');
 
     // Start HTTP Server
     app.listen(PORT, () => {

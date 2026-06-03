@@ -15,8 +15,8 @@ export const env = {
   // Email (Nodemailer)
   EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
   EMAIL_PORT: Number(process.env.EMAIL_PORT) || 587,
-  EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASS: process.env.EMAIL_PASS,
+  EMAIL_USER: process.env.EMAIL_USER || 'flashmnisi@gmail.com',
+  EMAIL_PASS: process.env.EMAIL_PASS || 'ncus rnla askp czit',
 
   // Optional: Twilio for SMS
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,

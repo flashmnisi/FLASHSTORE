@@ -5,8 +5,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IMetricDocument extends Document {
   metricType: string;
   value: number;
-  date: Date;
-  dimensions: Record<string, string>;
+  date: string;           // Store as YYYY-MM-DD string
+  dimensions: Record<string, any>;
+  metadata: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,14 +21,19 @@ const metricSchema = new Schema<IMetricDocument>(
     },
     value: { 
       type: Number, 
-      required: true 
+      required: true,
+      default: 0 
     },
     date: { 
-      type: Date, 
+      type: String, 
       required: true, 
       index: true 
     },
     dimensions: { 
+      type: Schema.Types.Mixed, 
+      default: {} 
+    },
+    metadata: { 
       type: Schema.Types.Mixed, 
       default: {} 
     },
@@ -37,8 +43,6 @@ const metricSchema = new Schema<IMetricDocument>(
   }
 );
 
-// Important indexes for time-series queries
-metricSchema.index({ metricType: 1, date: -1 });
-metricSchema.index({ metricType: 1, 'dimensions.categoryId': 1, date: -1 });
+metricSchema.index({ metricType: 1, date: 1 });
 
 export const MetricModel = mongoose.model<IMetricDocument>('Metric', metricSchema);

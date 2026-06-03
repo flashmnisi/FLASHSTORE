@@ -1,3 +1,5 @@
+// apps/cart-service/src/application/interface/pricing.provider.ts
+
 import { CartEntity } from '../../domain/entities/cart.entity';
 
 export interface PricingResult {

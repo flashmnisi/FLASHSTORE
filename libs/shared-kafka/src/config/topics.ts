@@ -12,6 +12,7 @@ export const TOPICS = {
   ORDERS: 'flashstore.orders',
   PAYMENTS: 'flashstore.payments',
   PRODUCTS: 'flashstore.products',
+  CATEGORIES: 'flashstore.categories',
   CARTS: 'flashstore.carts',
   INVENTORY: 'flashstore.inventory',
   NOTIFICATIONS: 'flashstore.notifications',
@@ -48,16 +49,22 @@ export const EVENTS = {
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
   PAYMENT_REFUNDED: 'payment.refunded',
+  PAYMENT_SUCCEEDED:'payment.succeded',
 
-  // ==================== PRODUCT EVENTS ====================
+  // ========== PRODUCT and CATEGORY EVENTS ============
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_DELETED: 'product.deleted',
   PRODUCT_VIEWED: 'product.viewed',
 
+  CATEGORY_CREATED: 'category.created',
+  CATEGORY_UPDATED: 'category.updated',
+  CATEGORY_DELETED: 'category.deleted',
+
   // ==================== CART EVENTS ====================
   CART_UPDATED: 'cart.updated',
   CART_CLEARED: 'cart.cleared',
+  CART_CHECKED_OUT: 'cart.checkedout',
 
   // ==================== NOTIFICATION EVENTS ====================
   NOTIFICATION_SENT: 'notification.sent',
@@ -68,6 +75,11 @@ export const EVENTS = {
 
   // ==================== ANALYTICS EVENTS ====================
   METRIC_GENERATED: 'metric.generated',
+
+  // Search / Indexing Events
+  PRODUCT_INDEXED: 'product.indexed',
+  PRODUCT_REINDEX_REQUESTED: 'product.reindex.requested',
+
 } as const;
 
 // Type exports for better type safety

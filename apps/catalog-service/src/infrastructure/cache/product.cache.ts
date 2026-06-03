@@ -21,23 +21,42 @@ export class ProductCache {
       if (!data) return null;
 
       const parsed = JSON.parse(data);
-      return new ProductEntity(
-        parsed.id,
-        parsed.name,
-        parsed.slug,
-        parsed.description,
-        parsed.price,
-        parsed.currency,
-        parsed.categoryId,
-        parsed.brand,
-        parsed.images,
-        parsed.tags,
-        parsed.inStock,
-        parsed.stockQuantity,
-        parsed.isActive,
-        new Date(parsed.createdAt),
-        new Date(parsed.updatedAt)
-      );
+ return new ProductEntity(
+  parsed.id,
+
+  parsed.name,
+  parsed.slug,
+  parsed.description,
+
+  parsed.price,
+  parsed.currency,
+
+  parsed.categoryId,
+
+  parsed.subCategory,
+
+  parsed.brand,
+
+  parsed.images || [],
+  parsed.tags || [],
+
+  parsed.isFeatured || false,
+  parsed.isHotDeal || false,
+  parsed.isNewArrival || false,
+
+  parsed.discountPercentage || 0,
+
+  parsed.inStock,
+  parsed.stockQuantity,
+
+  parsed.isActive,
+
+  new Date(parsed.createdAt),
+
+  parsed.updatedAt
+    ? new Date(parsed.updatedAt)
+    : undefined
+);
     } catch (error: any) {
       logger.error('Failed to get product from cache', { productId: id, error: error.message });
       return null;

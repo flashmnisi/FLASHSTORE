@@ -1,30 +1,35 @@
-// apps/payment-service/src/presentation/routes/payment.routes.ts
-
 import { Router } from 'express';
-import express from 'express'; // ← Needed for raw body parser
+import express from 'express';
 
 import { protect } from '../../middlewares/auth.middleware';
 
-// Import infrastructure for DI
 import { PaymentRepositoryImpl } from '../../infrastructure/persistence/repositories/payment.repository.impl';
 import { StripeAdapter } from '../../infrastructure/payments/stripe.adaptor';
-import { PaymentProducer } from '../../infrastructure/kafka/payment.producer';
+
+import { OutboxService } from '../../infrastructure/outbox/outbox.service';
+
 import { PaymentService } from '../../application/services/payment.service';
 import { PaymentController } from '../contollers/payment.controller';
+import { OutboxRepository } from '../../infrastructure/outbox/outbox.repository';
 
 const router = Router();
 
 /**
- * Manual Dependency Injection (Clean & Explicit)
+ * ======================
+ * DEPENDENCIES (DI)
+ * ======================
  */
-const repository = new PaymentRepositoryImpl();
+
+const paymentrepository = new PaymentRepositoryImpl();
 const stripeAdapter = new StripeAdapter();
-const producer = new PaymentProducer();
+
+const outboxRepository = new OutboxRepository();
+const outboxService = new OutboxService(outboxRepository);
 
 const paymentService = new PaymentService(
-  repository,
+  paymentrepository,
   stripeAdapter,
-  producer
+  outboxService
 );
 
 const controller = new PaymentController(paymentService);
@@ -33,21 +38,21 @@ const controller = new PaymentController(paymentService);
  * ====================== ROUTES ======================
  */
 
-// Protected: Create a new payment (Saga start)
+// Protected: Create payment
 router.post(
   '/',
   protect,
   controller.processPayment
 );
 
-// Public: Stripe Webhook (MUST be public + raw body)
+// Stripe webhook (raw body required)
 router.post(
   '/webhook',
-  express.raw({ type: 'application/json' }),   // Important for signature verification
+  express.raw({ type: 'application/json' }),
   controller.handleWebhook
 );
 
-// Protected: Get payment details by order ID
+// Get payment
 router.get(
   '/:orderId',
   protect,

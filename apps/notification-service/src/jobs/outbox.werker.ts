@@ -1,5 +1,5 @@
 import logger from '@org/shared-logger';
-import { OutboxModel } from '../infrastructure/persistence/models/outbox.model';
+import { OutboxModel } from '../infrastructure/persistence/database/models/outbox.model';
 import { NotificationService } from '../application/services/notification.service';
 
 export class OutboxWorker {
@@ -38,12 +38,12 @@ export class OutboxWorker {
           logger.info('Outbox event processed successfully', { outboxId: outbox._id });
         } catch (err: any) {
           outbox.status = 'failed';
-          outbox.retryCount = (outbox.retryCount || 0) + 1;
+          outbox.retries = (outbox.retries || 0) + 1;
           await outbox.save();
 
           logger.warn('Outbox event failed', {
             outboxId: outbox._id,
-            retryCount: outbox.retryCount,
+            retryCount: outbox.retries,
             error: err.message,
           });
         }

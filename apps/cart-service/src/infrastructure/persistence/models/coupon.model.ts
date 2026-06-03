@@ -54,7 +54,4 @@ const couponSchema = new Schema<ICoupon>(
   }
 );
 
-// Index for fast lookup
-couponSchema.index({ code: 1 });
-
 export const CouponModel = mongoose.model<ICoupon>('Coupon', couponSchema);

@@ -1,35 +1,15 @@
 // apps/user-service/src/domain/repositories/outbox.repository.ts
 
+import { OutboxEntity } from '../entities/outbox.entity';
+
 export interface IOutboxRepository {
-  /**
-   * Create a new outbox entry
-   */
-  create(outboxData: {
-    topic: string;
-  event: string;
-  payload: any;
-  key?: string;
-  status: 'pending' | 'processed' | 'failed';
-  retries: number;
-  }): Promise<any>;
-
-  /**
-   * Find pending events ready for processing
-   */
-  findPending(limit?: number): Promise<any[]>;
-
-  /**
-   * Mark event as successfully processed
-   */
+  create(outbox: OutboxEntity): Promise<OutboxEntity>;
+  findPending(limit?: number): Promise<OutboxEntity[]>;
+  lockForProcessing(id: string): Promise<OutboxEntity | null>;
   markAsProcessed(id: string): Promise<void>;
-
-  /**
-   * Mark event as failed and update retry count
-   */
-  markAsFailed(id: string, errorMessage: string, retries: number): Promise<void>;
-
-  /**
-   * Lock event for processing (to prevent duplicate processing)
-   */
-  lockForProcessing(id: string): Promise<any | null>;
+  markAsFailed(
+    id: string,
+    errorMessage: string,
+    retries: number
+  ): Promise<void>;
 }

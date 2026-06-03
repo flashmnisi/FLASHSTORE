@@ -13,12 +13,11 @@ import { UserRepositoryImpl } from './infrastructure/persistence/repositories/us
 const userRepository = new UserRepositoryImpl();
 const outboxRepository = new OutboxRepositoryImpl();
 
-// Services - Create instances here
 export const outboxService = new OutboxService(outboxRepository);
-
 export const authService = new AuthService(userRepository, outboxService);
 export const addressService = new AddressService(userRepository);
-
 export const userService = new UserService(userRepository, outboxService);
+
+
 
 logger.info('✅ Dependency Injection Container initialized');

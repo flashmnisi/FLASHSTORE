@@ -20,8 +20,8 @@ export class CartCheckoutOrchestrator {
   constructor(
     private readonly orderClient: IOrderClient,
     private readonly paymentClient: IPaymentClient,
-    private readonly cartRepo: ICartRepository,      // ← Now used
-    private readonly cartCache: ICartCacheRepository, // ← Now used
+    private readonly cartRepo: ICartRepository,      
+    private readonly cartCache: ICartCacheRepository, 
     private readonly couponService: CouponService
   ) {}
 
@@ -182,4 +182,53 @@ export class CartCheckoutOrchestrator {
       });
     }
   }
+
+  /**
+   * 🔥 Restore Cart After Order Cancellation
+   */
+async restoreCartAfterCancellation(
+  userId: string,
+  orderId: string
+) {
+
+  try {
+
+    const snapshot =
+      await this.cartCache.getSnapshot(orderId);
+
+    if (!snapshot) {
+
+      logger.warn('No cart snapshot found', {
+        userId,
+        orderId,
+      });
+
+      return;
+    }
+
+    await this.cartRepo.save(snapshot);
+
+    await this.cartCache.save(snapshot);
+
+    logger.info(
+      'Cart restored after cancellation',
+      {
+        userId,
+        orderId,
+        itemCount: snapshot.items.length,
+      }
+    );
+
+  } catch (error: any) {
+
+    logger.error(
+      'Failed to restore cart',
+      {
+        userId,
+        orderId,
+        error: error.message,
+      }
+    );
+  }
+}
 }

@@ -1,16 +1,34 @@
-import { createConsumer, runConsumer } from '@org/shared-kafka';
+// apps/notification-service/src/infrastructure/kafka/consumer.ts
+
+import {
+  createConsumer,
+  runConsumer,
+  TOPICS,
+  EVENTS,
+} from '@org/shared-kafka';
+
 import { NotificationService } from '../../application/services/notification.service';
+
 import logger from '@org/shared-logger';
 
 export const startNotificationConsumer = async (
   notificationService: NotificationService
 ) => {
-  const groupId = 'notification-service';
+
+  const groupId =
+    'notification-service';
 
   try {
+
+    const topics = [
+      TOPICS.USERS,
+      TOPICS.ORDERS,
+      TOPICS.PAYMENTS,
+    ];
+
     const consumer = createConsumer({
       groupId,
-      topics: ['flashstore.users', 'flashstore.orders', 'flashstore.payments'],
+      topics,
       serviceName: groupId,
     });
 
@@ -18,85 +36,289 @@ export const startNotificationConsumer = async (
       consumer,
       {
         groupId,
-        topics: ['flashstore.users', 'flashstore.orders', 'flashstore.payments'],
+        topics,
         serviceName: groupId,
       },
-      async (message: any) => {
-        logger.info('📥 Notification event received', { 
-          event: message.event 
-        });
+
+      async (event: any) => {
 
         try {
-          switch (message.event) {
-            case 'user.registered':
-              await notificationService.send({
-                userId: message.data.userId,
-                type: 'user.registered',
-                templateName: 'welcome-email',           // ← Required
-                templateData: message.data,              // ← Required
-                title: 'Welcome to Flashstore!',
-                message: `Hello ${message.data.name || 'there'}, welcome to Flashstore!`,
-                channel: 'email',
-              });
+
+          const eventType =
+            event?.event;
+
+          const payload =
+            event?.data || {};
+
+          logger.info(
+            '📥 Notification event received',
+            {
+              eventType,
+              userId: payload.userId,
+              orderId: payload.orderId,
+            }
+          );
+
+          switch (eventType) {
+
+            /**
+             * ==================================
+             * 👤 USER REGISTERED
+             * ==================================
+             */
+
+            case EVENTS.USER_REGISTERED:
+
+              await handleUserRegistered(
+                notificationService,
+                payload
+              );
+
               break;
 
-            case 'order.created':
-              await notificationService.send({
-                userId: message.data.userId,
-                type: 'order.created',
-                templateName: 'order-confirmation',      // ← Required
-                templateData: message.data,
-                title: 'Order Confirmed',
-                message: `Your order #${message.data.orderId} has been created successfully.`,
-                channel: 'email',
-              });
+            /**
+             * ==================================
+             * 📦 ORDER CREATED
+             * ==================================
+             */
+
+            case EVENTS.ORDER_CREATED:
+
+              await handleOrderCreated(
+                notificationService,
+                payload
+              );
+
               break;
 
-            case 'payment.success':
-              await notificationService.send({
-                userId: message.data.userId,
-                type: 'payment.success',
-                templateName: 'payment-success',
-                templateData: message.data,
-                title: 'Payment Successful',
-                message: `Payment for order #${message.data.orderId} was successful.`,
-                channel: 'email',
-              });
+            /**
+             * ==================================
+             * 💳 PAYMENT COMPLETED
+             * ==================================
+             */
+
+            case EVENTS.PAYMENT_COMPLETED:
+
+              await handlePaymentSuccess(
+                notificationService,
+                payload
+              );
+
               break;
 
-            case 'payment.failed':
-              await notificationService.send({
-                userId: message.data.userId,
-                type: 'payment.failed',
-                templateName: 'payment-failed',
-                templateData: message.data,
-                title: 'Payment Failed',
-                message: `Payment for order #${message.data.orderId} has failed. Please try again.`,
-                channel: 'email',
-              });
+            /**
+             * ==================================
+             * ❌ PAYMENT FAILED
+             * ==================================
+             */
+
+            case EVENTS.PAYMENT_FAILED:
+
+              await handlePaymentFailed(
+                notificationService,
+                payload
+              );
+
               break;
 
             default:
-              logger.warn('Unknown event received', { 
-                event: message.event 
-              });
+
+              logger.warn(
+                '⚠️ Unknown notification event',
+                {
+                  eventType,
+                }
+              );
           }
-        } catch (err: any) {
-          logger.error('Failed to process notification event', {
-            event: message.event,
-            error: err.message,
-            userId: message.data?.userId,
-          });
+
+        } catch (error: any) {
+
+          logger.error(
+            '❌ Failed to process notification event',
+            {
+              error: error.message,
+              stack: error.stack,
+            }
+          );
+
+          throw error;
         }
       }
     );
 
-    logger.info('👥 Notification consumer started successfully', { groupId });
+    logger.info(
+      '✅ Notification consumer started successfully',
+      {
+        groupId,
+        topics,
+      }
+    );
 
-  } catch (err: any) {
-    logger.error('Failed to start notification consumer', {
-      error: err.message,
-      groupId,
-    });
+  } catch (error: any) {
+
+    logger.error(
+      '❌ Failed to start notification consumer',
+      {
+        error: error.message,
+      }
+    );
+
+    throw error;
   }
 };
+
+/**
+ * ============================================
+ * 👤 USER REGISTERED
+ * ============================================
+ */
+
+async function handleUserRegistered(
+  service: NotificationService,
+  payload: any
+) {
+
+  if (!payload.userId) {
+    return;
+  }
+
+  await service.send({
+    userId: payload.userId,
+
+    type: EVENTS.USER_REGISTERED,
+
+    templateName: 'welcome-email',
+
+    templateData: payload,
+
+    title: 'Welcome to FlashStore!',
+
+    message:
+      `Hello ${payload.name || 'there'}, welcome to FlashStore!`,
+
+    channel: 'email',
+  });
+}
+
+/**
+ * ============================================
+ * 📦 ORDER CREATED
+ * ============================================
+ */
+
+async function handleOrderCreated(
+  service: NotificationService,
+  payload: any
+) {
+
+  if (!payload.userId) {
+
+    logger.warn(
+      '⚠️ order.created missing userId'
+    );
+
+    return;
+  }
+
+  const email =
+    payload.email ||
+    payload.userEmail;
+
+  if (!email) {
+
+    logger.warn(
+      '⚠️ order.created missing email',
+      {
+        orderId: payload.orderId,
+      }
+    );
+
+    return;
+  }
+
+  await service.send({
+    userId: payload.userId,
+
+    type: EVENTS.ORDER_CREATED,
+
+    templateName: 'order-confirmation',
+
+    templateData: {
+      ...payload,
+      email,
+    },
+
+    title: 'Order Confirmed',
+
+    message:
+      `Your order #${payload.orderId} has been created successfully.`,
+
+    channel: 'email',
+  });
+}
+
+/**
+ * ============================================
+ * 💳 PAYMENT SUCCESS
+ * ============================================
+ */
+
+async function handlePaymentSuccess(
+  service: NotificationService,
+  payload: any
+) {
+
+  if (!payload.userId) {
+    return;
+  }
+
+  await service.send({
+    userId: payload.userId,
+
+    type: EVENTS.PAYMENT_COMPLETED,
+
+    templateName: 'payment-success',
+
+    templateData: payload,
+
+    title: 'Payment Successful',
+
+    message:
+      `Payment for order #${payload.orderId} was successful.`,
+
+    channel: 'email',
+  });
+}
+
+/**
+ * ============================================
+ * ❌ PAYMENT FAILED
+ * ============================================
+ */
+
+async function handlePaymentFailed(
+  service: NotificationService,
+  payload: any
+) {
+
+  if (!payload.userId) {
+    return;
+  }
+
+  await service.send({
+    userId: payload.userId,
+
+    type: EVENTS.PAYMENT_FAILED,
+
+    templateName: 'payment-failed',
+
+    templateData: payload,
+
+    title: 'Payment Failed',
+
+    message:
+      `Payment for order #${payload.orderId} has failed.`,
+
+    channel: 'email',
+  });
+}

@@ -10,6 +10,8 @@ import { initKafka } from './config/kafka';
 import { connectRedis } from './config/radis';
 
 import app from './app';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { outboxService } from './container';
 
 const PORT = process.env.PORT || 3002;
 
@@ -28,6 +30,10 @@ const startServer = async () => {
     // 3. Initialize Kafka
     await initKafka();
     logger.info('✅ Kafka initialized');
+
+    const outboxProcessor = new OutboxProcessor(outboxService);
+    outboxProcessor.start();
+    logger.info('✅ Order Outbox Processor started');
 
     // 4. Start Express Server
     app.listen(PORT, () => {

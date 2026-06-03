@@ -2,51 +2,81 @@
 
 import { CategoryEntity } from '../../domain/entities/category.entity';
 import { ICategoryRepository } from '../../domain/repositories/category.repository';
+import { OutboxService } from '../../infrastructure/outbox/outbox.service';
+
 import { CategoryDto } from '../dtos/category.dto';
-import { CatalogProducer } from '../../infrastructure/kafka/producer/catalog.producer';
+
 import logger from '@org/shared-logger';
+import { EVENTS, TOPICS } from '@org/shared-kafka';
 
 export class CategoryService {
   constructor(
     private readonly categoryRepository: ICategoryRepository,
-    private readonly producer: CatalogProducer
+    private readonly outboxService: OutboxService
   ) {}
 
   async createCategory(dto: CategoryDto): Promise<CategoryEntity> {
     const category = new CategoryEntity(
       '',
       dto.name,
-      '', // Slug will be generated inside entity or use case
+      dto.slug,
       dto.description,
       dto.parentId,
       dto.imageUrl
     );
 
     const created = await this.categoryRepository.create(category);
-    await this.producer.categoryCreated(created);
 
-    logger.info('Category created', { 
+    await this.outboxService.write({
+      topic: TOPICS.CATEGORIES,
+      event: EVENTS.CATEGORY_CREATED,
+      data: created,
+      key: created.id,
+    });
+
+    logger.info('✅ Category created and queued in outbox', { 
       categoryId: created.id, 
       name: created.name 
     });
+
     return created;
   }
 
   async updateCategory(id: string, dto: Partial<CategoryDto>): Promise<CategoryEntity> {
     const updated = await this.categoryRepository.update(id, dto);
-    if (!updated) throw new Error('Category not found');
 
-    await this.producer.categoryUpdated(updated);
-    logger.info('Category updated', { categoryId: id });
+    if (!updated) {
+      throw new Error('Category not found');
+    }
+
+    await this.outboxService.write({
+      topic: TOPICS.CATEGORIES,
+      event: EVENTS.CATEGORY_UPDATED,
+      data: updated,
+      key: updated.id,
+    });
+
+    logger.info('✅ Category updated and queued in outbox', { 
+      categoryId: id 
+    });
+
     return updated;
   }
 
   async deleteCategory(id: string): Promise<boolean> {
     const deleted = await this.categoryRepository.delete(id);
+
     if (deleted) {
-      await this.producer.categoryDeleted(id);
-      logger.info('Category deleted', { categoryId: id });
+      await this.outboxService.write({
+        topic: TOPICS.CATEGORIES,
+        event: EVENTS.CATEGORY_DELETED,
+        data: { categoryId: id },
+        key: id,
+      });
+
+      logger.info('🗑️ Category deleted and queued in outbox', { categoryId: id });
     }
+
     return deleted;
   }
 

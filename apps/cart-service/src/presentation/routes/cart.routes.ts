@@ -2,31 +2,50 @@ import { Router } from 'express';
 import { CartController } from '../controllers/cart.controller';
 import { validate, validators } from '../../utils/validators';
 import { protect } from '../../middleware/auth.middleware';
+import { cartService } from '../../infrastructure/container/cart.container';
 
 const router = Router();
 
-/**
- * =============================
- * Cart Routes
- * =============================
- */
+// Create controller with injected service
+const controller = new CartController(cartService);
 
-// Add item to cart
-router.post('/items', protect, validate(validators.addToCart), CartController.prototype.addToCart);
+router.post(
+  '/items',
+  protect,
+  validate(validators.addToCart),
+  controller.addToCart
+);
 
-// Get user's cart
-router.get('/', protect, CartController.prototype.getCart);
+router.get(
+  '/',
+  protect,
+  controller.getCart
+);
 
-// Update item quantity
-router.put('/items/:productId', protect, validate(validators.updateCartItem), CartController.prototype.updateCartItem);
+router.put(
+  '/items/:productId',
+  protect,
+  validate(validators.updateCartItem),
+  controller.updateCartItem
+);
 
-// Remove item from cart
-router.delete('/items/:productId', protect, CartController.prototype.removeFromCart);
+router.delete(
+  '/items/:productId',
+  protect,
+  controller.removeFromCart
+);
 
-// Clear entire cart
-router.delete('/', protect, CartController.prototype.clearCart);
+router.delete(
+  '/',
+  protect,
+  controller.clearCart
+);
 
-// Checkout cart (with optional coupon)
-router.post('/checkout', protect, validate(validators.checkout), CartController.prototype.checkout);
+router.post(
+  '/checkout',
+  protect,
+  validate(validators.checkout),
+  controller.checkout
+);
 
 export default router;

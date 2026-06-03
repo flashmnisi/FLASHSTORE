@@ -2,61 +2,157 @@
 
 import { ProductEntity } from '../entities/product.entity';
 
+export interface ProductSearchCriteria {
+  query?: string;
+
+  // Category
+  categoryId?: string;
+  subCategory?: string;
+
+  // Brand
+  brand?: string;
+
+  // Tags
+  tags?: string[];
+
+  // Marketing flags
+  isFeatured?: boolean;
+  isHotDeal?: boolean;
+  isNewArrival?: boolean;
+
+  // Price filters
+  minPrice?: number;
+  maxPrice?: number;
+
+  // Inventory
+  inStock?: boolean;
+
+  // Sorting
+  sort?:
+    | 'relevance'
+    | 'price_asc'
+    | 'price_desc'
+    | 'newest'
+    | 'oldest';
+
+  // Pagination
+  page?: number;
+  limit?: number;
+}
+
+export interface ProductSearchResult {
+  products: ProductEntity[];
+
+  total: number;
+
+  page: number;
+  limit: number;
+
+  totalPages: number;
+}
+
 export interface IProductRepository {
   /**
-   * Create a new product
+   * =========================================
+   * CREATE PRODUCT
+   * =========================================
    */
-  create(product: ProductEntity): Promise<ProductEntity>;
+  create(
+    product: ProductEntity
+  ): Promise<ProductEntity>;
 
   /**
-   * Find product by ID
+   * =========================================
+   * FIND BY ID
+   * =========================================
    */
-  findById(id: string): Promise<ProductEntity | null>;
+  findById(
+    id: string
+  ): Promise<ProductEntity | null>;
 
   /**
-   * Find product by slug
+   * =========================================
+   * FIND BY SLUG
+   * =========================================
    */
-  findBySlug(slug: string): Promise<ProductEntity | null>;
+  findBySlug(
+    slug: string
+  ): Promise<ProductEntity | null>;
 
   /**
-   * Update product
+   * =========================================
+   * UPDATE PRODUCT
+   * =========================================
    */
-  update(id: string, product: Partial<ProductEntity>): Promise<ProductEntity | null>;
+  update(
+    id: string,
+    product: Partial<ProductEntity>
+  ): Promise<ProductEntity | null>;
 
   /**
-   * Delete product (soft delete - recommended)
+   * =========================================
+   * SOFT DELETE PRODUCT
+   * =========================================
    */
-  delete(id: string): Promise<boolean>;
+  delete(
+    id: string
+  ): Promise<boolean>;
 
   /**
-   * Search products with filters and pagination
+   * =========================================
+   * SEARCH PRODUCTS
+   * =========================================
    */
-  search(criteria: {
-    query?: string;
-    categoryId?: string;
-    brand?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    tags?: string[];
-    inStock?: boolean;
-    sort?: 'relevance' | 'price_asc' | 'price_desc' | 'newest';
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    products: ProductEntity[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }>;
+  search(
+    criteria: ProductSearchCriteria
+  ): Promise<ProductSearchResult>;
 
   /**
-   * Update stock quantity
+   * =========================================
+   * FIND FEATURED PRODUCTS
+   * =========================================
    */
-  updateStock(productId: string, quantity: number): Promise<ProductEntity | null>;
+  findFeatured(): Promise<ProductEntity[]>;
 
   /**
-   * Check if product exists
+   * =========================================
+   * FIND HOT DEAL PRODUCTS
+   * =========================================
    */
-  exists(id: string): Promise<boolean>;
+  findHotDeals(): Promise<ProductEntity[]>;
+
+  /**
+   * =========================================
+   * FIND NEW ARRIVAL PRODUCTS
+   * =========================================
+   */
+  findNewArrivals(): Promise<ProductEntity[]>;
+
+  /**
+   * =========================================
+   * FIND PRODUCTS BY CATEGORY
+   * =========================================
+   */
+  findByCategory(
+    categoryId: string
+  ): Promise<ProductEntity[]>;
+
+  /**
+   * =========================================
+   * UPDATE STOCK
+   * =========================================
+   */
+  updateStock(
+    productId: string,
+    quantity: number
+  ): Promise<ProductEntity | null>;
+
+  /**
+   * =========================================
+   * CHECK IF PRODUCT EXISTS
+   * =========================================
+   */
+  exists(
+    id: string
+  ): Promise<boolean>;
 }

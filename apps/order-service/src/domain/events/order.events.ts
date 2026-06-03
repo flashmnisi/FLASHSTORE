@@ -1,4 +1,4 @@
-//import { BaseEvent } from '@org/shared-kafka';
+// apps/order-service/src/domain/events/order.events.ts
 
 import { BaseEvent } from "@org/shared-kafka";
 
@@ -8,13 +8,24 @@ import { BaseEvent } from "@org/shared-kafka";
 export interface OrderCreatedPayload {
   orderId: string;
   userId: string;
+  
+  // Added for Notification Service
+  userEmail: string;
+  customerName?: string;
+
   items: {
     productId: string;
+    name?: string;
     quantity: number;
     price: number;
   }[];
+  
   totalAmount: number;
   currency: string;
+  
+  // Optional useful fields
+  shippingAddress?: any;
+  paymentMethod?: string;
 }
 
 export type OrderCreatedEvent = BaseEvent<OrderCreatedPayload>;
@@ -39,6 +50,7 @@ export interface OrderStatusUpdatedPayload {
   userId: string;
   previousStatus: string;
   newStatus: string;
+  // Optional: Add userEmail here too if needed in future
 }
 
 export type OrderStatusUpdatedEvent = BaseEvent<OrderStatusUpdatedPayload>;

@@ -1,43 +1,144 @@
-// // apps/analytics-service/src/container.ts
-
-
+// apps/analytics-service/src/container.ts
 
 import logger from '@org/shared-logger';
-import { TrackOrderCreatedUseCase } from './application/use-cases/track-order-created.usecase';
-import { TrackPaymentSuccessUseCase } from './application/use-cases/track-payment-success.usecase';
-import { TrackProductViewUseCase } from './application/use-cases/track-product-view.usecase';
-import { TrackUserRegistrationUseCase } from './application/use-cases/track-user-registration.usecase';
-import { AnalyticsConsumer } from './infrastructure/kafka/consumers/consumer';
+
+// ====================== REPOSITORIES ======================
+
 import { AnalyticsRepositoryImpl } from './infrastructure/persistance/mongoose/repositories/analytics.repository.impl';
+
+import { AnalyticsModel } from './infrastructure/persistance/mongoose/models/analytics.model';
+import { MetricModel } from './infrastructure/persistance/mongoose/models/metric.model';
+
+// ====================== SERVICES ======================
+
 import { AnalyticsService } from './application/services/analytics.service';
 import { MetricsService } from './application/services/metrics.service';
 import { DashboardService } from './application/services/dashboard.service';
-//import { EventLogRepositoryImpl } from './infrastructure/persistance/mongoose/repositories/event-log.repository.impl';
-//import { AnalyticsConsumer } from './infrastructure/kafka/consumers/analytics.consumer';
 
+// ====================== CONSUMER ======================
 
-// Repositories
-const analyticsRepository = new AnalyticsRepositoryImpl();
-//const eventLogRepository = new EventLogRepositoryImpl();
-// Use cases
-const trackUserRegistration = new TrackUserRegistrationUseCase(analyticsRepository);
-const trackOrderCreated = new TrackOrderCreatedUseCase(analyticsRepository);
-const trackPaymentSuccess = new TrackPaymentSuccessUseCase(analyticsRepository);
-const trackProductView = new TrackProductViewUseCase(analyticsRepository);
+import { AnalyticsConsumer } from './infrastructure/kafka/consumers/consumer';
 
-// SINGLE consumer ONLY
-export const analyticsConsumer = new AnalyticsConsumer(
-  trackUserRegistration,
-  trackOrderCreated,
-  trackPaymentSuccess,
-  trackProductView
+// ====================== USE CASES ======================
+
+import { TrackUserRegistrationUseCase } from './application/use-cases/track-user-registration.usecase';
+
+import { TrackOrderCreatedUseCase } from './application/use-cases/track-order-created.usecase';
+
+import { TrackPaymentSuccessUseCase } from './application/use-cases/track-payment-success.usecase';
+
+import { TrackProductViewUseCase } from './application/use-cases/track-product-view.usecase';
+
+// NEW USE CASES
+
+import { TrackProductEventUseCase } from './application/use-cases/track-product-event.usecase';
+
+import { TrackCategoryEventUseCase } from './application/use-cases/track-category-event.usecase';
+
+import { TrackCartEventUseCase } from './application/use-cases/track-cart-event.usecase';
+
+import { TrackInventoryEventUseCase } from './application/use-cases/track-inventory-event.usecase';
+
+// ======================================================
+// REPOSITORIES
+// ======================================================
+
+const analyticsRepository =
+  new AnalyticsRepositoryImpl(
+    AnalyticsModel,
+    MetricModel
+  );
+
+// ======================================================
+// USE CASES
+// ======================================================
+
+const trackUserRegistration =
+  new TrackUserRegistrationUseCase(
+    analyticsRepository
+  );
+
+const trackOrderCreated =
+  new TrackOrderCreatedUseCase(
+    analyticsRepository
+  );
+
+const trackPaymentSuccess =
+  new TrackPaymentSuccessUseCase(
+    analyticsRepository
+  );
+
+const trackProductView =
+  new TrackProductViewUseCase(
+    analyticsRepository
+  );
+
+// ======================================================
+// NEW ANALYTICS USE CASES
+// ======================================================
+
+const trackProductEvent =
+  new TrackProductEventUseCase(
+    analyticsRepository
+  );
+
+const trackCategoryEvent =
+  new TrackCategoryEventUseCase(
+    analyticsRepository
+  );
+
+const trackCartEvent =
+  new TrackCartEventUseCase(
+    analyticsRepository
+  );
+
+const trackInventoryEvent =
+  new TrackInventoryEventUseCase(
+    analyticsRepository
+  );
+
+// ======================================================
+// CONSUMER
+// ======================================================
+
+export const analyticsConsumer =
+  new AnalyticsConsumer(
+    trackUserRegistration,
+    trackOrderCreated,
+    trackPaymentSuccess,
+    trackProductView,
+    trackProductEvent,
+    trackCategoryEvent,
+    trackCartEvent,
+    trackInventoryEvent
+  );
+
+// ======================================================
+// SERVICES
+// ======================================================
+
+export const analyticsService =
+  new AnalyticsService(
+    analyticsRepository
+  );
+
+export const metricsService =
+  new MetricsService(
+    analyticsRepository
+  );
+
+export const dashboardService =
+  new DashboardService(
+    metricsService
+  );
+
+// ======================================================
+// LOGGER
+// ======================================================
+
+logger.info(
+  '✅ Analytics Service Container initialized successfully'
 );
-
-export const analyticsService = new AnalyticsService(analyticsRepository);
-export const metricsService = new MetricsService(analyticsRepository);
-export const dashboardService = new DashboardService(metricsService);
-
-logger.info('✅ Analytics Service Container initialized successfully');
 // import logger from '@org/shared-logger';
 
 // // ====================== REPOSITORIES ======================

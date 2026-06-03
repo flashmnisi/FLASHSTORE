@@ -5,11 +5,15 @@ import { OrderRepositoryImpl } from "../../infrastructure/persistance/repositori
 import { extractUser } from "../../middlewares/auth.middleware";
 import validators from "../../utils/validators";
 import { OrderController } from "../controllers/order.controller";
+import { OutboxService } from "../../infrastructure/outbox/outbox.service";
+import { OutboxRepository } from "../../infrastructure/outbox/outbox.repository";
 
 const router = Router();
 
+const outboxRepository = new OutboxRepository();
 const orderRepository = new OrderRepositoryImpl();
-const orderService = new OrderService(orderRepository);
+ const outboxService = new OutboxService(outboxRepository);
+const orderService = new OrderService(orderRepository,outboxService);
 const controller = new OrderController(orderService);
 
 // Routes

@@ -7,8 +7,8 @@ import logger from '@org/shared-logger';
 
 import { connectDatabase } from './config/database';
 import { initKafka } from './config/kafka';
-import { startOutboxProcessor } from './infrastructure/outbox/outbox.processor';
-import { paymentConsumer } from './container';
+import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
+import { outboxService, paymentConsumer } from './container';
 
 import app from './app';
 
@@ -27,8 +27,13 @@ const startServer = async () => {
     logger.info('✅ Kafka client initialized');
 
     // 3. Start Outbox Processor (reliable event delivery)
-    startOutboxProcessor();
-    logger.info('✅ Outbox Processor started');
+   // create processor
+const outboxProcessor = new OutboxProcessor(outboxService);
+
+// start processor
+outboxProcessor.start();
+
+    logger.info('✅ Order Outbox Processor started');
 
     // 4. Start Kafka Consumer (listens to Order Service events)
     await paymentConsumer.start();

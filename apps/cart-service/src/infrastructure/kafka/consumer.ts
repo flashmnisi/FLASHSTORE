@@ -1,64 +1,144 @@
-import { createConsumer } from '@org/shared-kafka';
+// apps/cart-service/src/infrastructure/kafka/consumer.ts
+
+import {
+  createConsumer,
+  runConsumer,
+  TOPICS,
+  EVENTS,
+} from '@org/shared-kafka';
+
 import { CartCheckoutOrchestrator } from '../checkout/cart-checkout.orchestrator';
 import logger from '@org/shared-logger';
 
 export const startCartConsumer = async (
   orchestrator: CartCheckoutOrchestrator
 ) => {
+  const groupId = 'cart-service-group';
+
   try {
+
     const consumer = createConsumer({
-      groupId: 'cart-service-group',
-      serviceName: 'cart-service',           // ← Required
-      topics: ['payment.completed', 'payment.failed'],
+      groupId,
+      serviceName: 'cart-service',
+
+      // ✅ SUBSCRIBE TO TOPICS
+      topics: [
+        TOPICS.PAYMENTS,
+        TOPICS.ORDERS,
+      ],
     });
 
-    await consumer.run({
-      eachMessage: async ({ topic, message }) => {
+    await runConsumer(
+      consumer,
+      {
+        groupId,
+        topics: [
+          TOPICS.PAYMENTS,
+          TOPICS.ORDERS,
+        ],
+        serviceName: 'cart-service',
+      },
+
+      async (message: any) => {
         try {
-          if (!message.value) return;
 
-          const event = JSON.parse(message.value.toString());
+          const eventType = message?.event;
+          const data = message?.data || {};
 
-          logger.info('📥 Cart consumer received event', { 
-            topic, 
-            event: event.event 
+          logger.info('📥 Cart consumer received event', {
+            event: eventType,
+            orderId: data.orderId,
+            userId: data.userId,
           });
 
-          switch (topic) {
-            case 'payment.completed':
-              if (event.data?.userId) {
+          switch (eventType) {
+
+            /**
+             * ====================================
+             * 💳 PAYMENT EVENTS
+             * ====================================
+             */
+
+            case EVENTS.PAYMENT_COMPLETED:
+
+              logger.info('💰 Processing payment.completed', {
+                orderId: data.orderId,
+              });
+
+              if (data.userId && data.orderId) {
+
                 await orchestrator.handlePaymentSuccess(
-                  event.data.userId,
-                  event.data.orderId || ''   // ← Pass orderId if available
+                  data.userId,
+                  data.orderId
                 );
               }
+
               break;
 
-            case 'payment.failed':
-              if (event.data?.orderId) {
-                await orchestrator.handlePaymentFailure(event.data.orderId);
+            case EVENTS.PAYMENT_FAILED:
+
+              logger.warn('❌ Processing payment.failed', {
+                orderId: data.orderId,
+              });
+
+              if (data.orderId) {
+
+                await orchestrator.handlePaymentFailure(
+                  data.orderId
+                );
               }
+
+              break;
+
+            /**
+             * ====================================
+             * 📦 ORDER EVENTS
+             * ====================================
+             */
+
+            case EVENTS.ORDER_CANCELLED:
+
+              logger.info('🚫 Processing order.cancelled', {
+                orderId: data.orderId,
+              });
+
+              if (data.userId) {
+
+                await orchestrator.restoreCartAfterCancellation?.(
+                  data.userId,
+                  data.orderId
+                );
+              }
+
               break;
 
             default:
-              logger.warn('Unhandled event in cart consumer', { topic });
-          }
-        } catch (error: any) {
-          logger.error('Failed to process cart event', {
-            topic,
-            error: error.message,
-          });
-        }
-      },
-    });
 
-    logger.info('🚀 Cart Kafka consumer started successfully', { 
-      groupId: 'cart-service-group' 
-    });
+              logger.warn('⚠️ Unhandled cart event', {
+                event: eventType,
+              });
+          }
+
+        } catch (error: any) {
+
+          logger.error('❌ Failed to process cart event', {
+            error: error.message,
+            stack: error.stack,
+          });
+
+          throw error;
+        }
+      }
+    );
+
+    logger.info('🚀 Cart Kafka consumer started successfully');
 
   } catch (error: any) {
-    logger.error('Failed to start Cart Kafka consumer', {
+
+    logger.error('❌ Failed to start cart consumer', {
       error: error.message,
     });
+
+    throw error;
   }
 };

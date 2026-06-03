@@ -1,24 +1,34 @@
+// apps/cart-service/src/shared/idempotency/idempotency.service.ts
+
 import logger from '@org/shared-logger';
-import redis from '../../infrastructure/cache/redis.client';
+import { getRedis } from '@org/shared-redis';
 
 const DEFAULT_TTL = 60 * 10; // 10 minutes
 const LOCK_TTL = 30;         // 30 seconds
 
 export class IdempotencyService {
+  private redisClient: any = null;
+
+  private async getClient() {
+    if (!this.redisClient) {
+      this.redisClient = await getRedis();
+    }
+    return this.redisClient;
+  }
 
   private buildKey(key: string): string {
     return `idempotency:${key}`;
   }
 
   /**
-   * 🔒 Acquire distributed lock - ioredis syntax (type-safe)
+   * 🔒 Acquire distributed lock
    */
   async acquireLock(key: string): Promise<boolean> {
     const lockKey = `${this.buildKey(key)}:lock`;
 
     try {
-      // Explicitly cast to bypass wrong type definitions
-      const result = await (redis as any).set(
+      const client = await this.getClient();
+      const result = await client.set(
         lockKey, 
         'locked', 
         'NX', 
@@ -42,7 +52,8 @@ export class IdempotencyService {
   async releaseLock(key: string): Promise<void> {
     const lockKey = `${this.buildKey(key)}:lock`;
     try {
-      await redis.del(lockKey);
+      const client = await this.getClient();
+      await client.del(lockKey);
     } catch (error: any) {
       logger.warn('Failed to release lock', { lockKey });
     }
@@ -53,7 +64,8 @@ export class IdempotencyService {
    */
   async getResult<T = any>(key: string): Promise<T | null> {
     try {
-      const data = await redis.get(this.buildKey(key));
+      const client = await this.getClient();
+      const data = await client.get(this.buildKey(key));
       if (!data) return null;
 
       return JSON.parse(data) as T;
@@ -68,7 +80,8 @@ export class IdempotencyService {
    */
   async storeResult(key: string, value: any, ttl = DEFAULT_TTL): Promise<void> {
     try {
-      await redis.set(this.buildKey(key), JSON.stringify(value), 'EX', ttl);
+      const client = await this.getClient();
+      await client.set(this.buildKey(key), JSON.stringify(value), 'EX', ttl);
     } catch (error: any) {
       logger.error('Failed to store idempotency result', { key });
     }

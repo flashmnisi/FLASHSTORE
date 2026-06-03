@@ -111,6 +111,7 @@ async login(dto: any) {
 
   async publishEvent(event: string, payload: any): Promise<void> {
     await this.outboxService.write({
+      topic:TOPICS.AUTH,
       event,
       data: payload,
       key: payload.userId || 'system',

@@ -99,30 +99,28 @@ services:
 
    command: >
     bash -c "
-      echo '⏳ Waiting for Kafka broker...';
-      sleep 35;
+    echo '⏳ Waiting for Kafka broker...';
+    sleep 35;
 
-      echo '🚀 Creating FlashStore Kafka topics...';
+    echo '🚀 Creating FlashStore Kafka topics...';
 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.users --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.auth --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.orders --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.payments --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.products --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.categories --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.carts --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.inventory --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
-    kafka-topics.sh --create --if-not-exists --topic flashstore.notifications --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 
-    kafka-topics.sh --create --if-not-exists --topic flashstore.analytics --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
-    kafka-topics.sh --create --if-not-exists --topic flashstore.search --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1
+    kafka-topics.sh --create --if-not-exists --topic flashstore.users --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.auth --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.orders --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.payments --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.products --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.categories --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.carts --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.inventory --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.notifications --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.analytics --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 &&
+    kafka-topics.sh --create --if-not-exists --topic flashstore.search --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1;
 
-      echo '✅ All FlashStore Kafka topics created successfully!';
+    echo '✅ All FlashStore Kafka topics created successfully!';
 
-      kafka-topics.sh \
-        --bootstrap-server kafka:9092 \ 
-        --list;
+    kafka-topics.sh --bootstrap-server kafka:9092 --list;
 
-      sleep infinity
+    sleep infinity
     "
   # ==================== Gateway (Nginx + Proxy) ====================
   gateway:
@@ -320,6 +318,29 @@ services:
       PORT: 3006
       KAFKA_BROKERS: kafka:9092
       MONGO_URI: mongodb://mongo:27017/flashstore
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_started
+      redis:
+       condition: service_healthy
+    networks:
+      - flashstore-net
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/inventory-service.Dockerfile
+    container_name: flashstore-inventory-service
+    environment:
+     NODE_ENV: production
+     PORT: 3008
+     KAFKA_BROKERS: kafka:9092
+     MONGO_URI: mongodb://mongo:27017/flashstore
     depends_on:
       mongo:
         condition: service_healthy

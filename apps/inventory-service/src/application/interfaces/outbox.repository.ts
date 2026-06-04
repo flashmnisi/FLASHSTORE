@@ -1,0 +1,27 @@
+// apps/inventory-service/src/infrastructure/outbox/outbox.repository.ts
+
+import { OutboxEntity } from '../../infrastructure/outbox/outbox.entity';
+
+export interface IOutboxRepository {
+  create(
+    outbox: OutboxEntity
+  ): Promise<OutboxEntity>;
+
+  findPending(
+    limit?: number
+  ): Promise<OutboxEntity[]>;
+
+  lockForProcessing(
+    id: string
+  ): Promise<OutboxEntity | null>;
+
+  markAsProcessed(
+    id: string
+  ): Promise<void>;
+
+  markAsFailed(
+    id: string,
+    errorMessage: string,
+    retries: number
+  ): Promise<void>;
+}

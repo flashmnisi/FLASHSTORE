@@ -72,6 +72,10 @@ export const EVENTS = {
 
   // ==================== INVENTORY EVENTS ====================
   STOCK_UPDATED: 'inventory.stock.updated',
+  STOCK_RESERVED: 'inventory.stock.reversed',
+  STOCK_RELEASED: 'inventory.stock.released',
+  STOCK_DEDUCTED: 'inventory.stock.deducted',
+  STOCK_ADJUSTED: 'inventory.stock.adjust',
 
   // ==================== ANALYTICS EVENTS ====================
   METRIC_GENERATED: 'metric.generated',

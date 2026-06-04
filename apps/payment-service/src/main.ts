@@ -33,7 +33,7 @@ const outboxProcessor = new OutboxProcessor(outboxService);
 // start processor
 outboxProcessor.start();
 
-    logger.info('✅ Order Outbox Processor started');
+    logger.info('✅ Payment Outbox Processor started');
 
     // 4. Start Kafka Consumer (listens to Order Service events)
     await paymentConsumer.start();

@@ -1,3 +1,5 @@
+//libs/shared-kafka/src/messaging/subscribe.ts
+
 import { EventPipeline } from '../pipeline/compose';
 import { createConsumer, runConsumer } from '../client/consumer';
 import { dlqMiddleware } from '../pipeline/middlewares/dlq.middleware';

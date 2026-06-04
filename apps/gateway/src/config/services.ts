@@ -12,6 +12,7 @@ export const services = {
   analytics: env.ANALYTICS_SERVICE_URL,
   search: env.SEARCH_SERVICE_URL,
   notification: env.NOTIFICATION_SERVICE_URL,
+  inventory: env.INENTORY_SERVICE_URL
 } as const;
 
 export type ServiceKey = keyof typeof services;
@@ -38,4 +39,5 @@ export const healthCheckPaths = {
   payment: '/health',
   analytics: '/health',
   search: '/health',
+  inventory: '/health'
 } as const;

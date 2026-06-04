@@ -20,6 +20,7 @@ export default {
   ANALYTICS_SERVICE_URL: process.env.ANALYTICS_SERVICE_URL || 'http://analytics-service:3006',
   SEARCH_SERVICE_URL: process.env.SEARCH_SERVICE_URL || 'http://search-service:4005',
   NOTIFICATION_SERVICE_URL: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3007',
+  INENTORY_SERVICE_URL: process.env.INVENTORY_SERVICE_URL || 'http://notification-service:3008',
 
   // =========================
   // SECURITY

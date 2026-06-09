@@ -1,138 +1,86 @@
 // apps/search-service/src/infrastructure/kafka/consumer.ts
 
 import {
-  createConsumer,
-  runConsumer,
+  subscribe,
   TOPICS,
   EVENTS,
 } from '@org/shared-kafka';
 
 import logger from '@org/shared-logger';
-
-import { handleProductEvent } from './handler/product-index.handler';
+import { CategoryEventHandler } from './handler/category-event.handler';
+import { ProductEventHandler } from './handler/product-event.handler';
 
 export const startSearchConsumer = async () => {
 
-  const groupId = 'search-service-group';
+  const productEventHandler =
+    new ProductEventHandler();
 
-  try {
+  const categoryEventHandler =
+    new CategoryEventHandler();
 
-    const consumer = createConsumer({
-      groupId,
+  /**
+   * =========================
+   * PRODUCTS
+   * =========================
+   */
+
+  await subscribe(
+    {
+      topics: [TOPICS.PRODUCTS],
+      groupId: 'search-service',
       serviceName: 'search-service',
+    },
+    async (message: any) => {
 
-      topics: [
-        TOPICS.PRODUCTS,
-        TOPICS.CATEGORIES,
-      ],
-    });
+      switch (message.event) {
 
-    logger.info('📥 Starting Search Kafka Consumer', {
-      groupId,
-      topics: [
-        TOPICS.PRODUCTS,
-        TOPICS.CATEGORIES,
-      ],
-    });
+        case EVENTS.PRODUCT_CREATED:
 
-    await runConsumer(
-      consumer,
-      {
-        groupId,
-        serviceName: 'search-service',
+        case EVENTS.PRODUCT_UPDATED:
 
-        topics: [
-          TOPICS.PRODUCTS,
-          TOPICS.CATEGORIES,
-        ],
-      },
+        case EVENTS.PRODUCT_DELETED:
 
-      async (message: any) => {
+          await productEventHandler.handle(
+            message
+          );
 
-        try {
-
-          const event =
-            typeof message === 'string'
-              ? JSON.parse(message)
-              : message;
-
-          const eventType = event.event;
-          const data = event.data || {};
-
-          logger.info('📥 Search consumer received event', {
-            event: eventType,
-            productId: data.productId,
-            categoryId: data.categoryId,
-          });
-
-          switch (eventType) {
-
-            // =====================================
-            // PRODUCT EVENTS
-            // =====================================
-
-            case EVENTS.PRODUCT_CREATED:
-
-            case EVENTS.PRODUCT_UPDATED:
-
-            case EVENTS.PRODUCT_DELETED:
-
-              await handleProductEvent(event);
-
-              logger.info('✅ Product search index updated', {
-                event: eventType,
-                productId: data.productId,
-              });
-
-              break;
-
-            // =====================================
-            // CATEGORY EVENTS
-            // =====================================
-
-            case EVENTS.CATEGORY_CREATED:
-
-            case EVENTS.CATEGORY_UPDATED:
-
-            case EVENTS.CATEGORY_DELETED:
-
-              logger.info('📂 Category event received in search-service', {
-                event: eventType,
-                categoryId: data.categoryId,
-              });
-
-              // optional:
-              // update category search metadata
-
-              break;
-
-            default:
-
-              logger.warn('⚠️ Unhandled event in search-service', {
-                event: eventType,
-              });
-          }
-
-        } catch (error: any) {
-
-          logger.error('❌ Failed to process Kafka message', {
-            error: error.message,
-            stack: error.stack,
-          });
-
-          throw error; // retry + DLQ
-        }
+          break;
       }
-    );
+    }
+  );
 
-    logger.info('🚀 Search Kafka consumer started successfully');
+  /**
+   * =========================
+   * CATEGORIES
+   * =========================
+   */
 
-  } catch (error: any) {
+  await subscribe(
+    {
+      topics: [TOPICS.CATEGORIES],
+      groupId: 'search-service',
+      serviceName: 'search-service',
+    },
+    async (message: any) => {
 
-    logger.error('❌ Failed to start Search Kafka consumer', {
-      error: error.message,
-    });
+      switch (message.event) {
 
-    throw error;
-  }
+        case EVENTS.CATEGORY_CREATED:
+
+        case EVENTS.CATEGORY_UPDATED:
+
+        case EVENTS.CATEGORY_DELETED:
+
+          await categoryEventHandler.handle(
+            message
+          );
+
+          break;
+      }
+    }
+  );
+
+  logger.info(
+    '🚀 Search Kafka consumer started successfully'
+  );
 };

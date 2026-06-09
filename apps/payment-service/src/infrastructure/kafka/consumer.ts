@@ -1,233 +1,73 @@
 // apps/payment-service/src/infrastructure/kafka/consumer.ts
 
 import {
-  createConsumer,
-  runConsumer,
-  TOPICS,
+  subscribe,
   EVENTS,
+  TOPICS,
 } from '@org/shared-kafka';
 
 import logger from '@org/shared-logger';
 
 import { PaymentService } from '../../application/services/payment.service';
 
-export class PaymentConsumer {
+import { OrderCreatedHandler } from './handlers/order-created.handler';
+import { OrderCancelledHandler } from './handlers/order-cancelled.handler';
+import { OrderCompletedHandler } from './handlers/order-completed.handler';
 
+export class PaymentConsumer {
   constructor(
     private readonly paymentService: PaymentService
   ) {}
 
   async start() {
+    try {
+      const orderCreatedHandler = new OrderCreatedHandler(this.paymentService);
+      const orderCancelledHandler = new OrderCancelledHandler(this.paymentService);
+      const orderCompletedHandler = new OrderCompletedHandler(this.paymentService); 
 
-    const groupId =
-      'payment-service-group';
+      await subscribe(
+        {
+          topics: [TOPICS.ORDERS],
+          groupId: 'payment-service-group',
+          serviceName: 'payment-service',
+        },
+        async (message: any) => {
+          try {
+            const eventType = message.event || message.type;
+            const data = message.data || message.payload || message;
 
-    const consumer = createConsumer({
-      groupId,
+            switch (eventType) {
+              case EVENTS.ORDER_CREATED:
+                await orderCreatedHandler.handle({ ...message, data });
+                break;
 
-      topics: [
-        TOPICS.ORDERS,
-      ],
+              case EVENTS.ORDER_CANCELLED:
+                await orderCancelledHandler.handle({ ...message, data });
+                break;
 
-      serviceName: 'payment-service',
-    });
+              case EVENTS.ORDER_COMPLETED:
+                await orderCompletedHandler.handle({ ...message, data });
+                break;
 
-    await runConsumer(
-      consumer,
-      {
-        groupId,
-
-        topics: [
-          TOPICS.ORDERS,
-        ],
-
-        serviceName: 'payment-service',
-      },
-
-      async (event: any) => {
-        try {
-
-          const eventType =
-            event?.event;
-
-          const data =
-            event?.data || {};
-
-          if (!eventType) {
-
-            logger.warn(
-              '⚠️ Malformed payment event received',
-              { event }
-            );
-
-            return;
-          }
-
-          logger.info(
-            '📥 Payment service received event',
-            {
-              eventType,
-              orderId: data.orderId,
+              default:
+                logger.warn('⚠️ Unknown event received in payment consumer', {
+                  event: eventType,
+                });
             }
-          );
-
-          switch (eventType) {
-
-            /**
-             * ===================================
-             * 📦 ORDER CREATED
-             * ===================================
-             */
-
-            case EVENTS.ORDER_CREATED:
-
-              await this.handleOrderCreated(data);
-
-              break;
-
-            /**
-             * ===================================
-             * ❌ ORDER CANCELLED
-             * ===================================
-             */
-
-            case EVENTS.ORDER_CANCELLED:
-
-              await this.handleOrderCancelled(
-                data.orderId
-              );
-
-              break;
-
-            /**
-             * ===================================
-             * 🎉 ORDER COMPLETED
-             * ===================================
-             */
-
-            case EVENTS.ORDER_COMPLETED:
-
-              logger.info(
-                '🎉 Order completed received',
-                {
-                  orderId: data.orderId,
-                }
-              );
-
-              break;
-
-            default:
-
-              logger.warn(
-                '⚠️ Unknown event in payment-service',
-                {
-                  eventType,
-                }
-              );
-          }
-
-        } catch (error: any) {
-
-          logger.error(
-            '❌ Failed to process payment event',
-            {
+          } catch (error: any) {
+            logger.error('❌ Error processing payment event', {
+              event: message.event,
               error: error.message,
-              stack: error.stack,
-            }
-          );
-
-          throw error;
-        }
-      }
-    );
-
-    logger.info(
-      '✅ Payment Consumer started successfully'
-    );
-  }
-
-  /**
-   * ===================================
-   * CREATE PAYMENT FROM ORDER
-   * ===================================
-   */
-
-  private async handleOrderCreated(
-    data: any
-  ) {
-    try {
-
-      logger.info(
-        '💳 Creating payment from order',
-        {
-          orderId: data.orderId,
-          amount: data.totalAmount,
+            });
+            // Do not re-throw to prevent consumer crash (let DLQ handle it)
+          }
         }
       );
 
-      await this.paymentService
-        .createPaymentFromOrder({
-          orderId: data.orderId,
-
-          userId: data.userId,
-
-          amount: data.totalAmount,
-
-          currency:
-            data.currency || 'ZAR',
-        });
-
-      logger.info(
-        '✅ Payment created from order',
-        {
-          orderId: data.orderId,
-        }
-      );
-
+      logger.info('✅ Payment Consumer started successfully');
     } catch (error: any) {
-
-      logger.error(
-        '❌ Failed to create payment from order',
-        {
-          orderId: data.orderId,
-          error: error.message,
-        }
-      );
-
+      logger.error('❌ Failed to start Payment Consumer', { error: error.message });
       throw error;
-    }
-  }
-
-  /**
-   * ===================================
-   * CANCEL PENDING PAYMENT
-   * ===================================
-   */
-
-  private async handleOrderCancelled(
-    orderId: string
-  ) {
-    try {
-
-      logger.info(
-        '🚫 Cancelling pending payment',
-        {
-          orderId,
-        }
-      );
-
-      // Optional future implementation
-      // await this.paymentService.cancelPendingPayment(orderId);
-
-    } catch (error: any) {
-
-      logger.error(
-        '❌ Failed to cancel payment',
-        {
-          orderId,
-          error: error.message,
-        }
-      );
     }
   }
 }

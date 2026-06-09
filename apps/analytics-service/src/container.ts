@@ -3,142 +3,70 @@
 import logger from '@org/shared-logger';
 
 // ====================== REPOSITORIES ======================
-
 import { AnalyticsRepositoryImpl } from './infrastructure/persistance/mongoose/repositories/analytics.repository.impl';
-
 import { AnalyticsModel } from './infrastructure/persistance/mongoose/models/analytics.model';
 import { MetricModel } from './infrastructure/persistance/mongoose/models/metric.model';
 
-// ====================== SERVICES ======================
+// ====================== USE CASES ======================
+import { TrackUserRegistrationUseCase } from './application/use-cases/track-user-registration.usecase';
 
+// ====================== HANDLERS ======================
+
+import { CartHandler } from './infrastructure/kafka/consumers/handlers/cart.handler';
+import { CategoryHandler } from './infrastructure/kafka/consumers/handlers/category.handler';
+import { InventoryHandler } from './infrastructure/kafka/consumers/handlers/inventory.handler';
+import { OrderHandler } from './infrastructure/kafka/consumers/handlers/order.handler';
+import { PaymentHandler } from './infrastructure/kafka/consumers/handlers/payment.handler';
+import { ProductHandler } from './infrastructure/kafka/consumers/handlers/product.handler';
+import { UserHandler } from './infrastructure/kafka/consumers/handlers/user.handler';
+
+// ====================== CONSUMER ======================
+import { AnalyticsConsumer } from './infrastructure/kafka/consumers';
+
+// ====================== SERVICES ======================
 import { AnalyticsService } from './application/services/analytics.service';
 import { MetricsService } from './application/services/metrics.service';
 import { DashboardService } from './application/services/dashboard.service';
+import { NotificationHandler } from './infrastructure/kafka/consumers/handlers/notification.handler';
 
-// ====================== CONSUMER ======================
 
-import { AnalyticsConsumer } from './infrastructure/kafka/consumers/consumer';
+// ====================== REPOSITORY ======================
+const analyticsRepository = new AnalyticsRepositoryImpl(
+  AnalyticsModel,
+  MetricModel
+);
 
 // ====================== USE CASES ======================
+const trackUserRegistration = new TrackUserRegistrationUseCase(analyticsRepository);
 
-import { TrackUserRegistrationUseCase } from './application/use-cases/track-user-registration.usecase';
+// ====================== HANDLERS ======================
+const userHandler = new UserHandler(trackUserRegistration);
+const orderHandler = new OrderHandler();
+const paymentHandler = new PaymentHandler();
+const productHandler = new ProductHandler();
+const categoryHandler = new CategoryHandler();
+const cartHandler = new CartHandler();
+const inventoryHandler = new InventoryHandler();
+const notificationHandler = new NotificationHandler ()
 
-import { TrackOrderCreatedUseCase } from './application/use-cases/track-order-created.usecase';
-
-import { TrackPaymentSuccessUseCase } from './application/use-cases/track-payment-success.usecase';
-
-import { TrackProductViewUseCase } from './application/use-cases/track-product-view.usecase';
-
-// NEW USE CASES
-
-import { TrackProductEventUseCase } from './application/use-cases/track-product-event.usecase';
-
-import { TrackCategoryEventUseCase } from './application/use-cases/track-category-event.usecase';
-
-import { TrackCartEventUseCase } from './application/use-cases/track-cart-event.usecase';
-
-import { TrackInventoryEventUseCase } from './application/use-cases/track-inventory-event.usecase';
-
-// ======================================================
-// REPOSITORIES
-// ======================================================
-
-const analyticsRepository =
-  new AnalyticsRepositoryImpl(
-    AnalyticsModel,
-    MetricModel
-  );
-
-// ======================================================
-// USE CASES
-// ======================================================
-
-const trackUserRegistration =
-  new TrackUserRegistrationUseCase(
-    analyticsRepository
-  );
-
-const trackOrderCreated =
-  new TrackOrderCreatedUseCase(
-    analyticsRepository
-  );
-
-const trackPaymentSuccess =
-  new TrackPaymentSuccessUseCase(
-    analyticsRepository
-  );
-
-const trackProductView =
-  new TrackProductViewUseCase(
-    analyticsRepository
-  );
-
-// ======================================================
-// NEW ANALYTICS USE CASES
-// ======================================================
-
-const trackProductEvent =
-  new TrackProductEventUseCase(
-    analyticsRepository
-  );
-
-const trackCategoryEvent =
-  new TrackCategoryEventUseCase(
-    analyticsRepository
-  );
-
-const trackCartEvent =
-  new TrackCartEventUseCase(
-    analyticsRepository
-  );
-
-const trackInventoryEvent =
-  new TrackInventoryEventUseCase(
-    analyticsRepository
-  );
-
-// ======================================================
-// CONSUMER
-// ======================================================
-
-export const analyticsConsumer =
-  new AnalyticsConsumer(
-    trackUserRegistration,
-    trackOrderCreated,
-    trackPaymentSuccess,
-    trackProductView,
-    trackProductEvent,
-    trackCategoryEvent,
-    trackCartEvent,
-    trackInventoryEvent
-  );
-
-// ======================================================
-// SERVICES
-// ======================================================
-
-export const analyticsService =
-  new AnalyticsService(
-    analyticsRepository
-  );
-
-export const metricsService =
-  new MetricsService(
-    analyticsRepository
-  );
-
-export const dashboardService =
-  new DashboardService(
-    metricsService
-  );
-
-// ======================================================
-// LOGGER
-// ======================================================
-
-logger.info(
-  '✅ Analytics Service Container initialized successfully'
+// ====================== CONSUMER ======================
+export const analyticsConsumer = new AnalyticsConsumer(
+  userHandler,
+  orderHandler,
+  paymentHandler,
+  productHandler,
+  categoryHandler,
+  cartHandler,
+  inventoryHandler,
+  notificationHandler
 );
+
+// ====================== SERVICES ======================
+export const analyticsService = new AnalyticsService(analyticsRepository);
+export const metricsService = new MetricsService(analyticsRepository);
+export const dashboardService = new DashboardService(metricsService);
+
+logger.info('✅ Analytics Service Container initialized successfully');
 // import logger from '@org/shared-logger';
 
 // // ====================== REPOSITORIES ======================

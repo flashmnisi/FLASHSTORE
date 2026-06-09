@@ -102,6 +102,81 @@ export class PaymentService {
 
   /**
    * =====================================
+   * HANDLE ORDER CANCELLED
+   * =====================================
+   */
+  async handleOrderCancelled(orderId: string) {
+    try {
+      const payment = await this.repository.findByOrderId(orderId);
+
+      if (!payment) {
+        logger.warn('No payment found for cancelled order', { orderId });
+        return;
+      }
+
+      // Mark payment as cancelled/refunded if needed
+      payment.markAsCanceled?.(); // Use method if it exists in entity
+
+      await this.repository.update(payment);
+
+      await this.outboxService.write({
+        topic: TOPICS.PAYMENTS,
+        event: EVENTS.PAYMENT_REFUNDED, // or PAYMENT_CANCELLED if you have it
+        data: {
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          userId: payment.userId,
+          amount: payment.amount,
+          status: 'cancelled',
+        },
+        key: payment.id,
+      });
+
+      logger.info('✅ Payment cancelled due to order cancellation', { orderId });
+
+    } catch (error: any) {
+      logger.error('Failed to handle order cancellation', {
+        orderId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * =====================================
+   * HANDLE ORDER COMPLETED
+   * =====================================
+   */
+  async handleOrderCompleted(orderId: string) {
+    try {
+      const payment = await this.repository.findByOrderId(orderId);
+
+      if (!payment) {
+        logger.warn('No payment found for completed order', { orderId });
+        return;
+      }
+
+      logger.info('✅ Order completed - payment already processed', { 
+        orderId,
+        paymentId: payment.id 
+      });
+
+      // You can add any post-completion logic here (e.g. send receipt, update analytics, etc.)
+
+    } catch (error: any) {
+      logger.error('Failed to handle order completion', {
+        orderId,
+        error: error.message,
+      });
+    }
+  }
+
+
+
+
+  /**
+   * =====================================
    * HANDLE STRIPE WEBHOOK
    * =====================================
    */
@@ -300,6 +375,8 @@ export class PaymentService {
       userId: string;
       amount: number;
       currency?: string;
+      items?: any[];
+      correlationId:string,
     }
   ) {
     const dto = {

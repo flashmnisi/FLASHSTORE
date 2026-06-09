@@ -1,5 +1,4 @@
 // apps/order-service/src/main.ts
-
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -11,15 +10,19 @@ import { connectDatabase } from './config/database';
 import { connectRedis } from './config/redis';
 import { initKafka } from './config/kafka';
 
-import { startOrderConsumer } from './infrastructure/kafka/consumer';
-//import { startOrderOutboxProcessor } from './infrastructure/outbox/outbox.publisher';
+import { OrderConsumer } from './infrastructure/kafka/consumer';
+import { PaymentCompletedHandler } from './infrastructure/kafka/handlers/payment-completed.handler';
+import { PaymentFailedHandler } from './infrastructure/kafka/handlers/payment-failed.handler';
+import { OrderCreatedHandler } from './infrastructure/kafka/handlers/order-created.handler';
+import { OrderCancelledHandler } from './infrastructure/kafka/handlers/order-cancelled.handler';
+import { OrderCompletedHandler } from './infrastructure/kafka/handlers/order-completed.handler';
+import { OrderUpdatedHandler } from './infrastructure/kafka/handlers/order-updated.hander';
 
-import { OrderService } from './application/sevices/order.service';
 import { OrderRepositoryImpl } from './infrastructure/persistance/repositories/oder.repository.impl';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 import { OutboxService } from './infrastructure/outbox/outbox.service';
 import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
-//import { OutboxRepository } from './infrastructure/persistance/repositories/outbox.repository';
+import { OrderService } from './application/sevices/order.service';
 
 const PORT = process.env.PORT || 3004;
 
@@ -27,75 +30,53 @@ const startServer = async () => {
   try {
     logger.info('🚀 Starting Order Service...');
 
-    /**
-     * =========================
-     * DATABASE
-     * =========================
-     */
+    // ========================= DATABASE =========================
     await connectDatabase();
-
     logger.info('✅ MongoDB connected');
 
-    /**
-     * =========================
-     * REDIS
-     * =========================
-     */
+    // ========================= REDIS =========================
     await connectRedis();
-
     logger.info('✅ Redis connected');
 
-    /**
-     * =========================
-     * KAFKA
-     * =========================
-     */
+    // ========================= KAFKA =========================
     await initKafka();
-
     logger.info('✅ Kafka initialized');
 
-    /**
-     * =========================
-     * DEPENDENCY INJECTION
-     * =========================
-     */
+    // ========================= DEPENDENCY INJECTION =========================
     const outboxRepository = new OutboxRepository();
     const orderRepository = new OrderRepositoryImpl();
     const outboxService = new OutboxService(outboxRepository);
-    
+    const orderService = new OrderService(orderRepository, outboxService);
 
-    const orderService = new OrderService(orderRepository,outboxService);
+    // ========================= KAFKA HANDLERS =========================
+    const paymentCompletedHandler = new PaymentCompletedHandler(orderService);
+    const paymentFailedHandler = new PaymentFailedHandler(orderService);
+    const orderCreatedHandler = new OrderCreatedHandler();
+    const orderCancelledHandler = new OrderCancelledHandler();
+    const orderCompletedHandler = new OrderCompletedHandler();
+    const orderUpdatedHandler = new OrderUpdatedHandler();
 
-    /**
-     * =========================
-     * KAFKA CONSUMERS
-     * =========================
-     */
-    await startOrderConsumer(orderService);
+    // ========================= KAFKA CONSUMER =========================
+    const orderConsumer = new OrderConsumer(
+      paymentCompletedHandler,
+      paymentFailedHandler,
+      orderCreatedHandler,
+      orderCancelledHandler,
+      orderCompletedHandler,
+      orderUpdatedHandler
+    );
 
-    logger.info('✅ Order Consumer started');
+    await orderConsumer.start();        // ← Called only once
 
-    /**
-     * =========================
-     * OUTBOX PROCESSOR
-     * =========================
-     */
-    // create outbox service (depends on your repo)
+    logger.info('✅ Order Consumer started successfully');
 
-
-// create processor
-const outboxProcessor = new OutboxProcessor(outboxService);
-
-// start processor
-outboxProcessor.start();
+    // ========================= OUTBOX PROCESSOR =========================
+    const outboxProcessor = new OutboxProcessor(outboxService);
+    outboxProcessor.start();
 
     logger.info('✅ Order Outbox Processor started');
 
-    /**
-     * =========================
-     * HTTP SERVER
-     * =========================
-     */
+    // ========================= HTTP SERVER =========================
     app.listen(PORT, () => {
       logger.info(`🚀 Order Service running on http://localhost:${PORT}`);
     });
@@ -105,25 +86,19 @@ outboxProcessor.start();
       error: error.message,
       stack: error.stack,
     });
-
     process.exit(1);
   }
 };
 
 startServer();
 
-/**
- * =========================
- * GRACEFUL SHUTDOWN
- * =========================
- */
-
+/** Graceful Shutdown */
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down Order Service gracefully...');
+  logger.info('SIGTERM received. Shutting down gracefully...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down Order Service gracefully...');
+  logger.info('SIGINT received. Shutting down gracefully...');
   process.exit(0);
 });

@@ -1,161 +1,173 @@
-// apps/order-service/src/infrastructure/kafka/consumer.ts
-
-import {
-  createConsumer,
-  runConsumer,
-  TOPICS,
-  EVENTS,
-} from '@org/shared-kafka';
-
+/**
+ * Order Consumer - Improved Version
+ */
+import { subscribe, TOPICS, EVENTS } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
-import { OrderService } from '../../application/sevices/order.service';
 
-export const startOrderConsumer = async (
-  orderService: OrderService
-) => {
-  const groupId = 'order-service-group';
+import { PaymentCompletedHandler } from './handlers/payment-completed.handler';
+import { PaymentFailedHandler } from './handlers/payment-failed.handler';
+import { OrderCancelledHandler } from './handlers/order-cancelled.handler';
+import { OrderCreatedHandler } from './handlers/order-created.handler';
+import { OrderCompletedHandler } from './handlers/order-completed.handler';
+import { OrderUpdatedHandler } from './handlers/order-updated.hander';
 
-  try {
-    const consumer = createConsumer({
-      groupId,
-      topics: [
-        TOPICS.PAYMENTS,
-        TOPICS.ORDERS,
-      ],
-      serviceName: 'order-service',
-    });
+export class OrderConsumer {
+  constructor(
+    private readonly paymentCompletedHandler: PaymentCompletedHandler,
+    private readonly paymentFailedHandler: PaymentFailedHandler,
+    private readonly orderCreatedHandler: OrderCreatedHandler,
+    private readonly orderCancelledHandler: OrderCancelledHandler,
+    private readonly orderCompletedHandler: OrderCompletedHandler,
+    private readonly orderUpdatedHandler: OrderUpdatedHandler
+  ) {}
 
-    logger.info('📥 Starting Order Kafka Consumer', {
-      groupId,
-      topics: [TOPICS.PAYMENTS, TOPICS.ORDERS],
-    });
-
-    await runConsumer(
-      consumer,
+  async start() {
+    await subscribe(
       {
-        groupId,
-        topics: [
-          TOPICS.PAYMENTS,
-          TOPICS.ORDERS,
-        ],
+        topics: [TOPICS.ORDERS, TOPICS.PAYMENTS],
+        groupId: 'order-service-group',
         serviceName: 'order-service',
       },
-      async (event: any) => {
+      async (message: any) => {
         try {
-          const eventType = event?.event;
-          const data = event?.data || {};
+          // ====================== SAFE EXTRACTION ======================
+          const eventType =
+            message?.event ||
+            message?.data?.event ||
+            message?.event?.event ||
+            message?.data?.data?.event;
+
+          const payload =
+            message?.data?.data ??
+            message?.data ??
+            message?.event?.data ??
+            message;
+
+          const topic = message?.topic;
 
           if (!eventType) {
-            logger.warn('⚠️ Received malformed Kafka event', {
-              event,
-            });
+            logger.warn('⚠️ Received message without event type', { topic });
             return;
           }
 
-          logger.info('📨 Order service received event', {
-            event: eventType,
-            orderId: data.orderId,
-            userId: data.userId,
+          logger.info('📥 Order consumer received event', {
+            eventType,
+            topic,
+            eventId: message?.eventId || payload?.id,
           });
 
+          // ====================== TOPIC VALIDATION ======================
+          this.validateEventTopic(eventType, topic);
+
+          // ====================== ROUTING ======================
           switch (eventType) {
-            /**
-             * ============================
-             * 💳 PAYMENT EVENTS
-             * ============================
-             */
-
+            // === PAYMENT EVENTS ===
             case EVENTS.PAYMENT_COMPLETED:
-              logger.info('💰 Processing payment.completed', {
-                orderId: data.orderId,
+              await this.paymentCompletedHandler.handle({
+                ...message,
+                data: payload,
               });
-
-              await orderService.handlePaymentCompleted(data);
-
-              logger.info('✅ Payment completed processed', {
-                orderId: data.orderId,
-              });
-
               break;
 
             case EVENTS.PAYMENT_FAILED:
-              logger.info('❌ Processing payment.failed', {
-                orderId: data.orderId,
+              await this.paymentFailedHandler.handle({
+                ...message,
+                data: payload,
               });
-
-              await orderService.handlePaymentFailed(data);
-
-              logger.info('✅ Payment failed processed', {
-                orderId: data.orderId,
-              });
-
               break;
 
-            /**
-             * ============================
-             * 📦 ORDER EVENTS
-             * ============================
-             */
-
+            // === ORDER EVENTS ===
             case EVENTS.ORDER_CREATED:
-              logger.info('📦 Processing order.created', {
-                orderId: data.orderId,
-                userId: data.userId,
-                totalAmount: data.totalAmount,
+              await this.orderCreatedHandler.handle({
+                ...message,
+                data: payload,
               });
-
-              // Optional:
-              // await orderService.handleOrderCreated(data);
-
-              break;
-
-            case EVENTS.ORDER_UPDATED:
-              logger.info('📝 Processing order.updated', {
-                orderId: data.orderId,
-              });
-
               break;
 
             case EVENTS.ORDER_CANCELLED:
-              logger.info('🚫 Processing order.cancelled', {
-                orderId: data.orderId,
+              await this.orderCancelledHandler.handle({
+                ...message,
+                data: payload,
               });
-
               break;
 
             case EVENTS.ORDER_COMPLETED:
-              logger.info('🎉 Processing order.completed', {
-                orderId: data.orderId,
+              await this.orderCompletedHandler.handle({
+                ...message,
+                data: payload,
               });
+              break;
 
+            case EVENTS.ORDER_UPDATED:
+              await this.orderUpdatedHandler.handle({
+                ...message,
+                data: payload,
+              });
               break;
 
             default:
-              logger.warn('⚠️ Unhandled Kafka event in order-service', {
-                event: eventType,
-              });
+              if (this.isKnownEvent(eventType)) {
+                logger.warn('⚠️ Event not handled by order-service', {
+                  eventType,
+                  topic,
+                });
+              } else {
+                logger.warn('❓ Unknown event type received', {
+                  eventType,
+                  topic,
+                });
+              }
           }
         } catch (error: any) {
-          logger.error('❌ Failed to process Kafka event', {
+          logger.error('❌ Error processing event in OrderConsumer', {
+            eventType: message?.event,
+            topic: message?.topic,
             error: error.message,
             stack: error.stack,
           });
-
-          throw error;
+          throw error; // Let Kafka retry mechanism handle it
         }
       }
     );
 
-    logger.info('✅ Order Kafka Consumer started successfully', {
-      groupId,
+    logger.info('✅ Order Consumer started successfully', {
+      topics: [TOPICS.ORDERS, TOPICS.PAYMENTS],
+      groupId: 'order-service-group',
     });
-
-  } catch (error: any) {
-    logger.error('❌ Failed to start Order Kafka Consumer', {
-      error: error.message,
-      groupId,
-    });
-
-    throw error;
   }
-};
+
+  /**
+   * Validates that events are coming from the correct topic
+   */
+  private validateEventTopic(eventType: string, topic?: string): void {
+    if (!topic) return;
+
+    if (eventType.startsWith('order.') && topic !== TOPICS.ORDERS) {
+      logger.warn('🚨 CRITICAL: Order event received on wrong topic!', {
+        eventType,
+        receivedTopic: topic,
+        expectedTopic: TOPICS.ORDERS,
+      });
+    }
+
+    if (eventType.startsWith('payment.') && topic !== TOPICS.PAYMENTS) {
+      logger.warn('🚨 CRITICAL: Payment event received on wrong topic!', {
+        eventType,
+        receivedTopic: topic,
+        expectedTopic: TOPICS.PAYMENTS,
+      });
+    }
+  }
+
+  /**
+   * Helper to know if we recognize this event
+   */
+  private isKnownEvent(eventType: string): boolean {
+    return (
+      eventType.startsWith('order.') ||
+      eventType.startsWith('payment.') ||
+      eventType.startsWith('user.') ||
+      eventType.startsWith('product.')
+    );
+  }
+}

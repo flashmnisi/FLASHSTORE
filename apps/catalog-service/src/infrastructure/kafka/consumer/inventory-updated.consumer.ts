@@ -1,119 +1,91 @@
+//apps/catalog-service/src/infrastructure/kafka/consumer/consumer.ts
+
 import {
-  createConsumer,
-  runConsumer,
+  subscribe,
   EVENTS,
   TOPICS,
 } from '@org/shared-kafka';
 
 import logger from '@org/shared-logger';
 
+import { OrderCancelledHandler } from './handlers/order-cancelled.handler';
+import { PaymentCompletedHandler } from './handlers/payment-completed.handler';
+import { OrderCreatedHandler } from './handlers/order-created.handler';
+
 export const startCatalogConsumer = async (
   inventoryService: any
 ) => {
 
-  const groupId = 'catalog-service-group';
+  const orderCreatedHandler =
+    new OrderCreatedHandler(
+      inventoryService
+    );
 
-  const consumer = createConsumer({
-    groupId,
-    topics: [
-      TOPICS.ORDERS,
-      TOPICS.PAYMENTS,
-    ],
-    serviceName: 'catalog-service',
-  });
+  const orderCancelledHandler =
+    new OrderCancelledHandler(
+      inventoryService
+    );
 
-  await runConsumer(
-    consumer,
+  const paymentCompletedHandler =
+    new PaymentCompletedHandler();
+
+  /**
+   * =========================
+   * ORDERS
+   * =========================
+   */
+
+  await subscribe(
     {
-      groupId,
-      topics: [
-        TOPICS.ORDERS,
-        TOPICS.PAYMENTS,
-      ],
+      topics: [TOPICS.ORDERS],
+      groupId: 'catalog-service',
       serviceName: 'catalog-service',
     },
+    async (message: any) => {
 
-    async (event: any) => {
+      switch (message.event) {
 
-      try {
+        case EVENTS.ORDER_CREATED:
+          await orderCreatedHandler.handle(
+            message
+          );
+          break;
 
-        const eventType = event?.event;
-        const data = event?.data || {};
-
-        logger.info('📥 Catalog event received', {
-          eventType,
-          orderId: data.orderId,
-        });
-
-        switch (eventType) {
-
-          /**
-           * =====================================
-           * 📦 ORDER CREATED
-           * Reduce inventory
-           * =====================================
-           */
-          case EVENTS.ORDER_CREATED:
-
-            await inventoryService.reduceStock(
-              data.items || []
-            );
-
-            logger.info('📉 Inventory reduced', {
-              orderId: data.orderId,
-            });
-
-            break;
-
-          /**
-           * =====================================
-           * ❌ ORDER CANCELLED
-           * Restore inventory
-           * =====================================
-           */
-          case EVENTS.ORDER_CANCELLED:
-
-            await inventoryService.restoreStock(
-              data.items || []
-            );
-
-            logger.info('📈 Inventory restored', {
-              orderId: data.orderId,
-            });
-
-            break;
-
-          /**
-           * =====================================
-           * 💳 PAYMENT COMPLETED
-           * Finalize stock
-           * =====================================
-           */
-          case EVENTS.PAYMENT_COMPLETED:
-
-            logger.info('💰 Payment confirmed for inventory', {
-              orderId: data.orderId,
-            });
-
-            break;
-
-          default:
-
-            logger.warn('Unknown catalog event', {
-              eventType,
-            });
-        }
-
-      } catch (error: any) {
-
-        logger.error('❌ Catalog consumer failed', {
-          error: error.message,
-        });
-
-        throw error;
+        case EVENTS.ORDER_CANCELLED:
+          await orderCancelledHandler.handle(
+            message
+          );
+          break;
       }
     }
   );
 
-  logger.info('🚀 Catalog consumer started');
+  /**
+   * =========================
+   * PAYMENTS
+   * =========================
+   */
+
+  await subscribe(
+    {
+      topics: [TOPICS.PAYMENTS],
+      groupId: 'catalog-service',
+      serviceName: 'catalog-service',
+    },
+    async (message: any) => {
+
+      switch (message.event) {
+
+        case EVENTS.PAYMENT_COMPLETED:
+          await paymentCompletedHandler.handle(
+            message
+          );
+          break;
+      }
+    }
+  );
+
+  logger.info(
+    '🚀 Catalog consumer started'
+  );
 };

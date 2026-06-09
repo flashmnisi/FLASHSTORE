@@ -19,8 +19,8 @@ export class OrderEntity {
     userId: string,
     items: OrderItem[],
     totalAmount: number,
-    idempotencyKey: string, // ✅ ADD THIS
-    currency: string = 'ZAR', // optional but recommended
+    idempotencyKey: string, 
+    currency: string = 'ZAR', 
     status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending',
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' = 'pending',
     createdAt: Date = new Date()
@@ -31,7 +31,7 @@ export class OrderEntity {
     this.totalAmount = totalAmount;
     this.currency = currency;
 
-    this.idempotencyKey = idempotencyKey; // ✅ IMPORTANT
+    this.idempotencyKey = idempotencyKey; 
 
     this.status = status;
     this.paymentStatus = paymentStatus;

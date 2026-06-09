@@ -9,7 +9,7 @@ import { EVENTS, TOPICS } from '@org/shared-kafka';
 export class InventoryService {
   constructor(
     private readonly inventoryRepository: IInventoryRepository,
-    private readonly outboxService: OutboxService   // ← Added
+    private readonly outboxService: OutboxService    
   ) {}
 
   async getInventory(productId: string) {

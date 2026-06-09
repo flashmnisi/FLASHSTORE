@@ -1,3 +1,5 @@
+// apps/notification-service/src/infrastructure/persistence/database/repositories/notification.repository.impl.ts
+
 import { INotificationRepository } from '../../../../application/interfaces/notification.repository';
 import { NotificationEntity } from '../../../../domain/entities/notification.entity';
 import { toNotificationType } from '../../../../domain/value-objects/notification-type.vo';
@@ -9,22 +11,16 @@ import { NotificationModel, NotificationDocument } from '../notification.model';
 class NotificationMapper {
   static toEntity(doc: NotificationDocument): NotificationEntity {
     return new NotificationEntity(
-      doc._id.toString(),                    // id
-      doc.userId,                            // userId
-      toNotificationType(doc.type),          // type
-
-      doc.templateName,                      // templateName
-      doc.templateData || {},                // templateData
-
-      doc.userId,                            // recipient ← using userId as recipient for now
-
-      doc.title || '',                       // title
-      doc.message || '',                     // message
-
-      doc.status,                            // status
-      doc.channel,                           // channel
-
-      doc.createdAt                          // createdAt
+      doc._id.toString(),
+      doc.userId,
+      toNotificationType(doc.type),
+      doc.templateName,
+      doc.templateData || {},
+      doc.title || '',          
+      doc.message || '',
+      doc.status,
+      doc.channel,
+      doc.createdAt
     );
   }
 
@@ -32,13 +28,10 @@ class NotificationMapper {
     return {
       userId: entity.userId,
       type: entity.type,
-
       templateName: entity.templateName,
       templateData: entity.templateData,
-
       title: entity.title,
       message: entity.message,
-
       status: entity.status,
       channel: entity.channel,
     };
@@ -54,7 +47,6 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     const created = await NotificationModel.create(
       NotificationMapper.toPersistence(notification)
     );
-
     return NotificationMapper.toEntity(created);
   }
 
@@ -62,7 +54,10 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     const updated = await NotificationModel.findByIdAndUpdate(
       notification.id,
       NotificationMapper.toPersistence(notification),
-      { new: true }
+      { 
+        returnDocument: 'after',   // ← Fixed deprecation warning
+        new: false                 // Not needed anymore
+      }
     );
 
     if (!updated) {

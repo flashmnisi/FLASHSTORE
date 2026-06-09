@@ -1,4 +1,4 @@
-// libs/shared-kafka/src/lib/consumer.ts
+// libs/shared-kafka/src/client/consumer.ts
 
 import { Consumer } from 'kafkajs';
 import { getKafka } from './kafka.client';

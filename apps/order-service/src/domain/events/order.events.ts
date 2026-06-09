@@ -3,27 +3,31 @@
 import { BaseEvent } from "@org/shared-kafka";
 
 /**
- * ORDER CREATED EVENT
+ * ORDER CREATED EVENT - Improved
  */
 export interface OrderCreatedPayload {
   orderId: string;
   userId: string;
   
-  // Added for Notification Service
+  // Customer info for notifications
   userEmail: string;
   customerName?: string;
 
   items: {
     productId: string;
-    name?: string;
+    name: string;
     quantity: number;
     price: number;
   }[];
-  
-  totalAmount: number;
+
+  // ✅ Proper price breakdown
+  itemsTotal: number;        
+  shippingPrice?: number;   
+  totalAmount: number;      
+
   currency: string;
   
-  // Optional useful fields
+  // Optional fields
   shippingAddress?: any;
   paymentMethod?: string;
 }
@@ -50,7 +54,6 @@ export interface OrderStatusUpdatedPayload {
   userId: string;
   previousStatus: string;
   newStatus: string;
-  // Optional: Add userEmail here too if needed in future
 }
 
 export type OrderStatusUpdatedEvent = BaseEvent<OrderStatusUpdatedPayload>;

@@ -43,35 +43,48 @@ export class OrderService {
         throw new Error('Duplicate order request');
       }
 
+      // Create order entity with items
       const order = new OrderEntity(
         '',
         dto.userId,
         dto.items as OrderItem[],
-        dto.totalAmount,
+        0,                                 // temporary total
         dto.idempotencyKey,
-        dto.currency,
+        dto.currency || 'ZAR',
         'pending',
         'pending'
       );
 
+      // ✅ CALCULATE TOTAL CORRECTLY
+      const itemsTotal = order.calculateTotal();
+      const shippingPrice = dto.shippingPrice || 0;
+      order.totalAmount = itemsTotal + shippingPrice;
+
+      // Save to database
       const savedOrder = await this.repository.create(order);
 
+      // Create rich event with proper breakdown
       const orderCreatedEvent = createOrderCreatedEvent({
         orderId: savedOrder.id,
         userId: savedOrder.userId,
         userEmail: dto.userEmail,
-        customerName: dto.customerName,
+        customerName: dto.customerName || dto.shippingAddress?.name,
+        
         items: savedOrder.items.map(item => ({
           productId: item.productId,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
         })),
-        totalAmount: savedOrder.totalAmount,
+        
+        itemsTotal,                    // ← Added
+        shippingPrice,                 // ← Added
+        totalAmount: savedOrder.totalAmount,   // ← Now correctly calculated
         currency: savedOrder.currency || 'ZAR',
+        shippingAddress: dto.shippingAddress,
       });
 
-      // Use OutboxService
+      // Write to outbox
       await this.outboxService.write({
         topic: TOPICS.ORDERS,
         event: EVENTS.ORDER_CREATED,
@@ -82,7 +95,9 @@ export class OrderService {
 
       logger.info('Order created successfully', {
         orderId: savedOrder.id,
-        userId: savedOrder.userId,
+        totalAmount: savedOrder.totalAmount,
+        itemsTotal,
+        shippingPrice,
       });
 
       return savedOrder;
@@ -213,9 +228,6 @@ export class OrderService {
       throw error;
     }
   }
-
-  // ... keep your getOrderById and getOrdersByUser methods unchanged
-
 
   /**
    * =============================

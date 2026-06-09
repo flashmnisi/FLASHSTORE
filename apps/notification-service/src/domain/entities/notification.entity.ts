@@ -1,3 +1,5 @@
+// apps/notification-service/src/domain/entities/notification.entity.ts
+
 export type NotificationType =
   | 'user.registered'
   | 'order.created'
@@ -5,29 +7,24 @@ export type NotificationType =
   | 'payment.failed'
   | 'order.status.updated';
 
+export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'permanently_failed';
 export type NotificationChannel = 'email' | 'sms' | 'push';
 
 export class NotificationEntity {
   constructor(
-    public readonly id: string,
+    public id: string,
     public userId: string,
-    public type: NotificationType,
-
-    // 🔥 Template-driven system
+    public type: string,                    // e.g., 'order.created'
     public templateName: string,
-    public templateData: Record<string, unknown>,  
-
-    public recipient: string,
-
-    // Rendered output (optional cache)
-    public title?: string,
-    public message?: string,
-
-    public status: 'pending' | 'sent' | 'failed' = 'pending',
-    public channel: NotificationChannel = 'email',
-
-    public createdAt: Date = new Date()
-  ) {}
+    public templateData: any,
+    public title: string,
+    public message: string,
+    public status: NotificationStatus = 'pending',
+    public channel: NotificationChannel,     // ← Channel should come after status
+    public createdAt?: Date
+  ) {
+    this.createdAt = createdAt || new Date();
+  }
 }
 
 

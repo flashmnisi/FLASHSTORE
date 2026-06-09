@@ -8,14 +8,16 @@ export class RetryJob {
   constructor(private readonly notificationService: NotificationService) {}
 
   /**
-   * Retry failed notifications from the outbox
+   * Retry failed notifications from the outbox (Improved)
    */
   async processFailedNotifications() {
     try {
       const failedNotifications = await OutboxModel.find({
         status: 'failed',
-        retries: { $lt: 5 },        // ← Use 'retries' (correct field)
-      }).limit(20);
+        retries: { $lt: 3 },           // Reduced max retries
+      })
+        .sort({ createdAt: 1 })
+        .limit(15);
 
       if (failedNotifications.length === 0) return;
 
@@ -23,46 +25,65 @@ export class RetryJob {
 
       for (const outbox of failedNotifications) {
         try {
-          const payload = outbox.payload;
+          const payload = outbox.payload || {};
 
+          // ====================== SKIP PERMANENT FAILURES ======================
+          const templateData = payload.templateData || payload.data || payload;
+          
+          if (payload.channel === 'email' && !templateData?.email) {
+            logger.warn('⛔ Skipping permanent failure (missing email)', {
+              outboxId: outbox._id,
+              notificationId: payload.notificationId,
+              userId: payload.userId,
+            });
+
+            await this.markAsPermanentlyFailed(outbox._id, 'Missing recipient email');
+            continue;
+          }
+
+          // ====================== RETRY ======================
           await this.notificationService.send({
             userId: payload.userId,
             type: payload.type,
             templateName: payload.templateName || 'default-notification',
-            templateData: payload.data || payload.templateData || payload,
+            templateData: templateData,
             title: payload.title,
             message: payload.message,
             channel: payload.channel || 'email',
+            data: payload.data,
           });
 
-          // Mark as processed
+          // Mark as successfully processed
           await OutboxModel.updateOne(
             { _id: outbox._id },
             {
               status: 'processed',
               retries: (outbox.retries || 0) + 1,
               processedAt: new Date(),
+              errorMessage: null,
             }
           );
 
-          logger.info('✅ Retry successful for notification', { 
+          logger.info('✅ Retry successful', { 
             outboxId: outbox._id,
-            notificationType: payload.type,
+            type: payload.type,
           });
 
         } catch (err: any) {
-          // Increment retry count on failure
+          const newRetryCount = (outbox.retries || 0) + 1;
+
           await OutboxModel.updateOne(
             { _id: outbox._id },
             {
-              retries: (outbox.retries || 0) + 1,
+              retries: newRetryCount,
               errorMessage: err.message,
+              lastAttemptAt: new Date(),
             }
           );
 
-          logger.warn('⚠️ Retry failed for notification', {
+          logger.warn('⚠️ Retry attempt failed', {
             outboxId: outbox._id,
-            retries: (outbox.retries || 0) + 1,
+            retries: newRetryCount,
             error: err.message,
           });
         }
@@ -70,5 +91,19 @@ export class RetryJob {
     } catch (error: any) {
       logger.error('❌ Retry job failed', { error: error.message });
     }
+  }
+
+  /**
+   * Mark hopeless notifications as permanently failed
+   */
+  private async markAsPermanentlyFailed(outboxId: any, reason: string) {
+    await OutboxModel.updateOne(
+      { _id: outboxId },
+      {
+        status: 'permanently_failed',
+        errorMessage: reason,
+        processedAt: new Date(),
+      }
+    );
   }
 }

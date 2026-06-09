@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import app from './app';
-import { connectDB } from './infrastructure/config/database';
-import { initKafka } from './infrastructure/config/kafka';
-import { initMailTransporter } from './infrastructure/config/mail';
+import { connectDatabase } from './config/database';
+import { initKafka } from './config/kafka';
+import { initMailTransporter } from './config/mail';
 
 import { startNotificationConsumer } from './infrastructure/kafka/consumer';
 import { NotificationService } from './application/services/notification.service';
@@ -17,7 +17,6 @@ import { RetryJob } from './jobs/retry.job';
 import { DeadLetterJob } from './jobs/dead-letter.job';
 
 import logger from '@org/shared-logger';
-import { OutboxWorker } from './jobs/outbox.werker';
 import { OutboxService } from './infrastructure/outbox/outbox.service';
 import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
@@ -28,20 +27,17 @@ const start = async () => {
   try {
     logger.info('🚀 Starting Notification Service...');
 
-    // 1. Initialize infrastructure
-    await connectDB();
+    await connectDatabase();
     await initKafka();
     await initMailTransporter();
 
-    // 2. Initialize providers
+    // Providers & Services
     const emailProvider = new NodemailerProvider();
     const smsProvider = new TwilioProvider();
     const pushProvider = new FirebaseProvider();
 
-    // 3. Initialize repository and core service
     const repository = new NotificationRepositoryImpl();
     const outboxRepository = new OutboxRepository();
-    
     const outboxService = new OutboxService(outboxRepository);
 
     const notificationService = new NotificationService(
@@ -52,48 +48,36 @@ const start = async () => {
       outboxService
     );
 
-    // 4. Start Kafka consumer
+    // Start Kafka Consumer
     await startNotificationConsumer(notificationService);
 
+    // ==================== OUTBOX PROCESSOR ====================
     const outboxProcessor = new OutboxProcessor(outboxService);
     outboxProcessor.start();
-    logger.info('✅ Order Outbox Processor started');
 
-    // 5. Start background jobs
+    // ==================== BACKGROUND JOBS ====================
     const retryJob = new RetryJob(notificationService);
     const deadLetterJob = new DeadLetterJob();
-    const outboxWorker = new OutboxWorker(notificationService);
 
-    // Process Outbox (reliable delivery) - every 15 seconds
+    // Only keep these two jobs
     setInterval(() => {
-      outboxWorker.processOutbox().catch((err: any) => 
-        logger.error('Outbox Worker Error', { error: err.message })
-      );
-    }, 15000);
-
-    // Retry failed notifications - every 30 seconds
-    setInterval(() => {
-      retryJob.processFailedNotifications().catch((err: any) => 
+      retryJob.processFailedNotifications().catch(err => 
         logger.error('Retry Job Error', { error: err.message })
       );
-    }, 30000);
+    }, 45000); // ← Increased to 45 seconds
 
-    // Move permanently failed to dead-letter - every 5 minutes
     setInterval(() => {
-      deadLetterJob.processDeadLetters().catch((err: any) => 
+      deadLetterJob.processDeadLetters().catch(err => 
         logger.error('Dead Letter Job Error', { error: err.message })
       );
     }, 300000);
 
-    // 6. Start HTTP server
     app.listen(PORT, () => {
       logger.info(`🚀 Notification Service running on http://localhost:${PORT}`);
     });
 
   } catch (error: any) {
-    logger.error('❌ Failed to start Notification Service', { 
-      error: error.message 
-    });
+    logger.error('❌ Failed to start Notification Service', { error: error.message });
     process.exit(1);
   }
 };

@@ -1,144 +1,91 @@
-// apps/cart-service/src/infrastructure/kafka/consumer.ts
-
 import {
-  createConsumer,
-  runConsumer,
-  TOPICS,
+  subscribe,
   EVENTS,
+  TOPICS,
 } from '@org/shared-kafka';
 
-import { CartCheckoutOrchestrator } from '../checkout/cart-checkout.orchestrator';
 import logger from '@org/shared-logger';
+
+import { CartCheckoutOrchestrator } from '../checkout/cart-checkout.orchestrator';
+
+import { PaymentCompletedHandler } from './handlers/payment-completed.handler';
+import { PaymentFailedHandler } from './handlers/payment-failed.handler';
+import { OrderCancelledHandler } from './handlers/order-cancelled.handler';
 
 export const startCartConsumer = async (
   orchestrator: CartCheckoutOrchestrator
 ) => {
-  const groupId = 'cart-service-group';
 
-  try {
-
-    const consumer = createConsumer({
-      groupId,
-      serviceName: 'cart-service',
-
-      // ✅ SUBSCRIBE TO TOPICS
-      topics: [
-        TOPICS.PAYMENTS,
-        TOPICS.ORDERS,
-      ],
-    });
-
-    await runConsumer(
-      consumer,
-      {
-        groupId,
-        topics: [
-          TOPICS.PAYMENTS,
-          TOPICS.ORDERS,
-        ],
-        serviceName: 'cart-service',
-      },
-
-      async (message: any) => {
-        try {
-
-          const eventType = message?.event;
-          const data = message?.data || {};
-
-          logger.info('📥 Cart consumer received event', {
-            event: eventType,
-            orderId: data.orderId,
-            userId: data.userId,
-          });
-
-          switch (eventType) {
-
-            /**
-             * ====================================
-             * 💳 PAYMENT EVENTS
-             * ====================================
-             */
-
-            case EVENTS.PAYMENT_COMPLETED:
-
-              logger.info('💰 Processing payment.completed', {
-                orderId: data.orderId,
-              });
-
-              if (data.userId && data.orderId) {
-
-                await orchestrator.handlePaymentSuccess(
-                  data.userId,
-                  data.orderId
-                );
-              }
-
-              break;
-
-            case EVENTS.PAYMENT_FAILED:
-
-              logger.warn('❌ Processing payment.failed', {
-                orderId: data.orderId,
-              });
-
-              if (data.orderId) {
-
-                await orchestrator.handlePaymentFailure(
-                  data.orderId
-                );
-              }
-
-              break;
-
-            /**
-             * ====================================
-             * 📦 ORDER EVENTS
-             * ====================================
-             */
-
-            case EVENTS.ORDER_CANCELLED:
-
-              logger.info('🚫 Processing order.cancelled', {
-                orderId: data.orderId,
-              });
-
-              if (data.userId) {
-
-                await orchestrator.restoreCartAfterCancellation?.(
-                  data.userId,
-                  data.orderId
-                );
-              }
-
-              break;
-
-            default:
-
-              logger.warn('⚠️ Unhandled cart event', {
-                event: eventType,
-              });
-          }
-
-        } catch (error: any) {
-
-          logger.error('❌ Failed to process cart event', {
-            error: error.message,
-            stack: error.stack,
-          });
-
-          throw error;
-        }
-      }
+  const paymentCompletedHandler =
+    new PaymentCompletedHandler(
+      orchestrator
     );
 
-    logger.info('🚀 Cart Kafka consumer started successfully');
+  const paymentFailedHandler =
+    new PaymentFailedHandler(
+      orchestrator
+    );
 
-  } catch (error: any) {
+  const orderCancelledHandler =
+    new OrderCancelledHandler(
+      orchestrator
+    );
 
-    logger.error('❌ Failed to start cart consumer', {
-      error: error.message,
-    });
+  /**
+   * =========================
+   * PAYMENTS
+   * =========================
+   */
 
-    throw error;
-  }
+  await subscribe(
+    {
+      topics: [TOPICS.PAYMENTS],
+      groupId: 'cart-service',
+      serviceName: 'cart-service',
+    },
+    async (message: any) => {
+      switch (message.event) {
+
+        case EVENTS.PAYMENT_COMPLETED:
+          await paymentCompletedHandler.handle(
+            message
+          );
+          break;
+
+        case EVENTS.PAYMENT_FAILED:
+          await paymentFailedHandler.handle(
+            message
+          );
+          break;
+      }
+    }
+  );
+
+  /**
+   * =========================
+   * ORDERS
+   * =========================
+   */
+
+  await subscribe(
+    {
+      topics: [TOPICS.ORDERS],
+      groupId: 'cart-service',
+      serviceName: 'cart-service',
+    },
+    async (message: any) => {
+      switch (message.event) {
+
+        case EVENTS.ORDER_CANCELLED:
+          await orderCancelledHandler.handle(
+            message
+          );
+          break;
+      }
+    }
+  );
+
+  logger.info(
+    '🚀 Cart Kafka consumer started successfully'
+  );
 };

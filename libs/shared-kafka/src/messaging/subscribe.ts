@@ -25,22 +25,20 @@ export const subscribe = async (
     .use(retryMiddleware)
     .use(dlqMiddleware);
 
-  await runConsumer(consumer, config, async (rawEvent: any) => {
-    const ctx = {
-      event: rawEvent,
-      topic: rawEvent?.topic || config.topics[0],
-      eventId: rawEvent?.metadata?.eventId || rawEvent?.eventId,
-      serviceName: config.serviceName,
+await runConsumer(consumer, config, async (rawEvent: any) => {
+  const ctx = {
+    event: rawEvent,
+    topic: rawEvent?.topic || config.topics[0],
+    eventId: rawEvent?.metadata?.eventId || rawEvent?.eventId,
+    serviceName: config.serviceName,
+    retryCount: rawEvent?.metadata?.retryCount || 0,
+    maxRetries: 5,
+    headers: rawEvent?.headers || {},
+    receivedAt: Date.now(),
+  };
 
-      retryCount: rawEvent?.metadata?.retryCount || 0,
-      maxRetries: 5,
-
-      headers: rawEvent?.headers || {},
-      receivedAt: Date.now(),
-    };
-
-    await pipeline.execute(ctx, async (ctx) => {
-      await handler(ctx);
-    });
+  await pipeline.execute(ctx, async () => {
+    await handler(rawEvent);
   });
+});
 };

@@ -1,12 +1,11 @@
 /**
  * =============================================
- * CENTRALIZED KAFKA TOPICS & EVENTS
+ * FLASHSTORE KAFKA TOPICS & EVENTS (CLEAN)
  * =============================================
- * Use this file in ALL services (order, analytics, user, payment, etc.)
  */
 
 export const TOPICS = {
-  // Core Business Topics
+  // ================= CORE BUSINESS =================
   USERS: 'flashstore.users',
   AUTH: 'flashstore.auth',
   ORDERS: 'flashstore.orders',
@@ -17,89 +16,106 @@ export const TOPICS = {
   INVENTORY: 'flashstore.inventory',
   NOTIFICATIONS: 'flashstore.notifications',
 
-  // Analytics & Internal
+  // ================= ANALYTICS =================
   ANALYTICS: 'flashstore.analytics',
   METRICS: 'flashstore.metrics',
 
-  // System
+  // ================= SYSTEM =================
   SYSTEM: 'flashstore.system',
 } as const;
 
+/**
+ * =============================================
+ * EVENTS (STANDARDIZED NAMING)
+ * =============================================
+ */
 export const EVENTS = {
-  // ==================== USER EVENTS ====================
+  // ================= USERS =================
   USER_REGISTERED: 'user.registered',
   USER_UPDATED: 'user.updated',
   USER_DELETED: 'user.deleted',
 
-  // ==================== AUTH EVENTS ====================
+  // ================= AUTH =================
   USER_LOGGED_IN: 'user.logged_in',
   USER_LOGGED_OUT: 'user.logged_out',
   PASSWORD_RESET_REQUESTED: 'user.password_reset_requested',
   PASSWORD_RESET_COMPLETED: 'user.password_reset_completed',
 
-  // ==================== ORDER EVENTS ====================
+  // ================= ORDERS =================
   ORDER_CREATED: 'order.created',
   ORDER_UPDATED: 'order.updated',
   ORDER_STATUS_UPDATED: 'order.status.updated',
   ORDER_CANCELLED: 'order.cancelled',
   ORDER_COMPLETED: 'order.completed',
 
-  // ==================== PAYMENT EVENTS ====================
+  // ================= PAYMENTS =================
   PAYMENT_INITIATED: 'payment.initiated',
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
   PAYMENT_REFUNDED: 'payment.refunded',
-  PAYMENT_SUCCEEDED:'payment.succeded',
+  PAYMENT_SUCCEEDED: 'payment.succeeded', 
 
-  // ========== PRODUCT and CATEGORY EVENTS ============
+  // ================= PRODUCTS =================
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_DELETED: 'product.deleted',
   PRODUCT_VIEWED: 'product.viewed',
+  PRODUCT_INDEXED: 'product.indexed',
+  PRODUCT_REINDEX_REQUESTED: 'product.reindex.requested',
 
+  // ================= CATEGORIES =================
   CATEGORY_CREATED: 'category.created',
   CATEGORY_UPDATED: 'category.updated',
   CATEGORY_DELETED: 'category.deleted',
 
-  // ==================== CART EVENTS ====================
+  // ================= CART =================
   CART_UPDATED: 'cart.updated',
   CART_CLEARED: 'cart.cleared',
-  CART_CHECKED_OUT: 'cart.checkedout',
+  CART_CHECKED_OUT: 'cart.checked_out', 
 
-  // ==================== NOTIFICATION EVENTS ====================
+  // ================= NOTIFICATIONS =================
   NOTIFICATION_SENT: 'notification.sent',
   NOTIFICATION_FAILED: 'notification.failed',
 
-  // ==================== INVENTORY EVENTS ====================
+  // ================= INVENTORY =================
   STOCK_UPDATED: 'inventory.stock.updated',
-  STOCK_RESERVED: 'inventory.stock.reversed',
+  STOCK_RESERVED: 'inventory.stock.reserved', 
   STOCK_RELEASED: 'inventory.stock.released',
   STOCK_DEDUCTED: 'inventory.stock.deducted',
-  STOCK_ADJUSTED: 'inventory.stock.adjust',
+  STOCK_ADJUSTED: 'inventory.stock.adjusted',
 
-  // ==================== ANALYTICS EVENTS ====================
+  // ================= ANALYTICS =================
   METRIC_GENERATED: 'metric.generated',
-
-  // Search / Indexing Events
-  PRODUCT_INDEXED: 'product.indexed',
-  PRODUCT_REINDEX_REQUESTED: 'product.reindex.requested',
-
 } as const;
 
-// Type exports for better type safety
+/**
+ * =============================================
+ * TYPE SAFETY
+ * =============================================
+ */
 export type Topic = typeof TOPICS[keyof typeof TOPICS];
 export type EventType = typeof EVENTS[keyof typeof EVENTS];
 
-// Helper functions
-export const isUserEvent = (event: string): boolean => event.startsWith('user.');
-export const isOrderEvent = (event: string): boolean => event.startsWith('order.');
-export const isPaymentEvent = (event: string): boolean => event.startsWith('payment.');
-export const isProductEvent = (event: string): boolean => event.startsWith('product.');
+/**
+ * =============================================
+ * HELPERS
+ * =============================================
+ */
+export const isUserEvent = (e: string) => e.startsWith('user.');
+export const isOrderEvent = (e: string) => e.startsWith('order.');
+export const isPaymentEvent = (e: string) => e.startsWith('payment.');
+export const isProductEvent = (e: string) => e.startsWith('product.');
+export const isInventoryEvent = (e: string) => e.startsWith('inventory.');
 
-// Retry & DLQ helpers
-export const getRetryTopic = (topic: Topic): string => `${topic}.retry`;
-export const getDLQTopic = (topic: Topic): string => `${topic}.dlq`;
+/**
+ * Retry / DLQ helpers
+ */
+export const getRetryTopic = (topic: Topic) => `${topic}.retry`;
+export const getDLQTopic = (topic: Topic) => `${topic}.dlq`;
 
+/**
+ * Default export
+ */
 export default {
   TOPICS,
   EVENTS,

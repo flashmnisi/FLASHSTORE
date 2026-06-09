@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
-import env from '../../config/env';
 import logger from '@org/shared-logger';
+import env from './env';
 //import logger from '../../utils/logger';        // or from '@org/shared-logger'
 
 let transporter: nodemailer.Transporter | null = null;

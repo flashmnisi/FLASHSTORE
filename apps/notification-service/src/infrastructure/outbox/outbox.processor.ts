@@ -105,7 +105,7 @@ export class OutboxProcessor {
       });
 
       await this.outboxService.markAsProcessed(
-        event._id.toString()
+        event.id!.toString()
       );
 
       logger.info(
@@ -144,7 +144,7 @@ export class OutboxProcessor {
       });
 
       await this.outboxService.markAsFailed(
-        event._id.toString(),
+        event.id!.toString(),
         error.message,
         retries
       );
@@ -161,7 +161,7 @@ export class OutboxProcessor {
     }
 
     await this.outboxService.markAsFailed(
-      event._id.toString(),
+      event.id!.toString(),
       error.message,
       retries
     );

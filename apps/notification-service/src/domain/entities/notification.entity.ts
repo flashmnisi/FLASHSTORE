@@ -11,17 +11,18 @@ export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'permanently_fa
 export type NotificationChannel = 'email' | 'sms' | 'push';
 
 export class NotificationEntity {
-  constructor(
-    public id: string,
-    public userId: string,
-    public type: string,                    // e.g., 'order.created'
-    public templateName: string,
-    public templateData: any,
-    public title: string,
-    public message: string,
-    public status: NotificationStatus = 'pending',
-    public channel: NotificationChannel,     // ← Channel should come after status
-    public createdAt?: Date
+constructor(
+  public id: string,
+  public userId: string,
+  public type: string,
+  public templateName: string,
+  public templateData: any,
+  public data: any,
+  public title: string,
+  public message: string,
+  public status: NotificationStatus = 'pending',
+  public channel: NotificationChannel,
+  public createdAt?: Date
   ) {
     this.createdAt = createdAt || new Date();
   }

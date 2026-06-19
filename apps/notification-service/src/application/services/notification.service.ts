@@ -31,18 +31,18 @@ export class NotificationService {
           availableKeys: Object.keys(dto.templateData || {}),
         });
 
-        const failedNotification = new NotificationEntity(
-          '', 
-          dto.userId,
-          dto.type as NotificationType,
-          dto.templateName,
-          dto.templateData,
-          dto.title,
-          dto.message,
-          dto.data,
-          'failed',
-          dto.channel
-        );
+    const failedNotification = new NotificationEntity(
+  '',
+  dto.userId,
+  dto.type as NotificationType,
+  dto.templateName,
+  dto.templateData,
+  dto.data,
+  dto.title,
+  dto.message,
+  'failed',
+  dto.channel
+);
 
         const saved = await this.repository.save(failedNotification);
         await this.publishNotificationEvent(saved, false, dto);
@@ -50,18 +50,18 @@ export class NotificationService {
       }
 
       // ====================== CREATE NOTIFICATION ======================
-      const notification = new NotificationEntity(
-        '', 
-        dto.userId,
-        dto.type as NotificationType,
-        dto.templateName,
-        dto.templateData,
-        dto.title,
-        dto.message,
-        dto.data,
-        'pending',
-        dto.channel
-      );
+     const notification = new NotificationEntity(
+  '',
+  dto.userId,
+  dto.type as NotificationType,
+  dto.templateName,
+  dto.templateData,
+  dto.data,
+  dto.title,
+  dto.message,
+  'pending',
+  dto.channel
+);
 
       const saved = await this.repository.save(notification);
 

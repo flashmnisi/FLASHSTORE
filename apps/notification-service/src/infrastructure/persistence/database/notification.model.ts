@@ -6,7 +6,7 @@ export interface NotificationDocument extends Document {
 
   templateName: string;
   templateData: any;
-
+  data: any;
   title?: string;
   message?: string;
 

@@ -9,33 +9,35 @@ import { NotificationModel, NotificationDocument } from '../notification.model';
  * Mapper (DB ↔ Domain)
  */
 class NotificationMapper {
-  static toEntity(doc: NotificationDocument): NotificationEntity {
-    return new NotificationEntity(
-      doc._id.toString(),
-      doc.userId,
-      toNotificationType(doc.type),
-      doc.templateName,
-      doc.templateData || {},
-      doc.title || '',          
-      doc.message || '',
-      doc.status,
-      doc.channel,
-      doc.createdAt
-    );
-  }
+static toEntity(doc: NotificationDocument): NotificationEntity {
+  return new NotificationEntity(
+    doc._id.toString(),
+    doc.userId,
+    toNotificationType(doc.type),
+    doc.templateName,
+    doc.templateData || {},
+    doc.data,
+    doc.title || '',
+    doc.message || '',
+    doc.status,
+    doc.channel,
+    doc.createdAt
+  );
+}
 
-  static toPersistence(entity: NotificationEntity) {
-    return {
-      userId: entity.userId,
-      type: entity.type,
-      templateName: entity.templateName,
-      templateData: entity.templateData,
-      title: entity.title,
-      message: entity.message,
-      status: entity.status,
-      channel: entity.channel,
-    };
-  }
+static toPersistence(entity: NotificationEntity) {
+  return {
+    userId: entity.userId,
+    type: entity.type,
+    templateName: entity.templateName,
+    templateData: entity.templateData,
+    data: entity.data,
+    title: entity.title,
+    message: entity.message,
+    status: entity.status,
+    channel: entity.channel,
+  };
+}
 }
 
 /**
@@ -55,8 +57,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
       notification.id,
       NotificationMapper.toPersistence(notification),
       { 
-        returnDocument: 'after',   // ← Fixed deprecation warning
-        new: false                 // Not needed anymore
+        returnDocument: 'after',   
       }
     );
 

@@ -1,10 +1,6 @@
 // libs/shared-kafka/src/lib/producer.ts
 
-import {
-  Producer,
-  ProducerRecord,
-  Partitioners,
-} from 'kafkajs';
+import { Producer, ProducerRecord, Partitioners } from 'kafkajs';
 
 import crypto from 'crypto';
 
@@ -62,12 +58,9 @@ export const publish = async (options: {
      */
 
     const requestId =
-      options.message?.metadata?.requestId ||
-      crypto.randomUUID();
+      options.message?.metadata?.requestId || crypto.randomUUID();
 
-    const correlationId =
-      options.message?.metadata?.correlationId ||
-      requestId;
+    const correlationId = options.message?.metadata?.correlationId || requestId;
 
     const timestamp = new Date().toISOString();
 
@@ -105,11 +98,9 @@ export const publish = async (options: {
 
             'x-correlation-id': correlationId,
 
-            'x-event-type':
-              payload?.event || 'unknown',
+            'x-event-type': payload?.event || 'unknown',
 
-            'x-service':
-              payload?.serviceName || 'shared-kafka',
+            'x-service': payload?.serviceName || 'shared-kafka',
 
             'x-timestamp': timestamp,
           },
@@ -125,7 +116,6 @@ export const publish = async (options: {
       event: payload?.event,
       requestId,
     });
-
   } catch (error: any) {
     logger.error('❌ Failed to publish event', {
       topic: options.topic,

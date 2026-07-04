@@ -24,7 +24,9 @@ export class DeadLetterJob {
       );
 
       if (result.modifiedCount > 0) {
-        logger.warn(`Moved ${result.modifiedCount} notifications to dead-letter queue`);
+        logger.warn(
+          `Moved ${result.modifiedCount} notifications to dead-letter queue`
+        );
       }
     } catch (error: any) {
       logger.error('Dead letter job failed', { error: error.message });

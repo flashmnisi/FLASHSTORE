@@ -7,7 +7,7 @@ export interface IOrderRepository {
   create(order: OrderEntity): Promise<OrderEntity>;
 
   /**
-   * Update order (status changes, payment updates, etc.)
+   * Update order (status changes, payment updates)
    */
   update(order: OrderEntity): Promise<OrderEntity>;
 

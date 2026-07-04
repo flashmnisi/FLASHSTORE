@@ -6,7 +6,7 @@ export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
 
 export class PaymentEntity {
   markAsCanceled() {
-      throw new Error('Method not implemented.');
+    throw new Error('Method not implemented.');
   }
   constructor(
     public readonly id: string = '',
@@ -30,12 +30,13 @@ export class PaymentEntity {
    * Get Money Value Object
    */
   getMoney(): Money {
-    return Money.create(this.amount, this.currency);   // ← Fixed: return the value
+    return Money.create(this.amount, this.currency);
   }
 
   markSucceeded(stripePaymentIntentId?: string): void {
     this.status = 'succeeded';
-    if (stripePaymentIntentId) this.stripePaymentIntentId = stripePaymentIntentId;
+    if (stripePaymentIntentId)
+      this.stripePaymentIntentId = stripePaymentIntentId;
     this.updatedAt = new Date();
   }
 

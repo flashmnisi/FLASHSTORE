@@ -18,7 +18,7 @@ export const stripeWebhookSchema = z.object({
       currency: z.string().length(3).toUpperCase(),
       status: z.string().optional(),
 
-      // Last payment error (important for failed events)
+      // Last payment error
       last_payment_error: z
         .object({
           message: z.string().optional(),
@@ -28,7 +28,7 @@ export const stripeWebhookSchema = z.object({
         .optional()
         .nullable(),
 
-      // Metadata from Stripe - made fully optional with safe default
+      // Metadata from Stripe
       metadata: z
         .object({
           orderId: z.string().optional(),

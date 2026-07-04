@@ -41,20 +41,11 @@ const startServer = async () => {
     logger.info('✅ Kafka initialized');
 
     // ====================== HANDLERS ======================
-    const orderCreatedHandler =
-  new OrderCreatedHandler(
-    reservationService
-  );
+    const orderCreatedHandler = new OrderCreatedHandler(reservationService);
 
-const paymentFailedHandler =
-  new PaymentFailedHandler(
-    reservationService
-  );
+    const paymentFailedHandler = new PaymentFailedHandler(reservationService);
 
-const paymentSuccessHandler =
-  new PaymentSuccessHandler(
-    inventoryService
-  );
+    const paymentSuccessHandler = new PaymentSuccessHandler(inventoryService);
 
     // ====================== START CONSUMER ======================
     await startInventoryConsumer(
@@ -75,7 +66,6 @@ const paymentSuccessHandler =
     app.listen(PORT, () => {
       logger.info(`🚀 Inventory Service running on http://localhost:${PORT}`);
     });
-
   } catch (error: any) {
     logger.error('❌ Failed to start Inventory Service', {
       error: error.message,

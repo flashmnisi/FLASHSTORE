@@ -59,7 +59,6 @@ export class PaymentConsumer {
               event: message.event,
               error: error.message,
             });
-            // Do not re-throw to prevent consumer crash (let DLQ handle it)
           }
         }
       );

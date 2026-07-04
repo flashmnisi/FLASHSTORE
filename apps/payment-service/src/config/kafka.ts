@@ -9,7 +9,9 @@ import logger from '@org/shared-logger';
  */
 export const kafkaConfig = {
   clientId: env.KAFKA_CLIENT_ID || 'payment-service',
-  brokers: env.KAFKA_BROKERS ? env.KAFKA_BROKERS.split(',') : ['localhost:9092'],
+  brokers: env.KAFKA_BROKERS
+    ? env.KAFKA_BROKERS.split(',')
+    : ['localhost:9092'],
 };
 
 /**
@@ -17,7 +19,7 @@ export const kafkaConfig = {
  */
 export const initKafka = async () => {
   try {
-    const kafka = getKafka(); 
+    const kafka = getKafka();
 
     logger.info('📡 Kafka initialized successfully', {
       clientId: kafkaConfig.clientId,

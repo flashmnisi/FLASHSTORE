@@ -5,7 +5,6 @@ import { PaymentConsumer } from './infrastructure/kafka/consumer';
 import logger from '@org/shared-logger';
 import { OutboxService } from './infrastructure/outbox/outbox.service';
 import { StripeAdapter } from './infrastructure/payments/stripe.adaptor';
-//import { OutboxRepository } from './infrastructure/persistence/repositories/outbox.repository.impl';
 import { PaymentRepositoryImpl } from './infrastructure/persistence/repositories/payment.repository.impl';
 import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
 

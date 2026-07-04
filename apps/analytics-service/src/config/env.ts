@@ -5,22 +5,22 @@ dotenv.config();
 
 export default {
   // Server
-  PORT: process.env.PORT || 3006,
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV,
 
   // MongoDB
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://localhost:27017/flashstore-analytics',
+  MONGO_URI: process.env.MONGO_URI,
 
   // Kafka
-  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID || 'analytics-service',
-  KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'localhost:9092',
+  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID,
+  KAFKA_BROKERS: process.env.KAFKA_BROKERS,
 
   // Redis
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  REDIS_URL: process.env.REDIS_URL,
 
   // JWT (for protected routes)
-  JWT_SECRET: process.env.JWT_SECRET || 'your-jwt-secret-key',
+  JWT_SECRET: process.env.JWT_SECRET,
 
   // Logging
-  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  LOG_LEVEL: process.env.LOG_LEVEL,
 };

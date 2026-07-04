@@ -8,8 +8,8 @@ export class QueryNormalizer {
     return input
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '')     // Remove special characters except hyphen
-      .replace(/\s+/g, ' ')         // Normalize multiple spaces
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, ' ')
       .trim();
   }
 

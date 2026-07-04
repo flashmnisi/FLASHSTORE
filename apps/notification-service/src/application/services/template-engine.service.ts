@@ -17,4 +17,7 @@ const templateSchema = new Schema(
 
 templateSchema.index({ name: 1, version: -1, channel: 1 });
 
-export const TemplateModel = mongoose.model('NotificationTemplate', templateSchema);
+export const TemplateModel = mongoose.model(
+  'NotificationTemplate',
+  templateSchema
+);

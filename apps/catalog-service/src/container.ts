@@ -69,7 +69,6 @@ export {
   productService,
   categoryService,
   outboxService,
-  // Use cases (if needed elsewhere)
   createProductUseCase,
   updateProductUseCase,
   deleteProductUseCase,

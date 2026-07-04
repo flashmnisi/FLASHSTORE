@@ -1,4 +1,7 @@
-import { IndicesIndexSettings, MappingTypeMapping } from "@elastic/elasticsearch/lib/api/types";
+import {
+  IndicesIndexSettings,
+  MappingTypeMapping,
+} from '@elastic/elasticsearch/lib/api/types';
 
 export const productMapping: {
   settings: IndicesIndexSettings;
@@ -12,7 +15,7 @@ export const productMapping: {
         autocomplete: {
           type: 'custom',
           tokenizer: 'standard',
-          filter: ['lowercase', 'edge_ngram_filter'], // ✅ NOT readonly
+          filter: ['lowercase', 'edge_ngram_filter'],
         },
       },
       filter: {

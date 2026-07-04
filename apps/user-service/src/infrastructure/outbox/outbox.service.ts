@@ -53,14 +53,16 @@ export class OutboxService {
     try {
       return this.outboxRepository.findPending(limit);
     } catch (error: any) {
-      logger.error('Failed to fetch pending outbox events', { error: error.message });
+      logger.error('Failed to fetch pending outbox events', {
+        error: error.message,
+      });
       throw error;
     }
   }
 
   async lockForProcessing(id: string) {
-  return this.outboxRepository.lockForProcessing(id);
-}
+    return this.outboxRepository.lockForProcessing(id);
+  }
 
   /**
    * Mark as successfully processed
@@ -70,20 +72,32 @@ export class OutboxService {
       await this.outboxRepository.markAsProcessed(id);
       logger.info('✅ Outbox event marked as processed', { outboxId: id });
     } catch (error: any) {
-      logger.error('Failed to mark as processed', { outboxId: id, error: error.message });
+      logger.error('Failed to mark as processed', {
+        outboxId: id,
+        error: error.message,
+      });
     }
   }
 
   /**
    * Mark as failed
    */
-  async markAsFailed(id: string, errorMessage: string, retries: number): Promise<void> {
+  async markAsFailed(
+    id: string,
+    errorMessage: string,
+    retries: number
+  ): Promise<void> {
     try {
       await this.outboxRepository.markAsFailed(id, errorMessage, retries);
-      logger.warn('⚠️ Outbox event marked as failed', { outboxId: id, retries });
+      logger.warn('⚠️ Outbox event marked as failed', {
+        outboxId: id,
+        retries,
+      });
     } catch (error: any) {
-      logger.error('Failed to mark as failed', { outboxId: id, error: error.message });
+      logger.error('Failed to mark as failed', {
+        outboxId: id,
+        error: error.message,
+      });
     }
   }
 }
-

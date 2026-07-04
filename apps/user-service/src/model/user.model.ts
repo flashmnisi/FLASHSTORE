@@ -31,36 +31,40 @@ const addressSchema = new Schema({
 });
 
 const cartItemSchema = new Schema({
-  product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product',
+    required: true,
+  },
   count: { type: Number, required: true, min: 1, default: 1 },
 });
 
 const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true, 
-      lowercase: true, 
-      trim: true 
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
-    password: { 
-      type: String, 
-      required: true, 
+    password: {
+      type: String,
+      required: true,
       minlength: 6,
-      select: false 
+      select: false,
     },
     address: [addressSchema],
     orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
     isAdmin: { type: Boolean, default: false },
-    role: { 
-      type: String, 
-      enum: ['user', 'admin'], 
-      default: 'user' 
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
-    cart: { 
-      items: [cartItemSchema] 
+    cart: {
+      items: [cartItemSchema],
     },
     resetOtp: {
       code: String,
@@ -72,24 +76,25 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return; 
+    return;
   }
 
   try {
-    console.log("🔑 Hashing password for:", this.email);
+    console.log('🔑 Hashing password for:', this.email);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    console.log("✅ Password hashed successfully");
+    console.log('✅ Password hashed successfully');
   } catch (err: any) {
-    console.error("❌ Hashing error:", err.message);
-    throw err; // Throwing an error stops the save process
+    console.error('❌ Hashing error:', err.message);
+    throw err;
   }
 });
 
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

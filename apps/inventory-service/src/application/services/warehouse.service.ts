@@ -6,9 +6,7 @@ import { IWarehouseRepository } from '../interfaces/warehouse.repository';
 import logger from '@org/shared-logger';
 
 export class WarehouseService {
-  constructor(
-    private readonly warehouseRepository: IWarehouseRepository
-  ) {}
+  constructor(private readonly warehouseRepository: IWarehouseRepository) {}
 
   async createWarehouse(data: {
     name: string;

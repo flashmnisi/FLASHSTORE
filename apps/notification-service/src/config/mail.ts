@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import logger from '@org/shared-logger';
 import env from './env';
-//import logger from '../../utils/logger';        // or from '@org/shared-logger'
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -23,11 +22,11 @@ export const initMailTransporter = async () => {
     await transporter.verify();
 
     logger.info('✅ Mail transporter (Nodemailer) initialized successfully');
-    
+
     return transporter;
   } catch (error: any) {
-    logger.error('❌ Failed to initialize mail transporter', { 
-      error: error.message 
+    logger.error('❌ Failed to initialize mail transporter', {
+      error: error.message,
     });
     throw error;
   }
@@ -35,7 +34,9 @@ export const initMailTransporter = async () => {
 
 export const getMailTransporter = (): nodemailer.Transporter => {
   if (!transporter) {
-    throw new Error('Mail transporter not initialized. Call initMailTransporter first.');
+    throw new Error(
+      'Mail transporter not initialized. Call initMailTransporter first.'
+    );
   }
   return transporter;
 };

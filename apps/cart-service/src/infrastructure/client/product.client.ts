@@ -9,11 +9,6 @@ export class ProductClient implements IProductClient {
     productId: string
   ): Promise<ProductDto | null> {
 
-    /**
-     * TODO:
-     * Replace with Product Service HTTP/gRPC call
-     */
-
     return {
       id: productId,
       name: 'iPhone 15',

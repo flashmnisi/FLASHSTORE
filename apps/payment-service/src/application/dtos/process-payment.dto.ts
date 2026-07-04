@@ -17,7 +17,6 @@ export const processPaymentSchema = z.object({
     .enum(['card', 'wallet', 'bank_transfer'])
     .default('card'),
 
-  // Metadata is optional and defaults to empty object
   metadata: z
     .record(z.string(), z.unknown())
     .optional()

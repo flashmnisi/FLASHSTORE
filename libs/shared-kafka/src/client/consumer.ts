@@ -15,9 +15,7 @@ interface ConsumerConfig {
   serviceName: string;
 }
 
-export const createConsumer = (
-  config: ConsumerConfig
-): Consumer => {
+export const createConsumer = (config: ConsumerConfig): Consumer => {
   const kafka = getKafka();
 
   const consumer = kafka.consumer({
@@ -76,22 +74,6 @@ export const runConsumer = async (
         return;
       }
 
-      /**
-       * ==================================================
-       * FIXED EVENT ID GENERATION
-       * ==================================================
-       *
-       * OLD BUG:
-       * generateEventId(parsed.data)
-       *
-       * user.registered and user.logged_in
-       * had same payload → same hash
-       *
-       * NOW:
-       * include event + topic + timestamp
-       * so every event becomes unique
-       */
-
       const eventId =
         parsed?.metadata?.requestId ||
         idempotencyService.generateEventId({
@@ -112,11 +94,10 @@ export const runConsumer = async (
          * ==================================================
          */
 
-        const isDuplicate =
-          await idempotencyService.isDuplicate(
-            eventId,
-            config.serviceName
-          );
+        const isDuplicate = await idempotencyService.isDuplicate(
+          eventId,
+          config.serviceName
+        );
 
         if (isDuplicate) {
           logger.warn('🔄 Duplicate event blocked', {
@@ -152,10 +133,7 @@ export const runConsumer = async (
          * ==================================================
          */
 
-        await idempotencyService.markAsProcessed(
-          eventId,
-          config.serviceName
-        );
+        await idempotencyService.markAsProcessed(eventId, config.serviceName);
 
         logger.info('✅ Event marked as processed', {
           topic,
@@ -163,7 +141,6 @@ export const runConsumer = async (
           eventId,
           service: config.serviceName,
         });
-
       } catch (error: any) {
         logger.error('❌ Event processing failed', {
           topic,
@@ -191,16 +168,13 @@ export const runConsumer = async (
             stack: error.stack,
           },
 
-          retryCount:
-            parsed?.metadata?.retryCount ?? 0,
+          retryCount: parsed?.metadata?.retryCount ?? 0,
 
           serviceName: config.serviceName,
 
-          correlationId:
-            parsed?.metadata?.correlationId,
+          correlationId: parsed?.metadata?.correlationId,
 
-          traceId:
-            parsed?.metadata?.traceId,
+          traceId: parsed?.metadata?.traceId,
         });
       }
     },

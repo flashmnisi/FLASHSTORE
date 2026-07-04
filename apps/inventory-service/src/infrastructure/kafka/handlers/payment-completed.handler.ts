@@ -4,9 +4,7 @@ import { InventoryService } from '../../../application/services/inventory.servic
 import logger from '@org/shared-logger';
 
 export class PaymentSuccessHandler {
-  constructor(
-    private readonly inventoryService: InventoryService
-  ) {}
+  constructor(private readonly inventoryService: InventoryService) {}
 
   async handle(event: any) {
     try {
@@ -24,7 +22,6 @@ export class PaymentSuccessHandler {
       logger.info('Inventory deducted after payment', {
         orderId: payment.orderId,
       });
-
     } catch (error: any) {
       logger.error('PaymentSuccessHandler failed', {
         error: error.message,

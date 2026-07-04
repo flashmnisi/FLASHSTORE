@@ -92,11 +92,7 @@ export class OutboxProcessor {
         correlationId: event.correlationId,
       });
 
-      await this.outboxService.markAsFailed(
-        event.id!,
-        error.message,
-        retries
-      );
+      await this.outboxService.markAsFailed(event.id!, error.message, retries);
 
       logger.error('💀 Event moved to DLQ', {
         outboxId: event.id,
@@ -106,11 +102,7 @@ export class OutboxProcessor {
       return;
     }
 
-    await this.outboxService.markAsFailed(
-      event.id!,
-      error.message,
-      retries
-    );
+    await this.outboxService.markAsFailed(event.id!, error.message, retries);
 
     logger.warn('⚠️ Outbox event failed. Will retry.', {
       outboxId: event.id,

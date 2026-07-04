@@ -13,8 +13,6 @@ from '../../presentation/controllers/cart.controller';
 /**
  * Repositories
  */
-// import { MongoCartRepository }
-// from '../../repositories/mongo-cart.repository';
 
 import { RedisCartCacheRepository }
 from '../cache/redis-cart-cache.repository';

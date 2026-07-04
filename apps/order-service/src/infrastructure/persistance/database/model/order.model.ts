@@ -35,11 +35,7 @@ export interface IOrder extends Document {
     | 'delivered'
     | 'cancelled';
 
-  paymentStatus:
-    | 'pending'
-    | 'paid'
-    | 'failed'
-    | 'refunded';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
 
   idempotencyKey: string;
 
@@ -191,45 +187,11 @@ const orderSchema = new Schema<IOrder>(
 orderSchema.index({ userId: 1, createdAt: -1 });
 
 /**
- * NOTE:
- * Removed duplicate index definitions
- * (status & paymentStatus already indexed inline)
- */
-
-/**
  * ===============================
  * MODEL
  * ===============================
  */
-export const OrderModel: Model<IOrder> =
-  mongoose.model<IOrder>('Order', orderSchema);
-
-// Invoke-WebRequest -Method POST `
-//   -Uri "http://localhost:8080/api/orders" `
-//   -Headers @{
-//     "Content-Type" = "application/json"
-//     "Authorization" = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTAwZTI4MmI4OTNhMDY5ZTM4MjFmOWQiLCJlbWFpbCI6InNlbGJ5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4NDkxNjI2LCJleHAiOjE3Nzg0OTI1MjZ9.czhm89LgKxLqhFujdu0SSs9mhelkgMWuyweRvrVjyv0"
-//   } `
-//   -Body '{
-//     "orderItems": [
-//       {
-//         "product": "prod_001",
-//         "qty": 1,
-//         "price": 1299.99
-//       }
-//     ],
-//     "shippingAddress": {
-//       "name": "Flash Mnisi",
-//       "phone": "0812345678",
-//       "city": "Johannesburg",
-//       "houseNo": "123",
-//       "streetName": "Main Street",
-//       "postalCode": "2001",
-//       "country": "South Africa"
-//     },
-//     "paymentMethod": "card",
-//     "itemsPrice": 1299.99,
-//     "shippingPrice": 99.99,
-//     "totalPrice": 1399.98,
-//     "deliveryOption": "standard"
-//   }' | Select-Object -ExpandProperty Content
+export const OrderModel: Model<IOrder> = mongoose.model<IOrder>(
+  'Order',
+  orderSchema
+);

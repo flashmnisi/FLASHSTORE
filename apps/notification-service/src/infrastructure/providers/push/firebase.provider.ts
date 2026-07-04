@@ -1,7 +1,6 @@
 import logger from '@org/shared-logger';
 import { NotificationEntity } from '../../../domain/entities/notification.entity';
 import { IPushProvider } from '../../../application/interfaces/push.provider';
-//import { IPushProvider } from '../../interfaces/push.provider';
 
 export class FirebaseProvider implements IPushProvider {
   async send(notification: NotificationEntity): Promise<void> {

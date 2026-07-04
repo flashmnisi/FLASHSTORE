@@ -39,11 +39,7 @@ const controller = new PaymentController(paymentService);
  */
 
 // Protected: Create payment
-router.post(
-  '/',
-  protect,
-  controller.processPayment
-);
+router.post('/', protect, controller.processPayment);
 
 // Stripe webhook (raw body required)
 router.post(
@@ -53,10 +49,6 @@ router.post(
 );
 
 // Get payment
-router.get(
-  '/:orderId',
-  protect,
-  controller.getPaymentByOrder
-);
+router.get('/:orderId', protect, controller.getPaymentByOrder);
 
 export default router;

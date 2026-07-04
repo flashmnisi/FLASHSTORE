@@ -33,7 +33,7 @@ export class DeductStockUseCase {
       // Publish event to Outbox
       await this.outboxService.write({
         topic: TOPICS.INVENTORY,
-        event: EVENTS.STOCK_DEDUCTED,           // Make sure this event exists in shared-kafka
+        event: EVENTS.STOCK_DEDUCTED,           
         key: dto.productId,
         correlationId: dto.correlationId,
         data: {

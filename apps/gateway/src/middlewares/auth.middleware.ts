@@ -22,10 +22,6 @@ export interface AuthRequest extends Request {
  * 🔐 AUTH MIDDLEWARE (GATEWAY)
  * ============================
  *
- * - Validates JWT
- * - Attaches req.user
- * - FORWARDS identity via headers
- *   for microservices (critical)
  */
 export const protect = (
   req: AuthRequest,

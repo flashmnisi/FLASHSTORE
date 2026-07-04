@@ -18,11 +18,16 @@ export class AuthService {
    * Generate Access + Refresh Tokens
    * Accepts either UserEntity or plain payload
    */
-  async generateTokens(input: UserEntity | { userId: string; email: string; role?: string }) {
+  async generateTokens(
+    input: UserEntity | { userId: string; email: string; role?: string }
+  ) {
     const payload = {
       userId: input instanceof UserEntity ? input.id : input.userId,
       email: input instanceof UserEntity ? input.email : input.email,
-      role: input instanceof UserEntity ? (input.role || 'user') : (input.role || 'user'),
+      role:
+        input instanceof UserEntity
+          ? input.role || 'user'
+          : input.role || 'user',
     };
 
     const accessToken = generateAccessToken(payload);
@@ -34,44 +39,44 @@ export class AuthService {
   /**
    * LOGIN
    */
-async login(dto: any) {
-  const user = await this.userRepository.findByEmail(dto.email);
+  async login(dto: any) {
+    const user = await this.userRepository.findByEmail(dto.email);
 
-  if (!user) {
-    throw new AppError('Invalid email or password', 401);
-  }
+    if (!user) {
+      throw new AppError('Invalid email or password', 401);
+    }
 
-  const { accessToken, refreshToken } = await this.generateTokens(user);
+    const { accessToken, refreshToken } = await this.generateTokens(user);
 
-  await this.outboxService.write({
-    topic: TOPICS.AUTH,
-    event: EVENTS.USER_LOGGED_IN,
-    key: user.id,
-    data: {
+    await this.outboxService.write({
+      topic: TOPICS.AUTH,
+      event: EVENTS.USER_LOGGED_IN,
+      key: user.id,
+      data: {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        loggedInAt: new Date().toISOString(),
+      },
+    });
+
+    logger.info('User logged in successfully', {
       userId: user.id,
       email: user.email,
-      name: user.name,
-      loggedInAt: new Date().toISOString(),
-    },
-  });
+    });
 
-  logger.info('User logged in successfully', {
-    userId: user.id,
-    email: user.email,
-  });
-
-  return {
-    user,
-    accessToken,
-    refreshToken,
-  };
-}
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
+  }
 
   /**
    * LOGOUT
    */
   async logout(userId: string): Promise<void> {
-    await this.userRepository.clearRefreshToken(userId);   // Make sure this method exists in repository
+    await this.userRepository.clearRefreshToken(userId); 
     logger.info('User logged out successfully', { userId });
   }
 
@@ -99,19 +104,23 @@ async login(dto: any) {
   }
 
   async generatePasswordResetToken(userId: string): Promise<string> {
-    const token = Math.random().toString(36).substring(2, 15) + 
-                  Math.random().toString(36).substring(2, 15);
+    const token =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
     logger.info('Password reset token generated', { userId });
     return token;
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string
+  ): Promise<void> {
     logger.info('Password reset email sent (mock)', { email, resetToken });
   }
 
   async publishEvent(event: string, payload: any): Promise<void> {
     await this.outboxService.write({
-      topic:TOPICS.AUTH,
+      topic: TOPICS.AUTH,
       event,
       data: payload,
       key: payload.userId || 'system',

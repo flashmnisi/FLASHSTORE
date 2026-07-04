@@ -28,7 +28,7 @@ const notificationService = new NotificationService(
 
 const controller = new NotificationController(notificationService);
 
-// Send notification endpoint (for manual testing or internal calls)
+// Send notification endpoint
 router.post('/send', controller.sendNotification.bind(controller));
 
 export default router;

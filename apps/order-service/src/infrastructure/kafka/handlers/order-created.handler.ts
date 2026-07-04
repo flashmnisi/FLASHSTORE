@@ -14,10 +14,5 @@ export class OrderCreatedHandler {
         totalAmount: data.totalAmount,
       }
     );
-
-    // Future:
-    // analytics
-    // notifications
-    // auditing
   }
 }

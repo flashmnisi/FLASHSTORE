@@ -31,7 +31,8 @@ export const authMiddleware = (
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
-        message: 'Missing or invalid authorization header. Use "Bearer <token>"',
+        message:
+          'Missing or invalid authorization header. Use "Bearer <token>"',
       });
       return;
     }
@@ -46,7 +47,7 @@ export const authMiddleware = (
       return;
     }
 
-    const decoded = jwt.verify(token, env.JWT_SECRET) as any;
+    const decoded = jwt.verify(token, env.JWT_SECRET || '') as any;
 
     // Attach user to request
     (req as AuthenticatedRequest).user = {

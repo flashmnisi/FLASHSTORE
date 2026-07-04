@@ -14,14 +14,16 @@ export class RetryJob {
     try {
       const failedNotifications = await OutboxModel.find({
         status: 'failed',
-        retries: { $lt: 3 },           // Reduced max retries
+        retries: { $lt: 3 },
       })
         .sort({ createdAt: 1 })
         .limit(15);
 
       if (failedNotifications.length === 0) return;
 
-      logger.info(`🔄 Retrying ${failedNotifications.length} failed notifications`);
+      logger.info(
+        `🔄 Retrying ${failedNotifications.length} failed notifications`
+      );
 
       for (const outbox of failedNotifications) {
         try {
@@ -29,7 +31,7 @@ export class RetryJob {
 
           // ====================== SKIP PERMANENT FAILURES ======================
           const templateData = payload.templateData || payload.data || payload;
-          
+
           if (payload.channel === 'email' && !templateData?.email) {
             logger.warn('⛔ Skipping permanent failure (missing email)', {
               outboxId: outbox._id,
@@ -37,7 +39,10 @@ export class RetryJob {
               userId: payload.userId,
             });
 
-            await this.markAsPermanentlyFailed(outbox._id, 'Missing recipient email');
+            await this.markAsPermanentlyFailed(
+              outbox._id,
+              'Missing recipient email'
+            );
             continue;
           }
 
@@ -64,11 +69,10 @@ export class RetryJob {
             }
           );
 
-          logger.info('✅ Retry successful', { 
+          logger.info('✅ Retry successful', {
             outboxId: outbox._id,
             type: payload.type,
           });
-
         } catch (err: any) {
           const newRetryCount = (outbox.retries || 0) + 1;
 

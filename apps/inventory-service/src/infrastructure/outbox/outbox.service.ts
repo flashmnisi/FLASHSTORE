@@ -5,9 +5,7 @@ import { IOutboxRepository } from '../../application/interfaces/outbox.repositor
 import logger from '@org/shared-logger';
 
 export class OutboxService {
-  constructor(
-    private readonly repository: IOutboxRepository
-  ) {}
+  constructor(private readonly repository: IOutboxRepository) {}
 
   async write(event: {
     topic: string;
@@ -57,7 +55,10 @@ export class OutboxService {
     try {
       await this.repository.markAsProcessed(id);
     } catch (error: any) {
-      logger.error('Failed to mark as processed', { outboxId: id, error: error.message });
+      logger.error('Failed to mark as processed', {
+        outboxId: id,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -70,7 +71,10 @@ export class OutboxService {
     try {
       await this.repository.markAsFailed(id, errorMessage, retries);
     } catch (error: any) {
-      logger.error('Failed to mark as failed', { outboxId: id, error: error.message });
+      logger.error('Failed to mark as failed', {
+        outboxId: id,
+        error: error.message,
+      });
       throw error;
     }
   }

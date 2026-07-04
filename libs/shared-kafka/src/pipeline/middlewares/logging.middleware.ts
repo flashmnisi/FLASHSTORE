@@ -31,6 +31,6 @@ logger.info("📥 Event received", {
       correlationId: ctx.correlationId,
     });
 
-    throw error; // IMPORTANT: triggers retry/DLQ
+    throw error; 
   }
 };

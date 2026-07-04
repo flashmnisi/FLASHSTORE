@@ -5,9 +5,7 @@ import logger from '@org/shared-logger';
 import { IOutboxRepository } from '../persistence/repositories/outbox.repository.impl';
 
 export class OutboxService {
-  constructor(
-    private readonly outboxRepository: IOutboxRepository
-  ) {}
+  constructor(private readonly outboxRepository: IOutboxRepository) {}
 
   /**
    * Write event to Outbox
@@ -83,11 +81,7 @@ export class OutboxService {
     errorMessage: string,
     retries: number
   ): Promise<void> {
-    await this.outboxRepository.markAsFailed(
-      id,
-      errorMessage,
-      retries
-    );
+    await this.outboxRepository.markAsFailed(id, errorMessage, retries);
 
     logger.warn('⚠️ Outbox failed', {
       outboxId: id,

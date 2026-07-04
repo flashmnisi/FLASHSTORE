@@ -72,15 +72,14 @@ export class SearchRepositoryImpl {
         ? response.hits.total
         : response.hits.total?.value || 0;
 
-    // Fixed: Pass correct arguments to SearchResultEntity
     return new SearchResultEntity(
-      hits,                    // products
-      total,                   // total
-      query.page,              // page
-      query.limit,             // limit
-      {},                      // facets (empty for now)
-      query.query,             // query
-      response.took            // took (response time from Elasticsearch)
+      hits,
+      total,
+      query.page,
+      query.limit,
+      {},
+      query.query,
+      response.took
     );
   }
 

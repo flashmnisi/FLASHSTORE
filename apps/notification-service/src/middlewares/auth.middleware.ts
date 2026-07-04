@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken, extractToken, type JwtPayload } from '@org/shared-auth';
+import {
+  verifyAccessToken,
+  extractToken,
+  type JwtPayload,
+} from '@org/shared-auth';
 import logger from '@org/shared-logger';
-//import logger from '../utils/logger';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;

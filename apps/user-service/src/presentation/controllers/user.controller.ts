@@ -2,7 +2,6 @@
 
 import logger from '@org/shared-logger';
 import { Request, Response } from 'express';
-//import { addressService } from '../../application/services/address.service';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { userService, authService, addressService } from '../../container';
 import { CreateUserDto } from '../../application/dtos/create-user.dto';
@@ -11,52 +10,49 @@ import { CreateUserDto } from '../../application/dtos/create-user.dto';
  * User Controller - Thin layer that delegates to services
  */
 export const userController = {
+  /**
+   * Register new user
+   * POST /api/auth/register or /api/users/register
+   */
+  async register(req: Request, res: Response) {
+    try {
+      const createUserDto = req.body as CreateUserDto;
 
-/**
- * Register new user
- * POST /api/auth/register or /api/users/register
- */
-async register(req: Request, res: Response) {
-  try {
-    const createUserDto = req.body as CreateUserDto;
+      // ✅ This returns { user, accessToken, refreshToken }
+      const result = await userService.register(createUserDto);
 
-    // ✅ This returns { user, accessToken, refreshToken }
-    const result = await userService.register(createUserDto);
+      const { user, accessToken, refreshToken } = result;
 
-    const { user, accessToken, refreshToken } = result;
-
-    logger.info('User registered successfully', {
-      userId: user.id,
-      email: user.email,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        name: user.name,
+      logger.info('User registered successfully', {
+        userId: user.id,
         email: user.email,
-        role: user.role,
-        isAdmin: user.isAdmin || false,
-      },
-    });
+      });
 
-  } catch (error: any) {
-    logger.error('Registration failed', {
-      email: req.body?.email,
-      error: error.message,
-    });
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isAdmin: user.isAdmin || false,
+        },
+      });
+    } catch (error: any) {
+      logger.error('Registration failed', {
+        email: req.body?.email,
+        error: error.message,
+      });
 
-    return res.status(400).json({
-      success: false,
-      message: error.message || 'Registration failed',
-    });
-  }
-},
-
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Registration failed',
+      });
+    }
+  },
 
   /**
    * Login user
@@ -134,7 +130,10 @@ async register(req: Request, res: Response) {
         });
       }
 
-      const updatedUser = await userService.updateProfile(req.user.userId, req.body);
+      const updatedUser = await userService.updateProfile(
+        req.user.userId,
+        req.body
+      );
 
       return res.status(200).json({
         success: true,

@@ -10,11 +10,7 @@ export class OutboxEntity {
   public key?: string;
   public correlationId?: string;
 
-  public status:
-    | 'pending'
-    | 'processing'
-    | 'processed'
-    | 'failed';
+  public status: 'pending' | 'processing' | 'processed' | 'failed';
 
   public retries: number;
 
@@ -37,11 +33,7 @@ export class OutboxEntity {
     key?: string;
     correlationId?: string;
 
-    status?:
-      | 'pending'
-      | 'processing'
-      | 'processed'
-      | 'failed';
+    status?: 'pending' | 'processing' | 'processed' | 'failed';
 
     retries?: number;
 
@@ -103,10 +95,7 @@ export class OutboxEntity {
     this.updatedAt = new Date();
   }
 
-  markAsFailed(
-    errorMessage: string,
-    retries: number
-  ): void {
+  markAsFailed(errorMessage: string, retries: number): void {
     this.status = 'failed';
     this.errorMessage = errorMessage;
     this.retries = retries;
@@ -115,10 +104,7 @@ export class OutboxEntity {
     this.updatedAt = new Date();
   }
 
-  markPendingRetry(
-    errorMessage: string,
-    nextRetryAt: Date
-  ): void {
+  markPendingRetry(errorMessage: string, nextRetryAt: Date): void {
     this.status = 'pending';
     this.errorMessage = errorMessage;
     this.retries += 1;
@@ -136,7 +122,7 @@ export class OutboxEntity {
   // =========================================
 
   toJSON() {
-    return { 
+    return {
       id: this.id,
       topic: this.topic,
       event: this.event,

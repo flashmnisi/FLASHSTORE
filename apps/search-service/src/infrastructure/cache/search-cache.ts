@@ -17,7 +17,7 @@ export class SearchCache {
       const cached = await redis.get(this.formatKey(key));
 
       if (cached) {
-        logger.debug('⚡ Cache hit', { key });   // Use debug for cache hits to reduce noise
+        logger.debug('⚡ Cache hit', { key });  
         return JSON.parse(cached);
       }
 
@@ -82,7 +82,7 @@ export class SearchCache {
       .toLowerCase()
       .trim()
       .replace(/\s+/g, ':')
-      .replace(/[^a-z0-9:]/g, '')}`;   // Remove special characters
+      .replace(/[^a-z0-9:]/g, '')}`;  
   }
 
   /**
@@ -90,7 +90,6 @@ export class SearchCache {
    */
   async clearAll(): Promise<void> {
     logger.warn('clearAll() is intentionally not implemented for safety');
-    // In production, you could use Redis SCAN to delete keys with prefix 'search:*'
   }
 }
 

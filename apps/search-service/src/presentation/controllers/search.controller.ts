@@ -21,7 +21,6 @@ const trendingService = new TrendingService();
 const analytics = new SearchAnalyticsService();
 
 export const searchController = {
-
   /**
    * 🔍 MAIN SEARCH
    */
@@ -44,7 +43,9 @@ export const searchController = {
       const searchVO = new SearchQueryVO(
         query,
         {
-          category: req.query.category ? [String(req.query.category)] : undefined,
+          category: req.query.category
+            ? [String(req.query.category)]
+            : undefined,
           brand: req.query.brand ? [String(req.query.brand)] : undefined,
           minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
           maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
@@ -73,15 +74,16 @@ export const searchController = {
       await searchCache.set(cacheKey, result);
 
       // Track analytics (non-blocking)
-      analytics.trackSearch(query).catch((err) =>
-        logger.warn('Analytics trackSearch failed', { error: err.message })
-      );
+      analytics
+        .trackSearch(query)
+        .catch((err) =>
+          logger.warn('Analytics trackSearch failed', { error: err.message })
+        );
 
       return res.json({
         success: true,
         data: result,
       });
-
     } catch (error: any) {
       logger.error('Search failed', {
         query: req.query.q,
@@ -112,7 +114,6 @@ export const searchController = {
         success: true,
         data: suggestions,
       });
-
     } catch (error: any) {
       logger.error('Suggest failed', { error: error.message });
       return res.status(500).json({
@@ -134,7 +135,6 @@ export const searchController = {
         success: true,
         data,
       });
-
     } catch (error: any) {
       logger.error('Trending failed', { error: error.message });
       return res.status(500).json({
@@ -149,7 +149,7 @@ export const searchController = {
    */
   async click(req: Request, res: Response) {
     try {
-      const { productId } = req.body;     // ← Fixed: only take productId
+      const { productId } = req.body; // ← Fixed: only take productId
 
       if (!productId) {
         return res.status(400).json({
@@ -165,7 +165,6 @@ export const searchController = {
         success: true,
         message: 'Click tracked',
       });
-
     } catch (error: any) {
       logger.error('Click tracking failed', { error: error.message });
       return res.status(500).json({

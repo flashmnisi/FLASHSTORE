@@ -12,8 +12,6 @@ export const startDLQConsumer = () => {
         topic: event.topic,
         error: event.error,
       });
-
-      // 👉 future: retry engine, manual approval, UI dashboard
     }
   );
 };

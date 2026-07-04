@@ -61,23 +61,30 @@ const start = async () => {
 
     // Only keep these two jobs
     setInterval(() => {
-      retryJob.processFailedNotifications().catch(err => 
-        logger.error('Retry Job Error', { error: err.message })
-      );
+      retryJob
+        .processFailedNotifications()
+        .catch((err) =>
+          logger.error('Retry Job Error', { error: err.message })
+        );
     }, 45000); // ← Increased to 45 seconds
 
     setInterval(() => {
-      deadLetterJob.processDeadLetters().catch(err => 
-        logger.error('Dead Letter Job Error', { error: err.message })
-      );
+      deadLetterJob
+        .processDeadLetters()
+        .catch((err) =>
+          logger.error('Dead Letter Job Error', { error: err.message })
+        );
     }, 300000);
 
     app.listen(PORT, () => {
-      logger.info(`🚀 Notification Service running on http://localhost:${PORT}`);
+      logger.info(
+        `🚀 Notification Service running on http://localhost:${PORT}`
+      );
     });
-
   } catch (error: any) {
-    logger.error('❌ Failed to start Notification Service', { error: error.message });
+    logger.error('❌ Failed to start Notification Service', {
+      error: error.message,
+    });
     process.exit(1);
   }
 };

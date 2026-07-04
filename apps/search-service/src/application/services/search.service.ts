@@ -19,7 +19,7 @@ export class SearchService {
         queryDto.limit || 20,
         queryDto.minPrice,
         queryDto.maxPrice,
-        queryDto.category ? [queryDto.category] : undefined,
+        queryDto.category ? [queryDto.category] : undefined
       );
 
       const rawResult = await this.searchRepository.search(queryVO);
@@ -29,7 +29,7 @@ export class SearchService {
         rawResult.total || 0,
         rawResult.page || queryVO.page,
         rawResult.limit || queryVO.limit,
-        [], // facets - can be expanded later
+        [],
         queryDto.query
       );
 
@@ -40,7 +40,6 @@ export class SearchService {
       });
 
       return result;
-
     } catch (error: any) {
       logger.error('Search failed', {
         error: error.message,

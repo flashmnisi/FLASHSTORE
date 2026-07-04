@@ -13,7 +13,6 @@ const elasticIndexer = new ElasticIndexer();
 const indexService = new IndexService(elasticIndexer);
 
 export const indexController = {
-
   /**
    * 🔥 Index single product
    * POST /api/index
@@ -52,9 +51,9 @@ export const indexController = {
         productId: payload.id,
       });
     } catch (error: any) {
-      logger.error('Index product failed', { 
-        productId: req.body?.id, 
-        error: error.message 
+      logger.error('Index product failed', {
+        productId: req.body?.id,
+        error: error.message,
       });
 
       return res.status(500).json({
@@ -79,21 +78,22 @@ export const indexController = {
         });
       }
 
-      const entities = products.map((p: any) => 
-        new ProductIndexEntity(
-          p.id,
-          p.name,
-          p.description,
-          p.price,
-          p.currency,
-          p.category,
-          p.brand,
-          p.tags || [],
-          p.images || [],
-          p.inStock ?? true,
-          p.rating || 0,
-          p.reviewCount || 0
-        )
+      const entities = products.map(
+        (p: any) =>
+          new ProductIndexEntity(
+            p.id,
+            p.name,
+            p.description,
+            p.price,
+            p.currency,
+            p.category,
+            p.brand,
+            p.tags || [],
+            p.images || [],
+            p.inStock ?? true,
+            p.rating || 0,
+            p.reviewCount || 0
+          )
       );
 
       await indexService.bulkIndex(entities);

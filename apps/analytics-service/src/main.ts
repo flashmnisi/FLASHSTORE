@@ -12,11 +12,7 @@ import { connectRedis } from './config/redis';
 import app from './app';
 
 // ✅ NEW SINGLE CONSUMER ARCHITECTURE
-import {
-  analyticsConsumer,
-  //aggregationJob,
- // cleanupJob,
-} from './container';
+import { analyticsConsumer } from './container';
 
 const PORT = process.env.PORT || 3006;
 
@@ -41,15 +37,12 @@ const startServer = async () => {
     logger.info('✅ Analytics Consumer started');
 
     // 5. Jobs
-   // aggregationJob.start();
-    //cleanupJob.start();
     logger.info('✅ Scheduler jobs started');
 
     // 6. API
     app.listen(PORT, () => {
       logger.info(`🚀 Analytics Service running on http://localhost:${PORT}`);
     });
-
   } catch (error: any) {
     logger.error('❌ Failed to start Analytics Service', {
       error: error.message,

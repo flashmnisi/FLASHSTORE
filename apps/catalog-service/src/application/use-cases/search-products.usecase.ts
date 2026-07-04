@@ -6,7 +6,7 @@ import logger from '@org/shared-logger';
 
 export class SearchProductsUseCase {
   constructor() {
-    // Using singleton Elasticsearch repository (as you prefer)
+   
   }
 
   async execute(dto: SearchProductsDto) {

@@ -21,7 +21,7 @@ export const healthCheck = (req: Request, res: Response) => {
 };
 
 export const readinessCheck = (req: Request, res: Response) => {
-  // Add checks for dependencies (Redis, Kafka, etc.) here in the future
+  
   res.status(200).json({
     status: 'ready',
     service: 'gateway',

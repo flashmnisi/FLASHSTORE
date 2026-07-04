@@ -1,7 +1,6 @@
 // apps/catalog-service/src/infrastructure/kafka/catalog.producer.ts
 
 import { EVENTS, publish, TOPICS } from '@org/shared-kafka';
-//import { TOPICS, EVENTS } from '../topics';
 import logger from '@org/shared-logger';
 import { CategoryEntity } from '../../../domain/entities/category.entity';
 import { ProductEntity } from '../../../domain/entities/product.entity';

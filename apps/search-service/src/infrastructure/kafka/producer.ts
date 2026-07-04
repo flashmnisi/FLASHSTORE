@@ -1,7 +1,7 @@
 // apps/search-service/src/infrastructure/kafka/search.producer.ts
 
-import { publish } from '@org/shared-kafka';
-import { TOPICS, EVENTS, KafkaEvent } from './topics';
+//import { EVENTS, publish, TOPICS } from '@org/shared-kafka';
+import { KafkaEvent, EVENTS, publish, TOPICS } from '@org/shared-kafka';
 import logger from '@org/shared-logger';
 
 export class SearchProducer {
@@ -19,7 +19,7 @@ export class SearchProducer {
   }) {
     try {
       const message: KafkaEvent = {
-        event: EVENTS.SEARCH.PERFORMED,
+        event: EVENTS.SEARCH,
         data,
         timestamp: new Date().toISOString(),
         correlationId: data.correlationId,
@@ -56,7 +56,7 @@ export class SearchProducer {
   }) {
     try {
       const message: KafkaEvent = {
-        event: EVENTS.SEARCH.CLICKED,
+        event: EVENTS.SEARCH,
         data,
         timestamp: new Date().toISOString(),
         correlationId: data.correlationId,
@@ -91,7 +91,7 @@ export class SearchProducer {
   }) {
     try {
       const message: KafkaEvent = {
-        event: EVENTS.SEARCH.SUGGEST_USED,
+        event: EVENTS.SEARCH,
         data,
         timestamp: new Date().toISOString(),
         service: this.service,
@@ -114,13 +114,10 @@ export class SearchProducer {
   // ==============================
   // 🔥 TRENDING SIGNAL
   // ==============================
-  async trendingSignal(data: {
-    query: string;
-    userId?: string;
-  }) {
+  async trendingSignal(data: { query: string; userId?: string }) {
     try {
       const message: KafkaEvent = {
-        event: EVENTS.SEARCH.TRENDING,
+        event: EVENTS.SEARCH,
         data,
         timestamp: new Date().toISOString(),
         service: this.service,
@@ -141,13 +138,10 @@ export class SearchProducer {
   // ==============================
   // 🔄 TRIGGER REINDEX
   // ==============================
-  async triggerReindex(data: {
-    productId: string;
-    correlationId?: string;
-  }) {
+  async triggerReindex(data: { productId: string; correlationId?: string }) {
     try {
       const message: KafkaEvent = {
-        event: EVENTS.PRODUCT.UPDATED,
+        event: EVENTS.PRODUCT_UPDATED,
         data,
         timestamp: new Date().toISOString(),
         correlationId: data.correlationId,

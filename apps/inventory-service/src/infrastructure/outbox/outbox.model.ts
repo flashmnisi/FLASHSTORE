@@ -26,12 +26,7 @@ const OutboxSchema = new Schema(
 
     status: {
       type: String,
-      enum: [
-        'pending',
-        'processing',
-        'processed',
-        'failed',
-      ],
+      enum: ['pending', 'processing', 'processed', 'failed'],
       default: 'pending',
       index: true,
     },
@@ -60,8 +55,4 @@ const OutboxSchema = new Schema(
   }
 );
 
-export const OutboxModel =
-  model(
-    'InventoryOutbox',
-    OutboxSchema
-  );
+export const OutboxModel = model('InventoryOutbox', OutboxSchema);

@@ -1,11 +1,6 @@
 //utils/validators.ts
 
-import {
-  Request,
-  Response,
-  NextFunction,
-  RequestHandler,
-} from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 import { z } from 'zod';
 
@@ -21,9 +16,7 @@ const amount = z
   .positive('Amount must be greater than zero')
   .max(1_000_000, 'Amount too large');
 
-const currency = z
-  .enum(['ZAR', 'USD', 'EUR', 'GBP'])
-  .default('ZAR');
+const currency = z.enum(['ZAR', 'USD', 'EUR', 'GBP']).default('ZAR');
 
 /**
  * =================================
@@ -44,14 +37,8 @@ const orderItem = z.object({
  * =================================
  * Create Order Schema
  * =================================
- *
- * NOTE:
- * userId REMOVED.
- *
- * User identity comes from:
- * req.headers['x-user-id']
- * after JWT auth middleware.
  */
+
 export const createOrder = z.object({
   items: z.array(orderItem).min(1),
 
@@ -97,14 +84,7 @@ const updateOrderStatus = z.object({
     ])
     .optional(),
 
-  paymentStatus: z
-    .enum([
-      'pending',
-      'paid',
-      'failed',
-      'refunded',
-    ])
-    .optional(),
+  paymentStatus: z.enum(['pending', 'paid', 'failed', 'refunded']).optional(),
 });
 
 /**
@@ -112,22 +92,15 @@ const updateOrderStatus = z.object({
  * Express Validator Middleware
  * =================================
  */
-export const validate = (
-  schema: z.ZodSchema
-): RequestHandler => {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): void => {
+export const validate = (schema: z.ZodSchema): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
       res.status(400).json({
         success: false,
         message: 'Validation failed',
-        errors:
-          result.error.flatten().fieldErrors,
+        errors: result.error.flatten().fieldErrors,
       });
 
       return;

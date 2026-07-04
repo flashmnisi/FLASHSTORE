@@ -1,7 +1,5 @@
 import { ProductIndexEntity } from '../../../domain/entities/product-index.entity';
-//import { IndexerService } from '../../../application/services/indexer.service';
 import logger from '@org/shared-logger';
-//import { ProductKafkaEvent } from '../types/product.events';
 import { IndexerService } from '../../indexer/indexer.service';
 import { ProductKafkaEvent } from '../../../types/product.event';
 
@@ -60,14 +58,11 @@ export const handleProductEvent = async (event: ProductKafkaEvent) => {
       default:
         logger.warn('⚠️ Unknown product event type', { eventType });
     }
-
   } catch (error: any) {
     logger.error('❌ Product event processing failed', {
       error: error.message,
       event,
     });
-
-    // 🔥 IMPORTANT → let Kafka retry / DLQ handle it
     throw error;
   }
 };

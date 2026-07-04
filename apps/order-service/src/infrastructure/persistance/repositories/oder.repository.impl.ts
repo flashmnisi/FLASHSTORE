@@ -16,11 +16,9 @@ export class OrderRepositoryImpl implements IOrderRepository {
    * Update Order
    */
   async update(order: OrderEntity): Promise<OrderEntity> {
-    const updated = await OrderModel.findByIdAndUpdate(
-      order.id,
-      order,
-      { new: true }
-    );
+    const updated = await OrderModel.findByIdAndUpdate(order.id, order, {
+      new: true,
+    });
 
     if (!updated) {
       throw new Error('Order not found');
@@ -32,18 +30,13 @@ export class OrderRepositoryImpl implements IOrderRepository {
   /**
    * Find by ID
    */
-  async findById(
-  key: string
-): Promise<OrderEntity | null> {
-  const order =
-    await OrderModel.findOne({
+  async findById(key: string): Promise<OrderEntity | null> {
+    const order = await OrderModel.findOne({
       idempotencyKey: key,
     });
 
-  return order
-    ? this.toEntity(order)
-    : null;
-}
+    return order ? this.toEntity(order) : null;
+  }
 
   /**
    * Find orders by user

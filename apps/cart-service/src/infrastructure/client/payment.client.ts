@@ -18,7 +18,7 @@ export class PaymentClient implements IPaymentClient {
     clientSecret: string;
     status: string;
   }> {
-    // TODO: In production, call real Payment Service
+    
     console.log('💳 [PaymentClient] Processing payment for order:', dto.orderId);
 
     return {

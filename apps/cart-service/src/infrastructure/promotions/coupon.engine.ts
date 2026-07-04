@@ -5,13 +5,13 @@ import { CartEntity } from '../../domain/entities/cart.entity';
 export interface Coupon {
   code: string;
   type: 'percentage' | 'fixed';
-  value: number;                    // e.g. 15 for 15%, 500 for $5
+  value: number;                  
   minOrderAmount?: number;
   maxDiscount?: number;
   validUntil: Date;
   usageLimit?: number;
   usedCount: number;
-  applicableTo?: string[];          // product IDs or categories
+  applicableTo?: string[];        
 }
 
 export class CouponEngine {
@@ -26,7 +26,7 @@ export class CouponEngine {
     coupon?: Coupon;
   }> {
     try {
-      // TODO: In real implementation, fetch coupon from database or cache
+    
       const coupon = await this.getCouponByCode(couponCode);
 
       if (!coupon) {
@@ -132,8 +132,7 @@ export class CouponEngine {
    * Get coupon by code (stub - replace with real DB/cache call)
    */
   private async getCouponByCode(code: string): Promise<Coupon | null> {
-    // In real implementation: fetch from Redis + DB with cache
-    // For now, return mock data for testing
+   
     const mockCoupons: Record<string, Coupon> = {
       'WELCOME10': {
         code: 'WELCOME10',

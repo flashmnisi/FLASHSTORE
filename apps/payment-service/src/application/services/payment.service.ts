@@ -7,10 +7,7 @@ import { IPaymentProvider } from '../interfaces/payment.provider';
 import { ProcessPaymentUseCase } from '../use-cases/process-payment.usecase';
 import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 
-import {
-  EVENTS,
-  TOPICS,
-} from '@org/shared-kafka';
+import { EVENTS, TOPICS } from '@org/shared-kafka';
 
 import logger from '@org/shared-logger';
 
@@ -22,11 +19,10 @@ export class PaymentService {
     private readonly provider: IPaymentProvider,
     private readonly outboxService: OutboxService
   ) {
-    this.processPaymentUseCase =
-      new ProcessPaymentUseCase(
-        repository,
-        provider,
-      );
+    this.processPaymentUseCase = new ProcessPaymentUseCase(
+      repository,
+      provider
+    );
   }
 
   /**
@@ -40,13 +36,10 @@ export class PaymentService {
     orderId: string;
     userId: string;
   }) {
-    logger.info(
-      'Creating payment intent',
-      {
-        orderId: input.orderId,
-        amount: input.amount,
-      }
-    );
+    logger.info('Creating payment intent', {
+      orderId: input.orderId,
+      amount: input.amount,
+    });
 
     return this.provider.createPaymentIntent({
       amount: input.amount,
@@ -67,15 +60,9 @@ export class PaymentService {
       correlationId?: string;
     }
   ) {
-    const validated =
-      validators.processPayment.parse(
-        input
-      );
+    const validated = validators.processPayment.parse(input);
 
-    return this.processPaymentUseCase.execute(
-      validated,
-      context
-    );
+    return this.processPaymentUseCase.execute(validated, context);
   }
 
   /**
@@ -83,18 +70,11 @@ export class PaymentService {
    * GET PAYMENT BY ORDER
    * =====================================
    */
-  async getPaymentByOrder(
-    orderId: string
-  ) {
-    const payment =
-      await this.repository.findByOrderId(
-        orderId
-      );
+  async getPaymentByOrder(orderId: string) {
+    const payment = await this.repository.findByOrderId(orderId);
 
     if (!payment) {
-      throw new Error(
-        'Payment not found'
-      );
+      throw new Error('Payment not found');
     }
 
     return payment;
@@ -115,13 +95,13 @@ export class PaymentService {
       }
 
       // Mark payment as cancelled/refunded if needed
-      payment.markAsCanceled?.(); // Use method if it exists in entity
+      payment.markAsCanceled?.();
 
       await this.repository.update(payment);
 
       await this.outboxService.write({
         topic: TOPICS.PAYMENTS,
-        event: EVENTS.PAYMENT_REFUNDED, // or PAYMENT_CANCELLED if you have it
+        event: EVENTS.PAYMENT_REFUNDED,
         data: {
           paymentId: payment.id,
           orderId: payment.orderId,
@@ -132,8 +112,9 @@ export class PaymentService {
         key: payment.id,
       });
 
-      logger.info('✅ Payment cancelled due to order cancellation', { orderId });
-
+      logger.info('✅ Payment cancelled due to order cancellation', {
+        orderId,
+      });
     } catch (error: any) {
       logger.error('Failed to handle order cancellation', {
         orderId,
@@ -157,13 +138,10 @@ export class PaymentService {
         return;
       }
 
-      logger.info('✅ Order completed - payment already processed', { 
+      logger.info('✅ Order completed - payment already processed', {
         orderId,
-        paymentId: payment.id 
+        paymentId: payment.id,
       });
-
-      // You can add any post-completion logic here (e.g. send receipt, update analytics, etc.)
-
     } catch (error: any) {
       logger.error('Failed to handle order completion', {
         orderId,
@@ -172,46 +150,30 @@ export class PaymentService {
     }
   }
 
-
-
-
   /**
    * =====================================
    * HANDLE STRIPE WEBHOOK
    * =====================================
    */
-  async handleWebhook(
-    input: any,
-    signature: string
-  ) {
+  async handleWebhook(input: any, signature: string) {
     try {
-      const event =
-        stripeWebhookSchema.parse(
-          input
-        );
+      const event = stripeWebhookSchema.parse(input);
 
-      const paymentIntentId =
-        event.data.object.id;
+      const paymentIntentId = event.data.object.id;
 
       if (!paymentIntentId) {
-        logger.warn(
-          'Webhook received without paymentIntentId'
-        );
+        logger.warn('Webhook received without paymentIntentId');
         return;
       }
 
-      const payment =
-        await this.repository.findByStripePaymentIntentId(
-          paymentIntentId
-        );
+      const payment = await this.repository.findByStripePaymentIntentId(
+        paymentIntentId
+      );
 
       if (!payment) {
-        logger.warn(
-          'Payment not found for webhook',
-          {
-            paymentIntentId,
-          }
-        );
+        logger.warn('Payment not found for webhook', {
+          paymentIntentId,
+        });
 
         return;
       }
@@ -223,54 +185,37 @@ export class PaymentService {
          * =====================================
          */
         case 'payment_intent.succeeded': {
-          payment.markSucceeded(
-            paymentIntentId
-          );
+          payment.markSucceeded(paymentIntentId);
 
-          await this.repository.update(
-            payment
-          );
+          await this.repository.update(payment);
 
           await this.outboxService.write({
             topic: TOPICS.PAYMENTS,
 
-            event:
-              EVENTS.PAYMENT_COMPLETED,
+            event: EVENTS.PAYMENT_COMPLETED,
 
             data: {
-              paymentId:
-                payment.id,
+              paymentId: payment.id,
 
-              orderId:
-                payment.orderId,
+              orderId: payment.orderId,
 
-              userId:
-                payment.userId,
+              userId: payment.userId,
 
-              amount:
-                payment.amount,
+              amount: payment.amount,
 
-              currency:
-                payment.currency,
+              currency: payment.currency,
 
-              status:
-                payment.status,
+              status: payment.status,
 
-              stripePaymentIntentId:
-                paymentIntentId,
+              stripePaymentIntentId: paymentIntentId,
             },
 
             key: payment.id,
-
           });
 
-          logger.info(
-            'Payment succeeded via webhook',
-            {
-              paymentId:
-                payment.id,
-            }
-          );
+          logger.info('Payment succeeded via webhook', {
+            paymentId: payment.id,
+          });
 
           break;
         }
@@ -282,83 +227,55 @@ export class PaymentService {
          */
         case 'payment_intent.payment_failed': {
           const reason =
-            event.data.object
-              .last_payment_error
-              ?.message ||
-            'Unknown error';
+            event.data.object.last_payment_error?.message || 'Unknown error';
 
-          payment.markFailed(
-            reason
-          );
+          payment.markFailed(reason);
 
-          await this.repository.update(
-            payment
-          );
+          await this.repository.update(payment);
 
           await this.outboxService.write({
             topic: TOPICS.PAYMENTS,
 
-            event:
-              EVENTS.PAYMENT_FAILED,
+            event: EVENTS.PAYMENT_FAILED,
 
             data: {
-              paymentId:
-                payment.id,
+              paymentId: payment.id,
 
-              orderId:
-                payment.orderId,
+              orderId: payment.orderId,
 
-              userId:
-                payment.userId,
+              userId: payment.userId,
 
-              amount:
-                payment.amount,
+              amount: payment.amount,
 
-              currency:
-                payment.currency,
+              currency: payment.currency,
 
-              status:
-                payment.status,
+              status: payment.status,
 
               reason,
             },
 
             key: payment.id,
-
           });
 
-          logger.warn(
-            'Payment failed via webhook',
-            {
-              paymentId:
-                payment.id,
-              reason,
-            }
-          );
+          logger.warn('Payment failed via webhook', {
+            paymentId: payment.id,
+            reason,
+          });
 
           break;
         }
 
         default:
-          logger.info(
-            'Unhandled webhook event',
-            {
-              type:
-                event.type,
-            }
-          );
+          logger.info('Unhandled webhook event', {
+            type: event.type,
+          });
       }
     } catch (error: any) {
-      logger.error(
-        'Webhook processing failed',
-        {
-          error:
-            error.message,
+      logger.error('Webhook processing failed', {
+        error: error.message,
 
-          type:
-            input?.type,
-        }
-      );
+        type: input?.type,
+      });
 
       throw error;
     }
@@ -369,57 +286,34 @@ export class PaymentService {
    * CREATE PAYMENT FROM ORDER EVENT
    * =====================================
    */
-  async createPaymentFromOrder(
-    data: {
-      orderId: string;
-      userId: string;
-      amount: number;
-      currency?: string;
-      items?: any[];
-      correlationId:string,
-    }
-  ) {
+  async createPaymentFromOrder(data: {
+    orderId: string;
+    userId: string;
+    amount: number;
+    currency?: string;
+    items?: any[];
+    correlationId: string;
+  }) {
     const dto = {
-      orderId:
-        data.orderId,
+      orderId: data.orderId,
 
-      userId:
-        data.userId,
+      userId: data.userId,
 
-      amount:
-        data.amount,
+      amount: data.amount,
 
-      currency:
-        (data.currency ||
-          'ZAR') as
-          | 'ZAR'
-          | 'USD'
-          | 'EUR'
-          | 'GBP',
+      currency: (data.currency || 'ZAR') as 'ZAR' | 'USD' | 'EUR' | 'GBP',
 
-      paymentMethod:
-        'card' as const,
+      paymentMethod: 'card' as const,
 
-      metadata:
-        {} as Record<
-          string,
-          any
-        >,
+      metadata: {} as Record<string, any>,
     };
 
-    logger.info(
-      'Auto-creating payment from order event',
-      {
-        orderId:
-          data.orderId,
+    logger.info('Auto-creating payment from order event', {
+      orderId: data.orderId,
 
-        userId:
-          data.userId,
-      }
-    );
+      userId: data.userId,
+    });
 
-    return this.processPayment(
-      dto
-    );
+    return this.processPayment(dto);
   }
 }

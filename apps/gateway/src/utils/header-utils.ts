@@ -29,10 +29,6 @@ export const forwardHeaders = (reqHeaders: IncomingHttpHeaders): Record<string, 
   return forwarded;
 };
 
-/**
- * Clean headers before sending to backend services
- * Removes hop-by-hop headers that should not be forwarded
- */
 export const sanitizeHeaders = (headers: IncomingHttpHeaders): Record<string, string> => {
   const sanitized: Record<string, string> = {};
   const hopByHopHeaders = [

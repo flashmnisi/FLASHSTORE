@@ -2,11 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import logger from '@org/shared-logger';
 import { v4 as uuidv4 } from 'uuid';
 
-export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+export const requestLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const start = Date.now();
 
   // Generate or reuse Correlation ID
-  const correlationId = 
+  const correlationId =
     (req.headers['x-correlation-id'] as string) ||
     (req.headers['x-request-id'] as string) ||
     `req_${Date.now()}_${uuidv4().slice(0, 8)}`;
@@ -35,9 +39,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
 
-    const logLevel = statusCode >= 500 ? 'error' 
-                   : statusCode >= 400 ? 'warn' 
-                   : 'info';
+    const logLevel =
+      statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
 
     logger[logLevel](`${method} ${url} ${statusCode} ${duration}ms`, {
       correlationId,

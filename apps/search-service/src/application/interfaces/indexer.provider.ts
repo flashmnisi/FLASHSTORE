@@ -19,7 +19,6 @@ export interface IIndexerProvider {
   deleteProduct(productId: string): Promise<void>;
 
   /**
-   * ✅ Ensure index exists with correct mappings
    * (Should be called on startup)
    */
   ensureIndex(): Promise<void>;

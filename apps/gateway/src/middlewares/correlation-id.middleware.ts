@@ -13,7 +13,7 @@ export const correlationIdMiddleware = (
     requestId = uuidv4();
   }
 
-  req.id = requestId; // ✅ typed (from express.d.ts)
+  req.id = requestId; 
   res.setHeader('x-request-id', requestId);
 
   logger.info('Request started',{

@@ -11,10 +11,12 @@ export const TOPICS = {
   ORDERS: 'flashstore.orders',
   PAYMENTS: 'flashstore.payments',
   PRODUCTS: 'flashstore.products',
+  PRODUCT: 'flashstore.product',
   CATEGORIES: 'flashstore.categories',
   CARTS: 'flashstore.carts',
   INVENTORY: 'flashstore.inventory',
   NOTIFICATIONS: 'flashstore.notifications',
+  SEARCH: 'flashstore.search',
 
   // ================= ANALYTICS =================
   ANALYTICS: 'flashstore.analytics',
@@ -53,11 +55,12 @@ export const EVENTS = {
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
   PAYMENT_REFUNDED: 'payment.refunded',
-  PAYMENT_SUCCEEDED: 'payment.succeeded', 
+  PAYMENT_SUCCEEDED: 'payment.succeeded',
 
   // ================= PRODUCTS =================
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
+  UPDATED: 'product.updated',
   PRODUCT_DELETED: 'product.deleted',
   PRODUCT_VIEWED: 'product.viewed',
   PRODUCT_INDEXED: 'product.indexed',
@@ -71,7 +74,7 @@ export const EVENTS = {
   // ================= CART =================
   CART_UPDATED: 'cart.updated',
   CART_CLEARED: 'cart.cleared',
-  CART_CHECKED_OUT: 'cart.checked_out', 
+  CART_CHECKED_OUT: 'cart.checked_out',
 
   // ================= NOTIFICATIONS =================
   NOTIFICATION_SENT: 'notification.sent',
@@ -79,13 +82,20 @@ export const EVENTS = {
 
   // ================= INVENTORY =================
   STOCK_UPDATED: 'inventory.stock.updated',
-  STOCK_RESERVED: 'inventory.stock.reserved', 
+  STOCK_RESERVED: 'inventory.stock.reserved',
   STOCK_RELEASED: 'inventory.stock.released',
   STOCK_DEDUCTED: 'inventory.stock.deducted',
   STOCK_ADJUSTED: 'inventory.stock.adjusted',
 
   // ================= ANALYTICS =================
   METRIC_GENERATED: 'metric.generated',
+
+  SEARCH: {
+    PERFORMED: 'search.performed',
+    CLICKED: 'search.clicked',
+    SUGGEST_USED: 'search.suggest',
+    TRENDING: 'search.trending',
+  },
 } as const;
 
 /**
@@ -93,8 +103,8 @@ export const EVENTS = {
  * TYPE SAFETY
  * =============================================
  */
-export type Topic = typeof TOPICS[keyof typeof TOPICS];
-export type EventType = typeof EVENTS[keyof typeof EVENTS];
+export type Topic = (typeof TOPICS)[keyof typeof TOPICS];
+export type EventType = (typeof EVENTS)[keyof typeof EVENTS];
 
 /**
  * =============================================
@@ -122,3 +132,11 @@ export default {
   getRetryTopic,
   getDLQTopic,
 };
+
+export interface KafkaEvent<T = any> {
+  event: EventType;
+  data: T;
+  timestamp: string;
+  correlationId?: string;
+  service?: string;
+}

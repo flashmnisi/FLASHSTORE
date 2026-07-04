@@ -54,15 +54,17 @@ const InventorySchema = new Schema<InventoryDocument>(
   }
 );
 
-InventorySchema.index({
-  productId: 1,
-  warehouseId: 1,
-}, {
-  unique: true,
-});
+InventorySchema.index(
+  {
+    productId: 1,
+    warehouseId: 1,
+  },
+  {
+    unique: true,
+  }
+);
 
-export const InventoryModel =
-  model<InventoryDocument>(
-    'Inventory',
-    InventorySchema
-  );
+export const InventoryModel = model<InventoryDocument>(
+  'Inventory',
+  InventorySchema
+);

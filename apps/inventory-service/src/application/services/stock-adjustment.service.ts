@@ -18,7 +18,7 @@ export class StockAdjustmentService {
   async adjustStock(data: {
     productId: string;
     warehouseId: string;
-    quantity: number;           // Positive = add, Negative = subtract
+    quantity: number;           
     reason?: string;
     referenceId?: string;
   }) {

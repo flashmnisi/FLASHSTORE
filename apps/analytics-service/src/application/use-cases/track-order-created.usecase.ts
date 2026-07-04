@@ -28,10 +28,10 @@ export class TrackOrderCreatedUseCase {
       } = input;
 
       const analyticsEvent = new AnalyticsEntity(
-        '', // ID will be generated in entity or repository
+        '', 
         'order.created',
         userId,
-        undefined,           // productId (not needed for order level)
+        undefined,       
         orderId,
         {
           totalAmount,
@@ -43,7 +43,7 @@ export class TrackOrderCreatedUseCase {
 
       await this.analyticsRepository.saveEvent(analyticsEvent);
 
-      // Optional: Update daily/monthly aggregates
+      // Update daily/monthly aggregates
       await this.analyticsRepository.updateDailyStats?.({
         date: new Date(createdAt),
         totalRevenue: totalAmount,
@@ -66,8 +66,6 @@ export class TrackOrderCreatedUseCase {
         totalAmount: input.totalAmount,
         error: error.message,
       });
-
-      // Do NOT re-throw → prevent consumer crash
     }
   }
 }

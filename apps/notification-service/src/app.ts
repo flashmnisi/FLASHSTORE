@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/notifications', notificationRoutes);
 
-// Global Error Handler (must be last)
+// Global Error Handler
 app.use(errorMiddleware);
 
 export default app;

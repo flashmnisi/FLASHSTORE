@@ -19,12 +19,7 @@ export const sendNotificationSchema = z.object({
 
   data: z.any().optional(),
 
-  channel: z.enum([
-    'email',
-    'sms',
-    'push',
-  ]).default('email'),
+  channel: z.enum(['email', 'sms', 'push']).default('email'),
 });
 
-export type SendNotificationDto =
-  z.infer<typeof sendNotificationSchema>;
+export type SendNotificationDto = z.infer<typeof sendNotificationSchema>;

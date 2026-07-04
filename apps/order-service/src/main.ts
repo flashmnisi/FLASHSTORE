@@ -66,7 +66,7 @@ const startServer = async () => {
       orderUpdatedHandler
     );
 
-    await orderConsumer.start();        // ← Called only once
+    await orderConsumer.start();  
 
     logger.info('✅ Order Consumer started successfully');
 

@@ -20,34 +20,32 @@ export class UserService {
 
   async register(dto: CreateUserDto) {
     const existing = await this.userRepository.findByEmail(dto.email);
-    if (existing) throw new AppError('User with this email already exists', 400);
+    if (existing)
+      throw new AppError('User with this email already exists', 400);
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    const user = new UserEntity(
-      '',
-      dto.name,
-      dto.email,
-      hashedPassword
-    );
+    const user = new UserEntity('', dto.name, dto.email, hashedPassword);
 
     const createdUser = await this.userRepository.create(user);
 
     // Publish event to Outbox
-   await this.outboxService.write({
-  topic: TOPICS.USERS,
-  event: EVENTS.USER_REGISTERED,
-  data: {
-    userId: createdUser.id,
-    email: createdUser.email,
-    name: createdUser.name,
-    role: createdUser.role,
-  },
-  key: createdUser.id,
-});
+    await this.outboxService.write({
+      topic: TOPICS.USERS,
+      event: EVENTS.USER_REGISTERED,
+      data: {
+        userId: createdUser.id,
+        email: createdUser.email,
+        name: createdUser.name,
+        role: createdUser.role,
+      },
+      key: createdUser.id,
+    });
 
     // Generate tokens
-    const { accessToken, refreshToken } = await authService.generateTokens(createdUser);
+    const { accessToken, refreshToken } = await authService.generateTokens(
+      createdUser
+    );
 
     // Save refresh token
     createdUser.setRefreshToken(refreshToken);
@@ -63,7 +61,7 @@ export class UserService {
   }
 
   async login(dto: LoginDto) {
-    return authService.login(dto);   // Let authService handle token generation
+    return authService.login(dto);
   }
 
   async getProfile(userId: string) {
@@ -75,16 +73,16 @@ export class UserService {
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const updatedUser = await this.userRepository.update(userId, dto);
 
- await this.outboxService.write({
-  topic: TOPICS.USERS,
-  event: EVENTS.USER_UPDATED,
-  data: {
-    userId: updatedUser.id,
-    email: updatedUser.email,
-    name: updatedUser.name,
-  },
-  key: updatedUser.id,
-});
+    await this.outboxService.write({
+      topic: TOPICS.USERS,
+      event: EVENTS.USER_UPDATED,
+      data: {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+      },
+      key: updatedUser.id,
+    });
 
     return updatedUser;
   }
@@ -92,14 +90,14 @@ export class UserService {
   async deleteUser(userId: string) {
     await this.userRepository.delete(userId);
 
-   await this.outboxService.write({
-  topic: TOPICS.USERS,
-  event: EVENTS.USER_DELETED,
-  data: {
-    userId,
-  },
-  key: userId,
-});
+    await this.outboxService.write({
+      topic: TOPICS.USERS,
+      event: EVENTS.USER_DELETED,
+      data: {
+        userId,
+      },
+      key: userId,
+    });
 
     return true;
   }

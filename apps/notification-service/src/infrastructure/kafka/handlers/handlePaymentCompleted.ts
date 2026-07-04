@@ -4,9 +4,7 @@ import { NotificationService } from '../../../application/services/notification.
 import logger from '@org/shared-logger';
 
 export class PaymentCompletedHandler {
-  constructor(
-    private readonly notificationService: NotificationService
-  ) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(rawMessage: any) {
     try {
@@ -39,7 +37,6 @@ export class PaymentCompletedHandler {
         orderId: payload.orderId,
         userId: payload.userId,
       });
-
     } catch (error: any) {
       logger.error('❌ PaymentCompletedHandler failed', {
         error: error.message,

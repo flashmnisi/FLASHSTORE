@@ -2,10 +2,8 @@
 
 import { ISearchRepository } from '../interfaces/search.repository';
 import { SearchQueryDto } from '../dtos/search-query.dto';
-//import { SearchQueryVO } from '../dtos/search-query.vo';
 import { QueryNormalizer } from './query-normalizer';
 import { RankingEngine } from './ranking.engine';
-//import { SearchCache } from '../../infrastructure/cache/search.cache';
 import logger from '@org/shared-logger';
 import { SearchCache } from '../../infrastructure/cache/search-cache';
 import { SearchQueryVO } from '../../domain/value-objects/search-query.vo';
@@ -49,7 +47,7 @@ export class SearchOrchestrator {
       // Create SearchQueryVO instance
       const searchQueryVO = new SearchQueryVO(
         normalizedQuery,
-        {}, // filters (you can expand this later)
+        {},
         queryDto.sort || 'relevance',
         queryDto.page || 1,
         queryDto.limit || 20,
@@ -62,7 +60,10 @@ export class SearchOrchestrator {
       const searchResult = await this.repository.search(searchQueryVO);
 
       // Apply ranking
-      const rankedProducts = this.ranking.rank(searchResult.products || [], user);
+      const rankedProducts = this.ranking.rank(
+        searchResult.products || [],
+        user
+      );
 
       const finalResult = {
         ...searchResult,
@@ -81,7 +82,6 @@ export class SearchOrchestrator {
       });
 
       return finalResult;
-
     } catch (error: any) {
       logger.error('Search orchestrator failed', {
         query: queryDto.query,

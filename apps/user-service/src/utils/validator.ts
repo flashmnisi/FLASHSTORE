@@ -26,7 +26,10 @@ export const nameSchema = z
   .trim()
   .min(2, 'Name must be at least 2 characters')
   .max(100, 'Name is too long')
-  .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens and apostrophes');
+  .regex(
+    /^[a-zA-Z\s'-]+$/,
+    'Name can only contain letters, spaces, hyphens and apostrophes'
+  );
 
 export const phoneSchema = z
   .string()
@@ -54,17 +57,18 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export const updateProfileSchema = z.object({
-  name: nameSchema.optional(),
-  email: emailSchema.optional(),
-  phone: phoneSchema,
-  // Add more fields as needed (bio, avatar, etc.)
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'At least one field must be provided for update',
-});
+export const updateProfileSchema = z
+  .object({
+    name: nameSchema.optional(),
+    email: emailSchema.optional(),
+    phone: phoneSchema,
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 /**
- * Generic validation middleware (recommended to use instead of manual checks)
+ * Generic validation middleware
  */
 import { Request, Response, NextFunction } from 'express';
 
@@ -101,5 +105,3 @@ export const validate = (schema: z.ZodSchema) => {
     }
   };
 };
-
-// Legacy

@@ -1,19 +1,20 @@
 import { getRedis } from '@org/shared-redis';
 
 export class TrendingService {
-
   async getTrending(limit = 10) {
     const redis = await getRedis();
 
     const [h1, h24] = await Promise.all([
       redis.zRangeWithScores('search:trending:1h', 0, limit - 1, { REV: true }),
-      redis.zRangeWithScores('search:trending:24h', 0, limit - 1, { REV: true }),
+      redis.zRangeWithScores('search:trending:24h', 0, limit - 1, {
+        REV: true,
+      }),
     ]);
 
     const map = new Map<string, number>();
 
-    this.merge(map, h24, 1); // long-term
-    this.merge(map, h1, 3);  // recent boost
+    this.merge(map, h24, 1);
+    this.merge(map, h1, 3);
 
     return Array.from(map.entries())
       .map(([query, score]) => ({

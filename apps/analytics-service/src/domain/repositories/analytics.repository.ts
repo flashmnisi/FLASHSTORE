@@ -41,7 +41,7 @@ export interface IAnalyticsRepository {
   ): Promise<number>;
 
   /**
-   * Optional: General stats
+   * General stats
    */
   getDailyStats(date: Date): Promise<any>;
 }

@@ -9,7 +9,6 @@ const suggestService = new SuggestService(getElasticClient());
 const trendingService = new TrendingService();
 
 export const suggestController = {
-
   /**
    * 🔥 Autocomplete suggestions
    * GET /api/search/suggest?q=iph
@@ -31,7 +30,6 @@ export const suggestController = {
         success: true,
         data: suggestions,
       });
-
     } catch (error: any) {
       logger.error('Suggest failed', { error: error.message });
 
@@ -56,7 +54,6 @@ export const suggestController = {
         success: true,
         data: trending,
       });
-
     } catch (error: any) {
       logger.error('Trending suggestions failed', {
         error: error.message,

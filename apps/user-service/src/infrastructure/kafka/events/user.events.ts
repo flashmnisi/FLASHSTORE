@@ -37,7 +37,7 @@ export interface UserUpdatedEvent {
 export interface PasswordResetRequestedEvent {
   userId: string;
   email: string;
-  resetToken: string;   // Only for internal use, never expose publicly
+  resetToken: string; 
   timestamp: string;
 }
 

@@ -5,7 +5,7 @@ export type SortOption =
   | 'price_asc'
   | 'price_desc'
   | 'newest'
-  | 'rating_desc';     // ← Added to match Zod schema
+  | 'rating_desc';   
 
 export interface SearchQueryVO {
   query?: string;
@@ -13,7 +13,7 @@ export interface SearchQueryVO {
   brand?: string;
   minPrice?: number;
   maxPrice?: number;
-  sort: SortOption;                    // ← Use the expanded type
+  sort: SortOption;              
   page: number;
   limit: number;
   tags?: string[];

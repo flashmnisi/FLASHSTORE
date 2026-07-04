@@ -28,7 +28,7 @@ export class OrderController {
       const dto = createOrderSchema.parse({
         ...req.body,
         userId: req.user.userId,
-        userEmail: req.user.email,           // ← Critical for notifications
+        userEmail: req.user.email,
         customerName: req.body.customerName || req.user.name,
       });
 
@@ -78,7 +78,7 @@ export class OrderController {
       if (!id) {
         return res.status(400).json({
           success: false,
-          message: "Order ID is required",
+          message: 'Order ID is required',
         });
       }
 
@@ -87,7 +87,7 @@ export class OrderController {
       if (!order) {
         return res.status(404).json({
           success: false,
-          message: "Order not found",
+          message: 'Order not found',
         });
       }
 
@@ -107,14 +107,14 @@ export class OrderController {
         },
       });
     } catch (error: any) {
-      logger.error('Get order by ID failed', { 
-        orderId: req.params.id, 
-        error: error.message 
+      logger.error('Get order by ID failed', {
+        orderId: req.params.id,
+        error: error.message,
       });
 
       return res.status(500).json({
         success: false,
-        message: error.message || "Failed to fetch order",
+        message: error.message || 'Failed to fetch order',
       });
     }
   };
@@ -128,9 +128,9 @@ export class OrderController {
     try {
       const userId = req.user?.userId;
       if (!userId) {
-        return res.status(401).json({ 
-          success: false, 
-          message: "User not authenticated" 
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
         });
       }
 
@@ -138,7 +138,7 @@ export class OrderController {
 
       return res.json({
         success: true,
-        data: orders.map(order => ({
+        data: orders.map((order) => ({
           id: order.id,
           userId: order.userId,
           items: order.items,
@@ -149,7 +149,7 @@ export class OrderController {
           idempotencyKey: order.idempotencyKey,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
-        }))
+        })),
       });
     } catch (error: any) {
       logger.error('Get user orders failed', { error: error.message });

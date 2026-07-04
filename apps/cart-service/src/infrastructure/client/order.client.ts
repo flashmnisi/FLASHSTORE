@@ -20,8 +20,6 @@ export class OrderClient implements IOrderClient {
   }): Promise<{
     orderId: string;
   }> {
-    // TODO: In production, call real Order Service via HTTP or gRPC
-    // For now, returning mock data
     console.log('📦 [OrderClient] Creating order for user:', dto.userId);
 
     return {
@@ -34,10 +32,6 @@ export class OrderClient implements IOrderClient {
    */
   async cancelOrder(orderId: string): Promise<void> {
     console.log('❌ [OrderClient] Cancelling order:', orderId);
-
-    // TODO: Call real Order Service to cancel
-    // In real implementation: await axios.post(`/orders/${orderId}/cancel`);
-    
     return;
   }
 }

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flashstore
+  labels:
+    app: flashstore
+    environment: base
+    managed-by: kustomize
+  annotations:
+    description: "Main namespace for Flashstore microservices application"

@@ -61,7 +61,7 @@ export class CartService {
         await this.repository.save(cart);
         await this.cache.save(cart);
 
-        // Optional: Publish cart updated event
+        //  Publish cart updated event
         await this.outboxService.write({
           topic: TOPICS.CARTS,
           event: EVENTS.CART_UPDATED,

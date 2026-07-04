@@ -70,12 +70,6 @@
       "path": "./libs/shared-auth"
     },
     {
-      "path": "./apps/analytics-e2e"
-    },
-    {
-      "path": "./apps/analytics"
-    },
-    {
       "path": "./apps/search-service-e2e"
     },
     {

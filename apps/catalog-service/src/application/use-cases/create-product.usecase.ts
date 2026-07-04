@@ -12,7 +12,7 @@ import { EVENTS, TOPICS } from '@org/shared-kafka';
 export class CreateProductUseCase {
   constructor(
     private readonly productRepository: IProductRepository,
-    private readonly outboxService: OutboxService   // ← Only these two
+    private readonly outboxService: OutboxService   
   ) {}
 
   async execute(dto: CreateProductDto): Promise<ProductEntity> {

@@ -27,7 +27,6 @@ export const initProductIndex = async () => {
         index: INDEX_NAME,
       });
     }
-
   } catch (error: any) {
     logger.error('❌ Failed to initialize index', {
       index: INDEX_NAME,

@@ -38,12 +38,12 @@ const corsOptions: CorsOptions = {
     'Content-Type',
     'Authorization',
     'X-Requested-With',
-    'X-Correlation-Id', // 🔥 important for tracing
+    'X-Correlation-Id', 
   ],
 
   exposedHeaders: [
     'X-Total-Count',
-    'X-Correlation-Id', // 🔥 allow frontend to read it
+    'X-Correlation-Id', 
   ],
 
   maxAge: 86400, // 24 hours (preflight cache)

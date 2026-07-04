@@ -52,7 +52,7 @@ export const startRetryConsumer = async ({
           error: error.message,
         });
 
-        throw error; // let retry pipeline handle it
+        throw error; 
       }
     }
   );

@@ -40,7 +40,6 @@ const processPayment = z.object({
   amount: positiveAmount,
   currency,
   paymentMethod: z.enum(['card']).default('card'),
-  // FIXED: Correct Zod record syntax → record(keyType, valueType)
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 

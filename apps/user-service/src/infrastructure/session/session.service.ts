@@ -75,13 +75,14 @@ export class SessionService {
       const redis = await getRedis();
       const pattern = `session:${userId}:*`;
 
-      // Note: redis.keys() is not recommended in production for large datasets
-      // Consider using SCAN in production for better performance
       const keys = await redis.keys(pattern);
 
       if (keys.length > 0) {
         await redis.del(keys);
-        logger.info('All sessions deleted for user', { userId, count: keys.length });
+        logger.info('All sessions deleted for user', {
+          userId,
+          count: keys.length,
+        });
       }
     } catch (error: any) {
       logger.error('Failed to delete all sessions', {

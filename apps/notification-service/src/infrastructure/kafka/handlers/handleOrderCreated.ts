@@ -4,38 +4,35 @@ import { NotificationService } from '../../../application/services/notification.
 import logger from '@org/shared-logger';
 
 export class OrderCreatedHandler {
-  constructor(
-    private readonly notificationService: NotificationService
-  ) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(rawMessage: any) {
     try {
       // Robust message extraction
-      const envelope = rawMessage?.payload?.event ||
-                      rawMessage?.data?.event ||
-                      rawMessage?.event ||
-                      rawMessage;
+      const envelope =
+        rawMessage?.payload?.event ||
+        rawMessage?.data?.event ||
+        rawMessage?.event ||
+        rawMessage;
 
-      const order = envelope?.data?.data ||
-                   envelope?.data ||
-                   envelope;
+      const order = envelope?.data?.data || envelope?.data || envelope;
 
       if (!order?.orderId || !order?.userId) {
-        logger.warn('⚠️ order.created missing required fields', { 
+        logger.warn('⚠️ order.created missing required fields', {
           orderId: order?.orderId,
-          userId: order?.userId 
+          userId: order?.userId,
         });
         return;
       }
 
       // Extract email with multiple fallbacks
-      const email = 
+      const email =
         order.userEmail ||
         order.email ||
         order.shippingAddress?.email ||
         order.recipient?.email;
 
-      const customerName = 
+      const customerName =
         order.customerName ||
         order.shippingAddress?.name ||
         order.name ||
@@ -46,7 +43,7 @@ export class OrderCreatedHandler {
           orderId: order.orderId,
           userId: order.userId,
           availableFields: Object.keys(order),
-          shippingAddress: order.shippingAddress
+          shippingAddress: order.shippingAddress,
         });
         return;
       }
@@ -57,7 +54,7 @@ export class OrderCreatedHandler {
         templateName: 'order-confirmation',
         templateData: {
           orderId: order.orderId,
-          email: email,                    
+          email: email,
           name: customerName,
           items: order.items || [],
           totalAmount: order.totalAmount,
@@ -73,7 +70,6 @@ export class OrderCreatedHandler {
         userId: order.userId,
         email,
       });
-
     } catch (error: any) {
       logger.error('❌ OrderCreatedHandler failed', {
         error: error.message,

@@ -9,12 +9,10 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   /**
-   * POST /api/payments
    * Create and process a new payment
    */
   processPayment = async (req: Request, res: Response) => {
     try {
-      // Use the new validator middleware style directly in controller
       const validated = validators.processPayment.parse(req.body);
 
       const result = await this.paymentService.processPayment(validated);
@@ -39,30 +37,26 @@ export class PaymentController {
 
   /**
    * POST /api/payments/webhook
-   * Stripe webhook handler (MUST be public + raw body)
    */
   handleWebhook = async (req: Request, res: Response) => {
     try {
       const signature = req.headers['stripe-signature'] as string;
 
       if (!signature) {
-        return res.status(400).json({ error: 'Missing stripe-signature header' });
+        return res
+          .status(400)
+          .json({ error: 'Missing stripe-signature header' });
       }
 
-      // Note: For Stripe webhooks, you should use raw body (not parsed JSON)
-      // In Express, this usually requires `express.raw()` middleware for this route
-      const event = req.body; // raw parsed body
+      const event = req.body;
 
       await this.paymentService.handleWebhook(event, signature);
 
-      // Always return 200 to Stripe quickly
       return res.status(200).json({ received: true });
     } catch (error: any) {
       logger.error('Stripe webhook handling failed', {
         error: error.message,
       });
-
-      // Return 200 anyway so Stripe doesn't retry endlessly
       return res.status(200).json({ received: true });
     }
   };

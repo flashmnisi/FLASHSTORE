@@ -24,8 +24,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ====================== ROUTES ======================
-app.use('/api/auth', authRoutes); 
-app.use('/api/users', userRoutes); 
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -49,6 +49,5 @@ app.use((req, res) => {
 app.use(errorMiddleware);
 
 logger.info('✅ Express app initialized with all routes');
-
 
 export default app;

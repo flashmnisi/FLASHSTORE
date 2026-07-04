@@ -18,15 +18,33 @@ export class UserEntity {
   // ======================
   // GETTERS
   // ======================
-  get name() { return this._name; }
-  get email() { return this._email; }
-  get password() { return this._password; }
-  get role() { return this._role; }
-  get isAdmin() { return this._isAdmin; }
-  get updatedAt() { return this._updatedAt; }
-  get addresses() { return [...this._addresses]; }   // return copy for safety
-  get phone() { return this._phone; }
-  get refreshToken() { return this._refreshToken; }
+  get name() {
+    return this._name;
+  }
+  get email() {
+    return this._email;
+  }
+  get password() {
+    return this._password;
+  }
+  get role() {
+    return this._role;
+  }
+  get isAdmin() {
+    return this._isAdmin;
+  }
+  get updatedAt() {
+    return this._updatedAt;
+  }
+  get addresses() {
+    return [...this._addresses];
+  }
+  get phone() {
+    return this._phone;
+  }
+  get refreshToken() {
+    return this._refreshToken;
+  }
 
   // ======================
   // DOMAIN METHODS
@@ -95,7 +113,6 @@ export class UserEntity {
       addresses: this._addresses,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
-      // Never expose password or refreshToken
     };
   }
 }

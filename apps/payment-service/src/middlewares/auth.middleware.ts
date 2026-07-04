@@ -9,10 +9,6 @@ export interface AuthRequest extends Request {
   };
 }
 
-/**
- * Simple service-to-service auth (gateway already verifies JWT)
- * Payment service trusts headers from gateway
- */
 export const protect = (
   req: AuthRequest,
   res: Response,
@@ -54,4 +50,4 @@ export const protect = (
       message: 'Authentication error',
     });
   }
-}; 
+};

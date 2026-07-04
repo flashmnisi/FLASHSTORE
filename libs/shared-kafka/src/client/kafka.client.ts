@@ -7,7 +7,7 @@ export const getKafka = (): Kafka => {
   if (!kafkaInstance) {
     const brokers = (process.env.KAFKA_BROKERS || 'kafka:9092')
       .split(',')
-      .map(b => b.trim());
+      .map((b) => b.trim());
 
     kafkaInstance = new Kafka({
       clientId: process.env.KAFKA_CLIENT_ID || 'flashstore-shared',

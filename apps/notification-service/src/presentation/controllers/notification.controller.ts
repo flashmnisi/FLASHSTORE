@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { NotificationService } from '../../application/services/notification.service';
-import { SendNotificationDto, sendNotificationSchema } from '../../application/dtos/send-notification.dto';
+import {
+  SendNotificationDto,
+  sendNotificationSchema,
+} from '../../application/dtos/send-notification.dto';
 import logger from '@org/shared-logger';
 
 export class NotificationController {

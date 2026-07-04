@@ -4,9 +4,7 @@ import { ReservationService } from '../../../application/services/reservation.se
 import logger from '@org/shared-logger';
 
 export class OrderCreatedHandler {
-  constructor(
-    private readonly reservationService: ReservationService
-  ) {}
+  constructor(private readonly reservationService: ReservationService) {}
 
   async handle(event: any) {
     try {
@@ -25,35 +23,32 @@ export class OrderCreatedHandler {
       });
 
       for (const item of order.items) {
-       await this.reservationService.reserveStock({
-  productId: item.productId,
-  warehouseId: order.warehouseId || 'default',
-  quantity: item.quantity,
+        await this.reservationService.reserveStock({
+          productId: item.productId,
+          warehouseId: order.warehouseId || 'default',
+          quantity: item.quantity,
 
-  orderId: order.orderId,
+          orderId: order.orderId,
 
-  correlationId:
-    event.correlationId ||
-    event.metadata?.correlationId,
+          correlationId: event.correlationId || event.metadata?.correlationId,
 
-  referenceId: order.orderId,
+          referenceId: order.orderId,
 
-  reason: `Order ${order.orderId}`,
-});
+          reason: `Order ${order.orderId}`,
+        });
       }
 
       logger.info('✅ Stock reserved successfully for order', {
         orderId: order.orderId,
         totalItems: order.items.length,
       });
-
     } catch (error: any) {
       logger.error('❌ OrderCreatedHandler failed', {
         orderId: event.data?.orderId,
         error: error.message,
       });
 
-      throw error;   // Let the consumer handle retry/DLQ
+      throw error; 
     }
   }
 }

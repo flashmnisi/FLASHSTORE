@@ -17,7 +17,6 @@ import { OutboxRepository } from '../../infrastructure/outbox/outbox.repository.
 import { ReleaseStockUseCase } from '../../application/use-cases/release-stock.usecase';
 import { ReserveStockUseCase } from '../../application/use-cases/reserve-stock.usecase';
 
-
 const router = Router();
 
 /**
@@ -25,17 +24,13 @@ const router = Router();
  * REPOSITORIES
  * =====================================
  */
-const inventoryRepository =
-  new InventoryRepositoryImpl();
+const inventoryRepository = new InventoryRepositoryImpl();
 
-const warehouseRepository =
-  new WarehouseRepositoryImpl();
+const warehouseRepository = new WarehouseRepositoryImpl();
 
-const outboxRepository =
-  new OutboxRepository();
+const outboxRepository = new OutboxRepository();
 
-const outboxService =
-  new OutboxService(outboxRepository);
+const outboxService = new OutboxService(outboxRepository);
 
 /**
  * =====================================
@@ -43,17 +38,15 @@ const outboxService =
  * =====================================
  */
 
-const reserveStockUseCase =
-  new ReserveStockUseCase(
-    inventoryRepository,
-    outboxService
-  );
+const reserveStockUseCase = new ReserveStockUseCase(
+  inventoryRepository,
+  outboxService
+);
 
-const releaseStockUseCase =
-  new ReleaseStockUseCase(
-    inventoryRepository,
-    outboxService
-  );
+const releaseStockUseCase = new ReleaseStockUseCase(
+  inventoryRepository,
+  outboxService
+);
 
 /**
  * =====================================
@@ -61,41 +54,34 @@ const releaseStockUseCase =
  * =====================================
  */
 
-const inventoryService =
-  new InventoryService(
-    inventoryRepository,
-    outboxService
-  );
+const inventoryService = new InventoryService(
+  inventoryRepository,
+  outboxService
+);
 
-const reservationService =
-  new ReservationService(
-    reserveStockUseCase,
-    releaseStockUseCase
-  );
+const reservationService = new ReservationService(
+  reserveStockUseCase,
+  releaseStockUseCase
+);
 
-const stockAdjustmentService =
-  new StockAdjustmentService(
-    inventoryRepository,
-    outboxService
-  );
+const stockAdjustmentService = new StockAdjustmentService(
+  inventoryRepository,
+  outboxService
+);
 
-const warehouseService =
-  new WarehouseService(
-    warehouseRepository
-  );
+const warehouseService = new WarehouseService(warehouseRepository);
 
 /**
  * =====================================
  * CONTROLLER
  * =====================================
  */
-const controller =
-  new InventoryController(
-    inventoryService,
-    reservationService,
-    stockAdjustmentService,
-    warehouseService
-  );
+const controller = new InventoryController(
+  inventoryService,
+  reservationService,
+  stockAdjustmentService,
+  warehouseService
+);
 
 /**
  * =====================================
@@ -103,34 +89,16 @@ const controller =
  * =====================================
  */
 
-router.get(
-  '/product/:productId',
-  controller.getInventory
-);
+router.get('/product/:productId', controller.getInventory);
 
-router.post(
-  '/reserve',
-  controller.reserveStock
-);
+router.post('/reserve', controller.reserveStock);
 
-router.post(
-  '/release',
-  controller.releaseStock
-);
+router.post('/release', controller.releaseStock);
 
-router.post(
-  '/deduct',
-  controller.deductStock
-);
+router.post('/deduct', controller.deductStock);
 
-router.post(
-  '/adjust',
-  controller.adjustStock
-);
+router.post('/adjust', controller.adjustStock);
 
-router.get(
-  '/warehouses',
-  controller.getWarehouses
-);
+router.get('/warehouses', controller.getWarehouses);
 
 export default router;

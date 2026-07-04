@@ -1,11 +1,10 @@
 // apps/search-service/src/infrastructure/outbox/outbox.repository.ts
 
-import { OutboxEntity } from "../../domain/entities/outbox.entity";
-import { OutboxModel } from "../persistence/models/outbox.model";
-import { IOutboxRepository } from "../persistence/repositories/outbox.repository.impl";
+import { OutboxEntity } from '../../domain/entities/outbox.entity';
+import { OutboxModel } from '../persistence/models/outbox.model';
+import { IOutboxRepository } from '../persistence/repositories/outbox.repository.impl';
 
 export class OutboxRepository implements IOutboxRepository {
-
   /**
    * ==========================
    * Mapper
@@ -29,7 +28,7 @@ export class OutboxRepository implements IOutboxRepository {
 
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
- 
+
       nextRetryAt: doc.nextRetryAt,
       processedAt: doc.processedAt,
       failedAt: doc.failedAt,
@@ -42,10 +41,7 @@ export class OutboxRepository implements IOutboxRepository {
    * Create
    * ==========================
    */
-  async create(
-    outbox: OutboxEntity
-  ): Promise<OutboxEntity> {
-
+  async create(outbox: OutboxEntity): Promise<OutboxEntity> {
     const doc = await OutboxModel.create({
       topic: outbox.topic,
       event: outbox.event,
@@ -69,10 +65,7 @@ export class OutboxRepository implements IOutboxRepository {
    * Find Pending
    * ==========================
    */
-  async findPending(
-    limit = 50
-  ): Promise<OutboxEntity[]> {
-
+  async findPending(limit = 50): Promise<OutboxEntity[]> {
     const docs = await OutboxModel.find({
       status: 'pending',
       nextRetryAt: {
@@ -83,9 +76,7 @@ export class OutboxRepository implements IOutboxRepository {
       .limit(limit)
       .lean();
 
-    return docs.map((doc) =>
-      this.toEntity(doc)
-    );
+    return docs.map((doc) => this.toEntity(doc));
   }
 
   /**
@@ -93,24 +84,20 @@ export class OutboxRepository implements IOutboxRepository {
    * Lock For Processing
    * ==========================
    */
-  async lockForProcessing(
-    id: string
-  ): Promise<OutboxEntity | null> {
-
-    const doc =
-      await OutboxModel.findOneAndUpdate(
-        {
-          _id: id,
-          status: 'pending',
-        },
-        {
-          status: 'processing',
-          lockedAt: new Date(),
-        },
-        {
-          new: true,
-        }
-      );
+  async lockForProcessing(id: string): Promise<OutboxEntity | null> {
+    const doc = await OutboxModel.findOneAndUpdate(
+      {
+        _id: id,
+        status: 'pending',
+      },
+      {
+        status: 'processing',
+        lockedAt: new Date(),
+      },
+      {
+        new: true,
+      }
+    );
 
     if (!doc) {
       return null;
@@ -124,18 +111,12 @@ export class OutboxRepository implements IOutboxRepository {
    * Mark Processed
    * ==========================
    */
-  async markAsProcessed(
-    id: string
-  ): Promise<void> {
-
-    await OutboxModel.findByIdAndUpdate(
-      id,
-      {
-        status: 'processed',
-        processedAt: new Date(),
-        lockedAt: null,
-      }
-    );
+  async markAsProcessed(id: string): Promise<void> {
+    await OutboxModel.findByIdAndUpdate(id, {
+      status: 'processed',
+      processedAt: new Date(),
+      lockedAt: null,
+    });
   }
 
   /**
@@ -148,16 +129,12 @@ export class OutboxRepository implements IOutboxRepository {
     errorMessage: string,
     retries: number
   ): Promise<void> {
-
-    await OutboxModel.findByIdAndUpdate(
-      id,
-      {
-        status: 'failed',
-        retries,
-        errorMessage,
-        failedAt: new Date(),
-        lockedAt: null,
-      }
-    );
+    await OutboxModel.findByIdAndUpdate(id, {
+      status: 'failed',
+      retries,
+      errorMessage,
+      failedAt: new Date(),
+      lockedAt: null,
+    });
   }
 }

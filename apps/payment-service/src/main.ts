@@ -18,32 +18,28 @@ const startServer = async () => {
   try {
     logger.info('🚀 Starting Payment Service...');
 
-    // 1. Connect to MongoDB
+    //  Connect to MongoDB
     await connectDatabase();
     logger.info('✅ MongoDB connected successfully');
 
-    // 2. Initialize Kafka
+    // Initialize Kafka
     await initKafka();
     logger.info('✅ Kafka client initialized');
+    const outboxProcessor = new OutboxProcessor(outboxService);
 
-    // 3. Start Outbox Processor (reliable event delivery)
-   // create processor
-const outboxProcessor = new OutboxProcessor(outboxService);
-
-// start processor
-outboxProcessor.start();
+    // start processor
+    outboxProcessor.start();
 
     logger.info('✅ Payment Outbox Processor started');
 
-    // 4. Start Kafka Consumer (listens to Order Service events)
+    // Start Kafka Consumer (listens to Order Service events)
     await paymentConsumer.start();
     logger.info('✅ Payment Consumer started and listening for events');
 
-    // 5. Start Express HTTP Server
+    // Start Express HTTP Server
     app.listen(PORT, () => {
       logger.info(`🚀 Payment Service is running on http://localhost:${PORT}`);
     });
-
   } catch (error: any) {
     logger.error('❌ Failed to start Payment Service', {
       error: error.message,
@@ -57,7 +53,6 @@ outboxProcessor.start();
 const gracefulShutdown = (signal: string) => {
   logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
 
-  // You can add more cleanup here (e.g., close Kafka consumer, Redis, etc.)
   setTimeout(() => {
     logger.info('✅ Graceful shutdown completed');
     process.exit(0);

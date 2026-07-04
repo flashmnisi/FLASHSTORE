@@ -46,7 +46,9 @@ export class OutboxProcessor {
           const locked = await this.outboxService.lockForProcessing(event.id!);
 
           if (!locked) {
-            logger.warn('Event already being processed', { outboxId: event.id });
+            logger.warn('Event already being processed', {
+              outboxId: event.id,
+            });
             continue;
           }
 
@@ -97,20 +99,16 @@ export class OutboxProcessor {
         event: event.event,
         retries,
       });
-        await sendToDLQ({
-          topic: event.topic,
-          event: event.event,
-          payload: event.payload,
-          error: error.message,
-          retryCount: retries,
-        });
-      }
+      await sendToDLQ({
+        topic: event.topic,
+        event: event.event,
+        payload: event.payload,
+        error: error.message,
+        retryCount: retries,
+      });
+    }
 
-    await this.outboxService.markAsFailed(
-      event.id!,
-      error.message,
-      retries
-    );
+    await this.outboxService.markAsFailed(event.id!, error.message, retries);
 
     logger.warn('⚠️ Outbox event failed, retry scheduled', {
       outboxId: event.id,

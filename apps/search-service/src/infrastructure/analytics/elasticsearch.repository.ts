@@ -41,9 +41,10 @@ export class ElasticSearchRepository implements ISearchRepository {
       });
 
       const hits = response.hits.hits.map((hit: any) => hit._source);
-      const total = typeof response.hits.total === 'number' 
-        ? response.hits.total 
-        : response.hits.total?.value || 0;
+      const total =
+        typeof response.hits.total === 'number'
+          ? response.hits.total
+          : response.hits.total?.value || 0;
 
       return {
         products: hits,
@@ -53,9 +54,9 @@ export class ElasticSearchRepository implements ISearchRepository {
         totalPages: Math.ceil(total / queryVO.limit),
       };
     } catch (error: any) {
-      logger.error('Elasticsearch search failed', { 
-        query: queryVO.query, 
-        error: error.message 
+      logger.error('Elasticsearch search failed', {
+        query: queryVO.query,
+        error: error.message,
       });
       throw error;
     }
@@ -93,9 +94,9 @@ export class ElasticSearchRepository implements ISearchRepository {
       product,
     ]);
 
-    await this.client.bulk({ 
-      operations, 
-      refresh: 'wait_for' 
+    await this.client.bulk({
+      operations,
+      refresh: 'wait_for',
     });
   }
 

@@ -69,10 +69,7 @@ export class InventoryCache {
   /**
    * Invalidate cache
    */
-  async invalidateStock(
-    productId: string,
-    warehouseId: string
-  ) {
+  async invalidateStock(productId: string, warehouseId: string) {
     const key = this.stockKey(productId, warehouseId);
 
     await this.client.del(key);
@@ -96,22 +93,15 @@ export class InventoryCache {
   ) {
     const key = `inventory:lock:${productId}:${warehouseId}`;
 
-    const result = await this.client.set(
-      key,
-      orderId,
-      {
-        NX: true, // only set if not exists
-        EX: ttl,  // auto-expire lock
-      }
-    );
+    const result = await this.client.set(key, orderId, {
+      NX: true, // only set if not exists
+      EX: ttl, // auto-expire lock
+    });
 
     return result === 'OK';
   }
 
-  async releaseReservationLock(
-    productId: string,
-    warehouseId: string
-  ) {
+  async releaseReservationLock(productId: string, warehouseId: string) {
     const key = `inventory:lock:${productId}:${warehouseId}`;
 
     await this.client.del(key);

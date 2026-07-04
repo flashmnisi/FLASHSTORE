@@ -4,7 +4,6 @@ import { getRedis } from '@org/shared-redis';
 const CLICK_TTL = 60 * 60 * 24; // 24h
 
 export class ClickTracker {
-
   /**
    * 👆 Track product click
    */
@@ -30,7 +29,6 @@ export class ClickTracker {
         productId: data.productId,
         query: data.query,
       });
-
     } catch (error: any) {
       logger.error('Click tracking failed', {
         productId: data.productId,
@@ -51,7 +49,6 @@ export class ClickTracker {
       return await redis.zRange(key, 0, limit - 1, {
         REV: true,
       });
-
     } catch (error: any) {
       logger.error('Failed to get top clicks', {
         query,

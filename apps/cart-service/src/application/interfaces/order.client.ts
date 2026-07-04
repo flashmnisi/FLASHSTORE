@@ -13,7 +13,6 @@ export interface IOrderClient {
     correlationId?: string;       
   }): Promise<{
     orderId: string;
-    // other fields returned by order service
   }>;
 
   cancelOrder(orderId: string): Promise<void>;

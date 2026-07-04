@@ -23,9 +23,9 @@ export class SearchQueryVO {
     public readonly sort: SortOption = 'relevance',
     public readonly page: number = 1,
     public readonly limit: number = 20,
-    public readonly minPrice?: number,      // ← Added
-    public readonly maxPrice?: number,      // ← Added
-    public readonly categories?: string[],  // ← Added
+    public readonly minPrice?: number,
+    public readonly maxPrice?: number,
+    public readonly categories?: string[]
   ) {}
 
   /**
@@ -50,8 +50,8 @@ export class SearchQueryVO {
 
     // Category
     if (this.categories?.length || this.filters.category?.length) {
-      filters.push({ 
-        terms: { category: this.categories || this.filters.category } 
+      filters.push({
+        terms: { category: this.categories || this.filters.category },
       });
     }
 
@@ -71,8 +71,12 @@ export class SearchQueryVO {
     }
 
     // Price Range
-    if (this.minPrice !== undefined || this.maxPrice !== undefined || 
-        this.filters.minPrice !== undefined || this.filters.maxPrice !== undefined) {
+    if (
+      this.minPrice !== undefined ||
+      this.maxPrice !== undefined ||
+      this.filters.minPrice !== undefined ||
+      this.filters.maxPrice !== undefined
+    ) {
       filters.push({
         range: {
           price: {

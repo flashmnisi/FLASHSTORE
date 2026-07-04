@@ -17,7 +17,10 @@ export class AddressService {
         throw new AppError('User not found', 404);
       }
 
-      const updatedUser = await this.userRepository.addAddress(userId, addressData);
+      const updatedUser = await this.userRepository.addAddress(
+        userId,
+        addressData
+      );
 
       logger.info('Address added successfully', { userId });
 
@@ -38,13 +41,24 @@ export class AddressService {
         throw new AppError('User not found', 404);
       }
 
-      const updatedUser = await this.userRepository.updateAddress(userId, index, addressData);
+      const updatedUser = await this.userRepository.updateAddress(
+        userId,
+        index,
+        addressData
+      );
 
-      logger.info('Address updated successfully', { userId, addressIndex: index });
+      logger.info('Address updated successfully', {
+        userId,
+        addressIndex: index,
+      });
 
       return updatedUser;
     } catch (error: any) {
-      logger.error('Failed to update address', { userId, addressIndex: index, error: error.message });
+      logger.error('Failed to update address', {
+        userId,
+        addressIndex: index,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -61,11 +75,18 @@ export class AddressService {
 
       await this.userRepository.deleteAddress(userId, index);
 
-      logger.info('Address deleted successfully', { userId, addressIndex: index });
+      logger.info('Address deleted successfully', {
+        userId,
+        addressIndex: index,
+      });
 
       return true;
     } catch (error: any) {
-      logger.error('Failed to delete address', { userId, addressIndex: index, error: error.message });
+      logger.error('Failed to delete address', {
+        userId,
+        addressIndex: index,
+        error: error.message,
+      });
       throw error;
     }
   }

@@ -2,19 +2,12 @@
 
 import { Schema, model, Document } from 'mongoose';
 
-export interface StockMovementDocument
-  extends Document {
-
+export interface StockMovementDocument extends Document {
   productId: string;
 
   warehouseId: string;
 
-  type:
-    | 'IN'
-    | 'OUT'
-    | 'RESERVE'
-    | 'RELEASE'
-    | 'ADJUSTMENT';
+  type: 'IN' | 'OUT' | 'RESERVE' | 'RELEASE' | 'ADJUSTMENT';
 
   quantity: number;
 
@@ -25,57 +18,49 @@ export interface StockMovementDocument
   createdAt: Date;
 }
 
-const StockMovementSchema =
-  new Schema<StockMovementDocument>(
-    {
-      productId: {
-        type: String,
-        required: true,
-        index: true,
-      },
-
-      warehouseId: {
-        type: String,
-        required: true,
-        index: true,
-      },
-
-      type: {
-        type: String,
-        required: true,
-        enum: [
-          'IN',
-          'OUT',
-          'RESERVE',
-          'RELEASE',
-          'ADJUSTMENT',
-        ],
-      },
-
-      quantity: {
-        type: Number,
-        required: true,
-      },
-
-      referenceId: {
-        type: String,
-      },
-
-      reason: {
-        type: String,
-      },
+const StockMovementSchema = new Schema<StockMovementDocument>(
+  {
+    productId: {
+      type: String,
+      required: true,
+      index: true,
     },
-    {
-      timestamps: {
-        createdAt: true,
-        updatedAt: false,
-      },
-      versionKey: false,
-    }
-  );
 
-export const StockMovementModel =
-  model<StockMovementDocument>(
-    'StockMovement',
-    StockMovementSchema
-  );
+    warehouseId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+
+    type: {
+      type: String,
+      required: true,
+      enum: ['IN', 'OUT', 'RESERVE', 'RELEASE', 'ADJUSTMENT'],
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+    },
+
+    referenceId: {
+      type: String,
+    },
+
+    reason: {
+      type: String,
+    },
+  },
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: false,
+    },
+    versionKey: false,
+  }
+);
+
+export const StockMovementModel = model<StockMovementDocument>(
+  'StockMovement',
+  StockMovementSchema
+);

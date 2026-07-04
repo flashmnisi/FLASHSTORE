@@ -1,21 +1,18 @@
 import dotenv from 'dotenv';
-import { z } from 'zod';
 
 dotenv.config();
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+export const env = {
+  NODE_ENV: process.env.NODE_ENV,
 
-  PORT: z.string().default('3004'),
+  PORT: process.env.PORT,
 
-  MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
+  MONGO_URI: process.env.MONGO_URI || 'MONGO_URI is required',
 
-  KAFKA_BROKERS: z.string().default('kafka:9092'),
-  KAFKA_CLIENT_ID: z.string().default('order-service'),
+  KAFKA_BROKERS: process.env.KAFKA_BROKERS || '',
+  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID,
 
-  JWT_SECRET: z.string().optional(),
-});
-
-const env = envSchema.parse(process.env);
+  JWT_SECRET: process.env.JWT_SECRET,
+};
 
 export default env;

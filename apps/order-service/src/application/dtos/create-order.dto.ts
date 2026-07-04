@@ -12,15 +12,11 @@ const orderItemSchema = z.object({
 export const createOrderSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
 
-  // Required for notifications
   userEmail: z.string().email('Valid email is required for notifications'),
 
-  // Optional but recommended
   customerName: z.string().min(1, 'Customer name is required').optional(),
 
-  items: z
-    .array(orderItemSchema)
-    .min(1, 'Order must contain at least 1 item'),
+  items: z.array(orderItemSchema).min(1, 'Order must contain at least 1 item'),
 
   shippingAddress: z.object({
     name: z.string().min(1, 'Recipient name is required'),
@@ -32,25 +28,19 @@ export const createOrderSchema = z.object({
     country: z.string().min(1, 'Country is required'),
   }),
 
-paymentMethod: z
-  .enum(['cash', 'card', 'paypal']),
+  paymentMethod: z.enum(['cash', 'card', 'paypal']),
 
   itemsPrice: z.number().positive('Items price must be positive'),
   shippingPrice: z.number().min(0, 'Shipping price cannot be negative'),
   totalAmount: z.number().positive('Total amount must be positive'),
 
   deliveryOption: z.string().optional(),
-  
-  currency: z
-    .enum(['ZAR', 'USD', 'EUR', 'GBP'])
-    .default('ZAR'),
+
+  currency: z.enum(['ZAR', 'USD', 'EUR', 'GBP']).default('ZAR'),
 
   idempotencyKey: z.string().min(1, 'Idempotency key is required'),
 
-  metadata: z
-    .record(z.string(), z.any())
-    .optional()
-    .default({}),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;

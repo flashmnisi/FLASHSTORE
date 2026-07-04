@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: mongodb
+  namespace: flashstore
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  clusterIP: None
+
+  selector:
+    app: mongodb
+
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017

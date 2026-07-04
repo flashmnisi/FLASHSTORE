@@ -4,9 +4,7 @@ import { ReservationService } from '../../../application/services/reservation.se
 import logger from '@org/shared-logger';
 
 export class PaymentFailedHandler {
-  constructor(
-    private readonly reservationService: ReservationService
-  ) {}
+  constructor(private readonly reservationService: ReservationService) {}
 
   async handle(event: any) {
     try {
@@ -39,7 +37,6 @@ export class PaymentFailedHandler {
       logger.info('✅ Reserved stock released', {
         orderId: payment.orderId,
       });
-
     } catch (error: any) {
       logger.error('❌ PaymentFailedHandler failed', {
         orderId: event.data?.orderId,

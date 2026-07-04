@@ -5,9 +5,9 @@ export interface AuthRequest extends Request {
     userId: string;
     email?: string;
     role?: string;
-    name?: string;         
+    name?: string;
   };
-  id?: string;              
+  id?: string;
   correlationId?: string;
 }
 
@@ -18,7 +18,7 @@ export const extractUser = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void => {                     
+): void => {
   const userId = req.headers['x-user-id'] as string;
 
   if (!userId) {
@@ -26,7 +26,7 @@ export const extractUser = (
       success: false,
       message: 'Unauthorized: User context missing from gateway',
     });
-    return;                 
+    return;
   }
 
   req.user = {

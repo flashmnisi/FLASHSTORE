@@ -11,7 +11,5 @@ export interface ProductDto {
 
 export interface IProductClient {
   getProduct(productId: string): Promise<ProductDto | null>;
-
-  // 🔥 Optional batch (for checkout validation)
   getProducts(productIds: string[]): Promise<ProductDto[]>;
 }

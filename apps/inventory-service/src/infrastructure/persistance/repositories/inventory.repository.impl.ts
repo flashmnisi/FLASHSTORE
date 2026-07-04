@@ -45,20 +45,20 @@ export class InventoryRepositoryImpl implements IInventoryRepository {
 
   async findByProduct(productId: string): Promise<InventoryEntity[]> {
     const docs = await InventoryModel.find({ productId });
-    return docs.map(doc => this.toEntity(doc));
+    return docs.map((doc) => this.toEntity(doc));
   }
 
   async findAll(): Promise<InventoryEntity[]> {
     const docs = await InventoryModel.find();
-    return docs.map(doc => this.toEntity(doc));
+    return docs.map((doc) => this.toEntity(doc));
   }
 
   async findLowStock(threshold: number = 10): Promise<InventoryEntity[]> {
     const docs = await InventoryModel.find({
-      $expr: { $lt: ['$quantity', threshold] }
+      $expr: { $lt: ['$quantity', threshold] },
     }).sort({ quantity: 1 });
 
-    return docs.map(doc => this.toEntity(doc));
+    return docs.map((doc) => this.toEntity(doc));
   }
 
   async update(inventory: InventoryEntity): Promise<InventoryEntity> {
@@ -83,8 +83,14 @@ export class InventoryRepositoryImpl implements IInventoryRepository {
 
   // ====================== NEW METHODS (Added) ======================
 
-  async adjustStock(productId: string, quantity: number): Promise<InventoryEntity> {
-    const inventory = await this.findByProductAndWarehouse(productId, 'default'); // Adjust as needed
+  async adjustStock(
+    productId: string,
+    quantity: number
+  ): Promise<InventoryEntity> {
+    const inventory = await this.findByProductAndWarehouse(
+      productId,
+      'default'
+    ); // Adjust as needed
     if (!inventory) throw new Error('Inventory not found');
 
     inventory.quantity += quantity;
@@ -93,24 +99,42 @@ export class InventoryRepositoryImpl implements IInventoryRepository {
     return this.update(inventory);
   }
 
-  async deductStock(productId: string, quantity: number): Promise<InventoryEntity> {
-    const inventory = await this.findByProductAndWarehouse(productId, 'default');
+  async deductStock(
+    productId: string,
+    quantity: number
+  ): Promise<InventoryEntity> {
+    const inventory = await this.findByProductAndWarehouse(
+      productId,
+      'default'
+    );
     if (!inventory) throw new Error('Inventory not found');
 
-    inventory.deduct(quantity);   
+    inventory.deduct(quantity);
     return this.update(inventory);
   }
 
-  async reserveStock(productId: string, quantity: number): Promise<InventoryEntity> {
-    const inventory = await this.findByProductAndWarehouse(productId, 'default');
+  async reserveStock(
+    productId: string,
+    quantity: number
+  ): Promise<InventoryEntity> {
+    const inventory = await this.findByProductAndWarehouse(
+      productId,
+      'default'
+    );
     if (!inventory) throw new Error('Inventory not found');
 
     inventory.reserve(quantity);
     return this.update(inventory);
   }
 
-  async releaseStock(productId: string, quantity: number): Promise<InventoryEntity> {
-    const inventory = await this.findByProductAndWarehouse(productId, 'default');
+  async releaseStock(
+    productId: string,
+    quantity: number
+  ): Promise<InventoryEntity> {
+    const inventory = await this.findByProductAndWarehouse(
+      productId,
+      'default'
+    );
     if (!inventory) throw new Error('Inventory not found');
 
     inventory.release(quantity);

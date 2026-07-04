@@ -5,11 +5,8 @@ export const checkoutCartSchema = z.object({
   paymentMethod: z.enum(['card']).default('card'),
   currency: z.enum(['ZAR', 'USD', 'EUR', 'GBP']).default('ZAR'),
    couponCode: z.string().optional(),
-  // optional overrides (future-ready)
   shippingAddressId: z.string().optional(),
   billingAddressId: z.string().optional(),
-
-  // idempotency (CRITICAL)
   idempotencyKey: z.string().min(10),
 });
 

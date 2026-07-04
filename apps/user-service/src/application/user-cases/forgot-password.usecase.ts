@@ -9,21 +9,25 @@ export class ForgotPasswordUseCase {
 
   async execute(email: string): Promise<void> {
     try {
-      // 1. Find user by email (silent if not found for security)
+      // Find user by email (silent if not found for security)
       const user = await this.authService.findByEmail(email);
 
       if (!user) {
-        logger.info('Forgot password requested for non-existent email', { email });
-        return; // Silent success - do not reveal existence
+        logger.info('Forgot password requested for non-existent email', {
+          email,
+        });
+        return;
       }
 
-      // 2. Generate reset token
-      const resetToken = await this.authService.generatePasswordResetToken(user.id);
+      // Generate reset token
+      const resetToken = await this.authService.generatePasswordResetToken(
+        user.id
+      );
 
-      // 3. Send password reset email
+      // Send password reset email
       await this.authService.sendPasswordResetEmail(user.email, resetToken);
 
-      // 4. Publish event to Outbox
+      // Publish event to Outbox
       await this.authService.publishEvent('user.password_reset_requested', {
         userId: user.id,
         email: user.email,
@@ -34,7 +38,6 @@ export class ForgotPasswordUseCase {
         userId: user.id,
         email: user.email,
       });
-
     } catch (error: any) {
       logger.error('ForgotPasswordUseCase failed', {
         email,

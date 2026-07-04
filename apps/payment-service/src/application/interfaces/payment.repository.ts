@@ -11,11 +11,7 @@ export interface IPaymentRepository {
   findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<PaymentEntity | null>;
   findByUserId(userId: string): Promise<PaymentEntity[]>;
   findByStatus(status: string): Promise<PaymentEntity[]>;
-
-  // Missing methods that caused the error
   existsByOrderId(orderId: string): Promise<boolean>;
   updateStatus(id: string, status: string): Promise<PaymentEntity | null>;
-
-  // Optional but useful
   delete(id: string): Promise<boolean>;
 }

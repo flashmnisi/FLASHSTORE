@@ -35,7 +35,9 @@ export class OutboxWorker {
           outbox.status = 'processed';
           await outbox.save();
 
-          logger.info('Outbox event processed successfully', { outboxId: outbox._id });
+          logger.info('Outbox event processed successfully', {
+            outboxId: outbox._id,
+          });
         } catch (err: any) {
           outbox.status = 'failed';
           outbox.retries = (outbox.retries || 0) + 1;

@@ -4,9 +4,7 @@ import { NotificationService } from '../../../application/services/notification.
 import logger from '@org/shared-logger';
 
 export class UserRegisteredHandler {
-  constructor(
-    private readonly notificationService: NotificationService
-  ) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   async handle(rawMessage: any) {
     try {
@@ -32,7 +30,6 @@ export class UserRegisteredHandler {
       });
 
       logger.info('✅ Welcome notification sent', { userId: user.userId });
-
     } catch (error: any) {
       logger.error('❌ UserRegisteredHandler failed', { error: error.message });
     }

@@ -23,7 +23,7 @@ router.post(
   authController.login
 );
 
-// Refresh token (optional)
+// Refresh token 
 router.post('/refresh-token', authController.refreshToken);
 
 export default router;

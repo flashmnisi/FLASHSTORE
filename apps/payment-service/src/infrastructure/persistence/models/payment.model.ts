@@ -31,10 +31,13 @@ const paymentSchema = new Schema<IPaymentDocument>(
     stripePaymentIntentId: { type: String, sparse: true, index: true },
     metadata: { type: Schema.Types.Mixed, default: {} },
   },
-  { 
+  {
     timestamps: true,
-    versionKey: false 
+    versionKey: false,
   }
 );
 
-export const PaymentModel = mongoose.model<IPaymentDocument>('Payment', paymentSchema);
+export const PaymentModel = mongoose.model<IPaymentDocument>(
+  'Payment',
+  paymentSchema
+);

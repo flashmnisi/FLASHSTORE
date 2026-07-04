@@ -4,15 +4,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const env = {
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: process.env.PORT || 3008,
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
 
   // DB
   MONGO_URI: process.env.MONGO_URI!,
 
   // Kafka
-  KAFKA_BROKERS: process.env.KAFKA_BROKERS || 'kafka:9092',
-  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID || 'inventory-service',
+  KAFKA_BROKERS: process.env.KAFKA_BROKERS,
+  KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID,
 
   INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || '',
 };

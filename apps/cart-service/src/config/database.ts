@@ -4,7 +4,7 @@ import logger from '@org/shared-logger';
 
 export const connectDatabase = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI);
+    await mongoose.connect(env.MONGO_URI || '');
 
     logger.info('MongoDB connected', {
       uri: env.MONGO_URI,

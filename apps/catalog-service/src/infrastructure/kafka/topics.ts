@@ -8,7 +8,7 @@ export const TOPICS = {
   PRODUCTS: 'flashstore.products',
   CATEGORIES: 'flashstore.categories',
   INVENTORY: 'flashstore.inventory',
-  SEARCH: 'flashstore.search',           // for search service indexing
+  SEARCH: 'flashstore.search',          
 } as const;
 
 export const EVENTS = {

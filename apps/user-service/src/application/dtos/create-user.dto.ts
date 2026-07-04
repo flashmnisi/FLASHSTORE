@@ -16,7 +16,6 @@ export const loginSchema = z.object({
 export const updateProfileSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   email: z.string().email().optional(),
-  // Add more fields as needed
 });
 
 export type CreateUserDto = z.infer<typeof createUserSchema>;

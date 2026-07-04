@@ -95,7 +95,4 @@ export const exists = async (key: string): Promise<boolean> => {
   return count > 0;
 };
 
-/**
- * ⚠️ Raw client access (use carefully)
- */
 export const getRawClient = (): RedisClientType | null => client;

@@ -15,7 +15,7 @@ import {
 export class OrderService {
   constructor(
     private readonly repository: IOrderRepository,
-    private readonly outboxService: OutboxService   
+    private readonly outboxService: OutboxService
   ) {}
 
   /**
@@ -23,10 +23,7 @@ export class OrderService {
    * 🟢 CREATE ORDER
    * =============================
    */
-  async createOrder(
-    dto: CreateOrderDto,
-    context?: { correlationId?: string }
-  ) {
+  async createOrder(dto: CreateOrderDto, context?: { correlationId?: string }) {
     try {
       logger.info('Creating new order', {
         userId: dto.userId,
@@ -48,14 +45,13 @@ export class OrderService {
         '',
         dto.userId,
         dto.items as OrderItem[],
-        0,                                 // temporary total
+        0, // temporary total
         dto.idempotencyKey,
         dto.currency || 'ZAR',
         'pending',
         'pending'
       );
 
-      // ✅ CALCULATE TOTAL CORRECTLY
       const itemsTotal = order.calculateTotal();
       const shippingPrice = dto.shippingPrice || 0;
       order.totalAmount = itemsTotal + shippingPrice;
@@ -63,23 +59,22 @@ export class OrderService {
       // Save to database
       const savedOrder = await this.repository.create(order);
 
-      // Create rich event with proper breakdown
       const orderCreatedEvent = createOrderCreatedEvent({
         orderId: savedOrder.id,
         userId: savedOrder.userId,
         userEmail: dto.userEmail,
         customerName: dto.customerName || dto.shippingAddress?.name,
-        
-        items: savedOrder.items.map(item => ({
+
+        items: savedOrder.items.map((item) => ({
           productId: item.productId,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
         })),
-        
-        itemsTotal,                    // ← Added
-        shippingPrice,                 // ← Added
-        totalAmount: savedOrder.totalAmount,   // ← Now correctly calculated
+
+        itemsTotal,
+        shippingPrice,
+        totalAmount: savedOrder.totalAmount,
         currency: savedOrder.currency || 'ZAR',
         shippingAddress: dto.shippingAddress,
       });
@@ -101,7 +96,6 @@ export class OrderService {
       });
 
       return savedOrder;
-
     } catch (error: any) {
       logger.error('Failed to create order', {
         error: error.message,
@@ -160,7 +154,6 @@ export class OrderService {
         orderId: order.id,
         paymentId,
       });
-
     } catch (error: any) {
       logger.error('handlePaymentCompleted failed', {
         error: error.message,
@@ -219,7 +212,6 @@ export class OrderService {
         orderId: order.id,
         paymentId,
       });
-
     } catch (error: any) {
       logger.error('handlePaymentFailed failed', {
         error: error.message,
@@ -234,18 +226,11 @@ export class OrderService {
    * GET ORDER BY ID
    * =============================
    */
-  async getOrderById(
-    orderId: string
-  ) {
-    const order =
-      await this.repository.findById(
-        orderId
-      );
+  async getOrderById(orderId: string) {
+    const order = await this.repository.findById(orderId);
 
     if (!order) {
-      throw new Error(
-        'Order not found'
-      );
+      throw new Error('Order not found');
     }
 
     return order;
@@ -256,11 +241,7 @@ export class OrderService {
    * GET USER ORDERS
    * =============================
    */
-  async getOrdersByUser(
-    userId: string
-  ) {
-    return this.repository.findByUserId(
-      userId
-    );
+  async getOrdersByUser(userId: string) {
+    return this.repository.findByUserId(userId);
   }
 }

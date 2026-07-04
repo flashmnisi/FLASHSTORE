@@ -53,7 +53,7 @@ const gracefulShutdown = async (signal: string) => {
   logger.warn(`⚠️ Received ${signal}. Shutting down gracefully...`);
 
   try {
-    // Add cleanup if needed
+
     logger.info('✅ Graceful shutdown completed');
     process.exit(0);
   } catch (error: any) {

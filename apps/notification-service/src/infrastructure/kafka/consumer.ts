@@ -1,10 +1,6 @@
 //apps/notification-servive/src/infrastructure/kafka/consumer.ts
 
-import {
-  subscribe,
-  EVENTS,
-  TOPICS,
-} from '@org/shared-kafka';
+import { subscribe, EVENTS, TOPICS } from '@org/shared-kafka';
 
 import logger from '@org/shared-logger';
 import { NotificationService } from '../../application/services/notification.service';
@@ -17,25 +13,21 @@ import { PaymentFailedHandler } from './handlers/handlePaymentFailed';
 export const startNotificationConsumer = async (
   notificationService: NotificationService
 ) => {
-
   const userRegisteredHandler = new UserRegisteredHandler(notificationService);
   const orderCreatedHandler = new OrderCreatedHandler(notificationService);
-  const paymentCompletedHandler = new PaymentCompletedHandler(notificationService);
+  const paymentCompletedHandler = new PaymentCompletedHandler(
+    notificationService
+  );
   const paymentFailedHandler = new PaymentFailedHandler(notificationService);
 
   await subscribe(
     {
-      topics: [
-        TOPICS.USERS,
-        TOPICS.ORDERS,
-      ],
+      topics: [TOPICS.USERS, TOPICS.ORDERS],
       groupId: 'notification-service',
       serviceName: 'notification-service',
     },
     async (message: any) => {
       try {
-
-        // ✅ FIX: normalize Kafka envelope safely
         const eventType =
           message?.event ||
           message?.payload?.event?.event ||
@@ -54,7 +46,6 @@ export const startNotificationConsumer = async (
         });
 
         switch (eventType) {
-
           case EVENTS.USER_REGISTERED:
             await userRegisteredHandler.handle(payload);
             break;
@@ -82,7 +73,6 @@ export const startNotificationConsumer = async (
               payload,
             });
         }
-
       } catch (err: any) {
         logger.error('❌ Consumer processing failed', {
           error: err.message,

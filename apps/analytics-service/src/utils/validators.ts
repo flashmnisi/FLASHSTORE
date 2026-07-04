@@ -13,7 +13,6 @@ export const trackEventSchema = z.object({
 
 export const validators = {
   trackEvent: trackEventSchema,
-  // ... other validators
 } as const;
 
 export type TrackEventDto = z.infer<typeof trackEventSchema>;

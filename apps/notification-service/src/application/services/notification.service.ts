@@ -1,6 +1,9 @@
 // apps/notification-service/src/application/services/notification.service.ts
 
-import { NotificationEntity, NotificationType } from '../../domain/entities/notification.entity';
+import {
+  NotificationEntity,
+  NotificationType,
+} from '../../domain/entities/notification.entity';
 import { SendNotificationDto } from '../dtos/send-notification.dto';
 import { INotificationRepository } from '../interfaces/notification.repository';
 import { IEmailProvider } from '../interfaces/email.provider';
@@ -24,25 +27,28 @@ export class NotificationService {
     try {
       // ====================== EARLY VALIDATION ======================
       if (dto.channel === 'email' && !dto.templateData?.email) {
-        logger.error('❌ Cannot process email notification - missing recipient email', {
-          userId: dto.userId,
-          type: dto.type,
-          templateData: dto.templateData,
-          availableKeys: Object.keys(dto.templateData || {}),
-        });
+        logger.error(
+          '❌ Cannot process email notification - missing recipient email',
+          {
+            userId: dto.userId,
+            type: dto.type,
+            templateData: dto.templateData,
+            availableKeys: Object.keys(dto.templateData || {}),
+          }
+        );
 
-    const failedNotification = new NotificationEntity(
-  '',
-  dto.userId,
-  dto.type as NotificationType,
-  dto.templateName,
-  dto.templateData,
-  dto.data,
-  dto.title,
-  dto.message,
-  'failed',
-  dto.channel
-);
+        const failedNotification = new NotificationEntity(
+          '',
+          dto.userId,
+          dto.type as NotificationType,
+          dto.templateName,
+          dto.templateData,
+          dto.data,
+          dto.title,
+          dto.message,
+          'failed',
+          dto.channel
+        );
 
         const saved = await this.repository.save(failedNotification);
         await this.publishNotificationEvent(saved, false, dto);
@@ -50,18 +56,18 @@ export class NotificationService {
       }
 
       // ====================== CREATE NOTIFICATION ======================
-     const notification = new NotificationEntity(
-  '',
-  dto.userId,
-  dto.type as NotificationType,
-  dto.templateName,
-  dto.templateData,
-  dto.data,
-  dto.title,
-  dto.message,
-  'pending',
-  dto.channel
-);
+      const notification = new NotificationEntity(
+        '',
+        dto.userId,
+        dto.type as NotificationType,
+        dto.templateName,
+        dto.templateData,
+        dto.data,
+        dto.title,
+        dto.message,
+        'pending',
+        dto.channel
+      );
 
       const saved = await this.repository.save(notification);
 
@@ -79,7 +85,9 @@ export class NotificationService {
           await this.pushProvider.send(saved);
           sendSuccess = true;
         } else {
-          logger.warn('Unsupported notification channel', { channel: dto.channel });
+          logger.warn('Unsupported notification channel', {
+            channel: dto.channel,
+          });
         }
       } catch (sendError: any) {
         logger.error('Failed to send notification via provider', {
@@ -112,7 +120,6 @@ export class NotificationService {
       }
 
       return saved;
-
     } catch (error: any) {
       logger.error('❌ Critical failure in NotificationService.send', {
         userId: dto.userId,

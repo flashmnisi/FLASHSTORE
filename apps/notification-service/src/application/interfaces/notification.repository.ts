@@ -7,12 +7,12 @@ export interface INotificationRepository {
   save(notification: NotificationEntity): Promise<NotificationEntity>;
 
   /**
-   * Update an existing notification (e.g., status change to 'sent' or 'failed')
+   * Update an existing notification 
    */
   update(notification: NotificationEntity): Promise<NotificationEntity>;
 
   /**
-   * Find notifications by user ID (optional, for future use)
+   * Find notifications by user ID 
    */
   findByUserId(userId: string): Promise<NotificationEntity[]>;
 

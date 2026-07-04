@@ -3,11 +3,13 @@
 import { Request, Response } from 'express';
 import { userService } from '../../container';
 import logger from '@org/shared-logger';
-import { LoginDto, CreateUserDto } from '../../application/dtos/create-user.dto';
+import {
+  LoginDto,
+  CreateUserDto,
+} from '../../application/dtos/create-user.dto';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 
 export const authController = {
-
   /**
    * REGISTER NEW USER
    * POST /api/auth/register
@@ -20,9 +22,9 @@ export const authController = {
 
       const { user, accessToken, refreshToken } = result;
 
-      logger.info('User registered successfully', { 
-        userId: user.id, 
-        email: user.email 
+      logger.info('User registered successfully', {
+        userId: user.id,
+        email: user.email,
       });
 
       return res.status(201).json({
@@ -175,7 +177,6 @@ export const authController = {
         });
       }
 
-      // TODO: Implement proper refresh token logic
       return res.status(501).json({
         success: false,
         message: 'Refresh token functionality not implemented yet',

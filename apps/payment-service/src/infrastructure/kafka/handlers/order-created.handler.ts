@@ -41,7 +41,7 @@ export class OrderCreatedHandler {
         orderId: message.data?.orderId,
         error: error.message,
       });
-      throw error; // Let consumer/DLQ handle retry
+      throw error;
     }
   }
 }

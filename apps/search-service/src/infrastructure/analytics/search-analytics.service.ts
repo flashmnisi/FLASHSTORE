@@ -16,7 +16,10 @@ export class SearchAnalyticsService {
 
       logger.info('Search query tracked', { query });
     } catch (error: any) {
-      logger.error('Failed to track search query', { query, error: error.message });
+      logger.error('Failed to track search query', {
+        query,
+        error: error.message,
+      });
     }
   }
 
@@ -30,7 +33,10 @@ export class SearchAnalyticsService {
 
       logger.info('Product click tracked', { productId });
     } catch (error: any) {
-      logger.error('Failed to track product click', { productId, error: error.message });
+      logger.error('Failed to track product click', {
+        productId,
+        error: error.message,
+      });
     }
   }
 
@@ -44,7 +50,10 @@ export class SearchAnalyticsService {
 
       logger.info('Product conversion tracked', { productId });
     } catch (error: any) {
-      logger.error('Failed to track conversion', { productId, error: error.message });
+      logger.error('Failed to track conversion', {
+        productId,
+        error: error.message,
+      });
     }
   }
 

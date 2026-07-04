@@ -12,12 +12,7 @@ const OutboxSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: [
-        'pending',
-        'processing',
-        'processed',
-        'failed',
-      ],
+      enum: ['pending', 'processing', 'processed', 'failed'],
       default: 'pending',
     },
 
@@ -41,8 +36,4 @@ const OutboxSchema = new mongoose.Schema(
   }
 );
 
-export const OutboxModel =
-  mongoose.model(
-    'Outbox',
-    OutboxSchema
-  );
+export const OutboxModel = mongoose.model('Outbox', OutboxSchema);

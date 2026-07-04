@@ -1,11 +1,10 @@
 // apps/inventory-service/src/infrastructure/outbox/outbox.repository.impl.ts
 
-import { OutboxEntity } from "../../outbox/outbox.entity";
-import { OutboxModel } from "../../outbox/outbox.model";
-import { IOutboxRepository } from "../../../application/interfaces/outbox.repository";
+import { OutboxEntity } from '../../outbox/outbox.entity';
+import { OutboxModel } from '../../outbox/outbox.model';
+import { IOutboxRepository } from '../../../application/interfaces/outbox.repository';
 
 export class OutboxRepositoryImpl implements IOutboxRepository {
-
   private toEntity(doc: any): OutboxEntity {
     return new OutboxEntity({
       id: doc._id?.toString(),

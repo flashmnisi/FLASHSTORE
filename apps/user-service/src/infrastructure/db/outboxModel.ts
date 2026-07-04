@@ -20,7 +20,7 @@ const OutboxSchema = new Schema<IOutbox>(
   {
     aggregateId: { type: String, required: true },
 
-    eventType: { type: String, required: true }, // ✅ FIX
+    eventType: { type: String, required: true }, 
 
     topic: { type: String, required: true },
 
@@ -34,7 +34,7 @@ const OutboxSchema = new Schema<IOutbox>(
 
     retries: { type: Number, default: 0 },
 
-    nextRetryAt: { type: Date, default: Date.now }, // ✅ FIX
+    nextRetryAt: { type: Date, default: Date.now },
 
     lastError: { type: String },
   },

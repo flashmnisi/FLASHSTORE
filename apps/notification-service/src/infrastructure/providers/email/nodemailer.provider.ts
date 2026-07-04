@@ -130,11 +130,15 @@ export class NodemailerProvider implements IEmailProvider {
               <table width="100%" style="border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0;">Subtotal</td>
-                  <td style="text-align:right; padding: 8px 0;">$${itemsTotal.toFixed(2)}</td>
+                  <td style="text-align:right; padding: 8px 0;">$${itemsTotal.toFixed(
+                    2
+                  )}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0;">Shipping</td>
-                  <td style="text-align:right; padding: 8px 0;">$${shippingPrice.toFixed(2)}</td>
+                  <td style="text-align:right; padding: 8px 0;">$${shippingPrice.toFixed(
+                    2
+                  )}</td>
                 </tr>
                 <tr style="border-top: 2px solid #e5e7eb; font-weight: bold;">
                   <td style="padding: 12px 0 8px 0;">Total</td>

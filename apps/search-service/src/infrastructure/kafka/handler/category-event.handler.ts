@@ -13,9 +13,5 @@ export class CategoryEventHandler {
         categoryId: data.categoryId,
       }
     );
-
-    // future:
-    // update category metadata
-    // sync elasticsearch category index
   }
 }

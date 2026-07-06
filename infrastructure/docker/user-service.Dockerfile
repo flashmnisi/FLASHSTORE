@@ -1,3 +1,4 @@
+#infrastructure/docker/user-service.Dockerfile
 # ==================== BUILD STAGE ====================
 FROM node:20-alpine AS builder
 

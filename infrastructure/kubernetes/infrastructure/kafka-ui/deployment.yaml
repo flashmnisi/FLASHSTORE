@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: kafka-ui
+  namespace: flashstore
+  labels:
+    app: kafka-ui
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: kafka-ui
+
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+
+    spec:
+      containers:
+        - name: kafka-ui
+
+          image: provectuslabs/kafka-ui:v0.7.2
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: "false"
+
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: flashstore
+
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: kafka:9092
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+          securityContext:
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false

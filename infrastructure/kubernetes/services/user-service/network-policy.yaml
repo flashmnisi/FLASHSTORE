@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: user-service-network-policy
+  namespace: flashstore
+  labels:
+    app: user-service
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        # Allow all pods inside the flashstore namespace
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flashstore
+
+      ports:
+        - protocol: TCP
+          port: 3001
+
+  egress:
+    # Allow DNS lookups
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Allow communication within the flashstore namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flashstore

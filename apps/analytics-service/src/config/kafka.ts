@@ -1,26 +1,21 @@
 // apps/analytics-service/src/config/kafka.ts
 
 import { getKafka } from '@org/shared-kafka';
-import env from './env';
 import logger from '@org/shared-logger';
+import env from './env';
 
-export const kafkaConfig = {
-  clientId: env.KAFKA_CLIENT_ID,
-  brokers: env.KAFKA_BROKERS ? env.KAFKA_BROKERS.split(',') : ['localhost:9092'],
-};
-
-export const initKafka = async () => {
+export const initKafka = async (): Promise<void> => {
   try {
-    const kafka = getKafka();
+    await getKafka();
 
-    logger.info('📡 Kafka initialized successfully', {
-      clientId: kafkaConfig.clientId,
-      brokers: kafkaConfig.brokers,
+    logger.info('✅ Kafka client initialized successfully', {
+      brokers: env.KAFKA_BROKERS,
     });
-
-    return kafka;
   } catch (error: any) {
-    logger.error('❌ Failed to initialize Kafka', { error: error.message });
+    logger.error('❌ Failed to initialize Kafka', {
+      error: error.message,
+      brokers: env.KAFKA_BROKERS,
+    });
     throw error;
   }
 };

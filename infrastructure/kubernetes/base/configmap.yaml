@@ -28,9 +28,9 @@ data:
   CART_SERVICE_PORT: "3004"
   PAYMENT_SERVICE_PORT: "3005"
   ANALYTICS_SERVICE_PORT: "3006"
-  SEARCH_SERVICE_PORT: "3007"
+  NOTIFICATION_SERVICE_PORT: "3007"
   INVENTORY_SERVICE_PORT: "3008"
-  NOTIFICATION_SERVICE_PORT: "3009"
+  SEARCH_SERVICE_PORT: "4005"
 
   #####################################
   # Internal Service URLs
@@ -42,9 +42,9 @@ data:
   CART_SERVICE_URL: "http://cart-service:3004"
   PAYMENT_SERVICE_URL: "http://payment-service:3005"
   ANALYTICS_SERVICE_URL: "http://analytics-service:3006"
-  SEARCH_SERVICE_URL: "http://search-service:3007"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3007"
   INVENTORY_SERVICE_URL: "http://inventory-service:3008"
-  NOTIFICATION_SERVICE_URL: "http://notification-service:3009"
+  SEARCH_SERVICE_URL: "http://search-service:4005"
 
   #####################################
   # MongoDB
@@ -52,8 +52,12 @@ data:
 
   MONGO_HOST: "mongodb"
   MONGO_PORT: "27017"
+
+  # Shared database server
   MONGO_DB: "flashstore"
-  MONGO_URI: "mongodb://mongodb:27017/flashstore"
+
+  # Analytics database
+  ANALYTICS_MONGO_DB: "flashstore-analytics"
 
   #####################################
   # Redis
@@ -68,7 +72,12 @@ data:
   #####################################
 
   KAFKA_BROKERS: "kafka:9092"
+
+  # Shared default
   KAFKA_CLIENT_ID: "flashstore-app"
+
+  # Analytics specific
+  ANALYTICS_KAFKA_CLIENT_ID: "analytics-service"
 
   #####################################
   # Email
@@ -76,3 +85,17 @@ data:
 
   EMAIL_HOST: "smtp.gmail.com"
   EMAIL_PORT: "587"
+
+  #####################################
+  # Logging
+  #####################################
+
+  LOG_LEVEL: "info"
+
+  #####################################
+  # Gateway
+  #####################################
+
+  SERVICE_NAME: "api-gateway"
+  RATE_LIMIT_MAX: "100"
+  RATE_LIMIT_WINDOW_MS: "900000"

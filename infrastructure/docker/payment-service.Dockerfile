@@ -26,7 +26,6 @@ COPY --from=builder /app/node_modules ./node_modules
 ENV NODE_ENV=production
 ENV PORT=3005
 ENV KAFKA_BROKERS=kafka:9092
-ENV MONGO_URI=mongodb://mongo:27017/flashstore
 # Stripe keys will be passed from docker-compose or .env
 
 EXPOSE 3005

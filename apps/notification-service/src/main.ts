@@ -21,7 +21,7 @@ import { OutboxService } from './infrastructure/outbox/outbox.service';
 import { OutboxRepository } from './infrastructure/outbox/outbox.repository';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 
-const PORT = process.env.PORT || 3006;
+const PORT = process.env.PORT || 3007;
 
 const start = async () => {
   try {

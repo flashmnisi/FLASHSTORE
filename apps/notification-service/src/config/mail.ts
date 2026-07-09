@@ -7,29 +7,32 @@ let transporter: nodemailer.Transporter | null = null;
 export const initMailTransporter = async () => {
   if (transporter) return transporter;
 
-  try {
-    transporter = nodemailer.createTransport({
-      host: env.EMAIL_HOST || 'smtp.gmail.com',
-      port: Number(env.EMAIL_PORT) || 587,
-      secure: false,
-      auth: {
-        user: env.EMAIL_USER,
-        pass: env.EMAIL_PASS,
-      },
-    });
+  transporter = nodemailer.createTransport({
+    host: env.EMAIL_HOST,
+    port: Number(env.EMAIL_PORT),
+    secure: false,
+    auth: {
+      user: env.EMAIL_USER,
+      pass: env.EMAIL_PASS,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+  });
 
-    // Verify connection
+  try {
     await transporter.verify();
 
-    logger.info('✅ Mail transporter (Nodemailer) initialized successfully');
-
-    return transporter;
+    logger.info('✅ Mail transporter initialized successfully');
   } catch (error: any) {
-    logger.error('❌ Failed to initialize mail transporter', {
+    logger.warn('⚠️ Mail transporter unavailable', {
       error: error.message,
     });
-    throw error;
+
+    // Don't throw
   }
+
+  return transporter;
 };
 
 export const getMailTransporter = (): nodemailer.Transporter => {

@@ -25,6 +25,11 @@
 //   LOG_LEVEL: process.env.LOG_LEVEL,
 // };
 
+// apps/analytics-service/src/config/env.ts
+
+import dotenv from 'dotenv';
+dotenv.config();
+
 const mongoHost = process.env.MONGO_HOST || 'localhost';
 const mongoPort = process.env.MONGO_PORT || '27017';
 const mongoDb =

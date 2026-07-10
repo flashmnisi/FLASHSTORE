@@ -4,11 +4,6 @@ kind: NetworkPolicy
 metadata:
   name: gateway-network-policy
   namespace: flashstore
-  labels:
-    app: gateway
-    app.kubernetes.io/name: gateway
-    app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: flashstore
 
 spec:
   podSelector:
@@ -21,35 +16,37 @@ spec:
 
   ingress:
     - from:
+        # Internal services
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: flashstore
+
+        # NGINX Ingress Controller
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+
       ports:
         - protocol: TCP
           port: 3000
 
   egress:
-    # DNS
-    - to:
-        - namespaceSelector: {}
+    - to: []
       ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
 
-    # Allow communication inside namespace
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: flashstore
 
-    # HTTPS
-    - ports:
-        - protocol: TCP
-          port: 443
-
-    # HTTP
     - ports:
         - protocol: TCP
           port: 80
+
+    - ports:
+        - protocol: TCP
+          port: 443

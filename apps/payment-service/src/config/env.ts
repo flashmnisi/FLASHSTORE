@@ -22,16 +22,8 @@ const env = {
 
   // Security
   INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || '',
+  
 };
 
-function assertEnv(value: any, name: string) {
-  if (!value) {
-    throw new Error(`❌ Missing environment variable: ${name}`);
-  }
-}
-
-assertEnv(env.MONGO_URI, 'MONGO_URI');
-assertEnv(env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY');
-assertEnv(env.STRIPE_WEBHOOK_SECRET, 'STRIPE_WEBHOOK_SECRET');
 
 export default env;

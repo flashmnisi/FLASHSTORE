@@ -1,42 +1,9 @@
-// // apps/user-service/src/config/env.ts
-
-// import dotenv from 'dotenv';
-// dotenv.config();
-
-// const env = {
-//   PORT: process.env.PORT,
-//   NODE_ENV: process.env.NODE_ENV,
-  
-//   // MongoDB
-//   MONGO_URI: process.env.MONGO_URI ||'',
-  
-//   // Redis
-//   REDIS_URL: process.env.REDIS_URL || '',
-  
-//   // Kafka
-//   KAFKA_BROKERS: process.env.KAFKA_BROKERS,
-  
-//   // JWT
-//   JWT_SECRET: process.env.JWT_SECRET || '',
-//   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
-  
-//   // Email (for password reset)
-//   EMAIL_HOST: process.env.EMAIL_HOST,
-//   EMAIL_PORT: process.env.EMAIL_PORT,
-//   EMAIL_USER: process.env.EMAIL_USER,
-//   EMAIL_PASS: process.env.EMAIL_PASS,
-// };
-
-// export default env;
-
-// apps/user-service/src/config/env.ts
-
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const mongoHost = process.env.MONGO_HOST || 'localhost';
-const mongoPort = process.env.MONGO_PORT || '27017';
+const mongoHost = process.env.MONGO_HOST;
+const mongoPort = process.env.MONGO_PORT;
 const mongoDb = process.env.MONGO_DB || 'flashstore';
 
 const mongoUser =
@@ -49,14 +16,14 @@ const mongoPassword =
   process.env.MONGO_PASSWORD ||
   '';
 
-const redisHost = process.env.REDIS_HOST || 'localhost';
-const redisPort = process.env.REDIS_PORT || '6379';
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
 const redisPassword = process.env.REDIS_PASSWORD || '';
 
 const env = {
-  PORT: Number(process.env.PORT) || 3001,
+  PORT: Number(process.env.PORT),
 
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  NODE_ENV: process.env.NODE_ENV,
 
   // ==========================
   // MongoDB

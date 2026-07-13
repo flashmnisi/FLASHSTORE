@@ -35,8 +35,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const mongoHost = process.env.MONGO_HOST || 'localhost';
-const mongoPort = process.env.MONGO_PORT || '27017';
+const mongoHost = process.env.MONGO_HOST;
+const mongoPort = process.env.MONGO_PORT;
 const mongoDb = process.env.MONGO_DB || 'flashstore';
 
 const mongoUser =
@@ -49,14 +49,14 @@ const mongoPassword =
   process.env.MONGO_PASSWORD ||
   '';
 
-const redisHost = process.env.REDIS_HOST || 'localhost';
-const redisPort = process.env.REDIS_PORT || '6379';
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
 const redisPassword = process.env.REDIS_PASSWORD || '';
 
 const env = {
-  PORT: Number(process.env.PORT) || 3007,
+  PORT: Number(process.env.PORT),
 
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  NODE_ENV: process.env.NODE_ENV,
 
   // ==========================
   // MongoDB

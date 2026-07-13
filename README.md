@@ -1,3 +1,4 @@
+ HEAD
 # New Nx Repository
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
@@ -105,3 +106,7 @@ And join the Nx community:
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+# FLASHSTORE
+Scalable e-commerce platform built with Nx Monorepo (It features multiple backend services (User, Order, Catalog, Cart, Payment, etc.)), TypeScript, Node.js microservices, Kafka, MongoDB, Redis, Docker, Kubernetes, and GitHub Actions for CI/CD.
+ff2d95e3482d4fefb8de38d73b9702ee8f5ee3d6

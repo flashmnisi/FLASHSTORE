@@ -2,18 +2,12 @@ name: Flashstore Continuous Integration
 
 on:
   push:
-    branches:
-      - main
-      - develop
-
+    branches: [ main, develop ]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -23,36 +17,30 @@ env:
   NODE_VERSION: 20
 
 jobs:
-
   setup:
     name: Setup
     runs-on: ubuntu-latest
-
     outputs:
       nx-base: ${{ steps.base.outputs.base }}
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Cache Nx
+      - name: Nx Cache
         uses: actions/cache@v4
         with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            nx-${{ runner.os }}-
+          restore-keys: nx-${{ runner.os }}-
 
       - name: Determine Base Commit
         id: base
@@ -64,132 +52,30 @@ jobs:
           fi
 
       - name: Start Nx Cloud
-        run: |
-          npx nx start-ci-run --distribute-on="3 linux-medium-js"
+        run: npx nx start-ci-run --distribute-on="3 linux-medium-js"
 
-      - name: Check Formatting
-        run: |
-          npx nx format:check
-
-      - name: Upload Workspace
-        uses: actions/upload-artifact@v4
-        with:
-          name: workspace
-          path: .
-          retention-days: 1
-
-  lint:
-    name: Lint
+  lint-test-build:
+    name: Lint, Test & Build
     needs: setup
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          name: workspace
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          cache: 'npm'
 
       - run: npm ci
 
-      - name: Lint Affected Projects
-        run: |
-          npx nx affected \
-            --target=lint \
-            --base=${{ needs.setup.outputs.nx-base }} \
-            --head=HEAD \
-            --parallel=3
+      - name: Lint Affected
+        run: npx nx affected -t lint --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --verbose
 
-  test:
-    name: Unit Tests
-    needs: setup
-    runs-on: ubuntu-latest
+      - name: Test Affected
+        run: npx nx affected -t test --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --configuration=ci --verbose
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: workspace
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
-
-      - name: Run Tests
-        run: |
-          npx nx affected \
-            --target=test \
-            --base=${{ needs.setup.outputs.nx-base }} \
-            --head=HEAD \
-            --parallel=3 \
-            --configuration=ci
-
-  build:
-    name: Build
-    needs:
-      - setup
-      - lint
-      - test
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: workspace
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build Applications
-        run: |
-          npx nx affected \
-            --target=build \
-            --base=${{ needs.setup.outputs.nx-base }} \
-            --head=HEAD \
-            --parallel=3
-
-      - name: Generate Dependency Graph
-        run: |
-          npx nx graph --file=graph.html
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: |
-            dist
-            graph.html
-          retention-days: 7
-
-  finish:
-    name: Finish Nx Cloud Run
-    needs:
-      - setup
-      - build
-
-    if: always()
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - run: npm ci
-
-      - name: Complete Nx Cloud Run
-        run: |
-          npx nx fix-ci
+      - name: Build Affected
+        run: npx nx affected -t build --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --verbose

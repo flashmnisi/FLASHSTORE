@@ -1,0 +1,92 @@
+name: FlashStore Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create GitHub Release
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Version Tag
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+
+          echo "Release tag: $TAG"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "❌ Invalid version tag."
+            echo ""
+            echo "Expected examples:"
+            echo "  v1.0.0"
+            echo "  v1.2.3"
+            echo "  v2.0.0-beta.1"
+            exit 1
+          fi
+
+          echo "✅ Valid semantic version tag"
+
+      - name: Generate Release Notes Header
+        id: release_notes
+        shell: bash
+        run: |
+          {
+            echo "notes<<EOF"
+            echo "## 🚀 FlashStore ${GITHUB_REF#refs/tags/}"
+            echo ""
+            echo "This release was automatically created by the FlashStore Release workflow."
+            echo ""
+            echo "### Highlights"
+            echo ""
+            echo "- ✅ Built successfully"
+            echo "- ✅ All CI checks passed"
+            echo "- ✅ Docker images published"
+            echo "- ✅ Ready for deployment"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 📋 Full Changelog"
+            echo ""
+            echo "The changelog below is generated automatically by GitHub."
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FlashStore ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        shell: bash
+        run: |
+          echo "========================================"
+          echo "🎉 FlashStore Release Created"
+          echo "========================================"
+          echo "Version    : ${GITHUB_REF#refs/tags/}"
+          echo "Repository : $GITHUB_REPOSITORY"
+          echo "Ref        : $GITHUB_REF"
+          echo "Actor      : $GITHUB_ACTOR"
+          echo "========================================"

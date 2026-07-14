@@ -1,0 +1,101 @@
+name: FlashStore Security & Vulnerability Scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  schedule:
+    - cron: "0 2 * * 1" # Every Monday at 02:00 UTC
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  security-scan:
+    name: Security Scan
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run NPM Audit
+        run: npm audit --audit-level=high
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Run Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy SARIF Report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Run Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Security Scan Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "=============================================="
+          echo "FlashStore Security Scan Completed"
+          echo "=============================================="
+          echo "Repository : $GITHUB_REPOSITORY"
+          echo "Branch     : ${GITHUB_REF_NAME}"
+          echo "Commit     : $GITHUB_SHA"
+          echo "Actor      : $GITHUB_ACTOR"
+          echo ""
+          echo "Completed Checks"
+          echo "✔ NPM Dependency Audit"
+          echo "✔ CodeQL Static Analysis"
+          echo "✔ Trivy Filesystem Scan"
+          echo "✔ Trivy SARIF Upload"
+          echo "✔ Gitleaks Secret Scan"
+          echo "=============================================="

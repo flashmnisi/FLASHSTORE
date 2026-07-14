@@ -2,80 +2,159 @@ name: Flashstore Continuous Integration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
+
   pull_request:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: "20"
 
 jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
+
     outputs:
       nx-base: ${{ steps.base.outputs.base }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
-      - run: npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Nx Cache
+      - name: Cache Nx
         uses: actions/cache@v4
         with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ github.sha }}
-          restore-keys: nx-${{ runner.os }}-
+          restore-keys: |
+            nx-${{ runner.os }}-
 
       - name: Determine Base Commit
         id: base
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "base=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            echo "base=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
           else
-            echo "base=HEAD~1" >> $GITHUB_OUTPUT
+            echo "base=HEAD~1" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Start Nx Cloud
-        run: npx nx start-ci-run --distribute-on="3 linux-medium-js"
+        run: |
+          npx nx start-ci-run --distribute-on="3 linux-medium-js"
 
-  lint-test-build:
-    name: Lint, Test & Build
+  verify:
+    name: Format, Lint, Test & Build
+
     needs: setup
+
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
-      - run: npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Lint Affected
-        run: npx nx affected -t lint --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --verbose
+      - name: Check Formatting
+        run: |
+          npx nx format:check
 
-      - name: Test Affected
-        run: npx nx affected -t test --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --configuration=ci --verbose
+      - name: Lint Affected Projects
+        run: |
+          npx nx affected \
+            --target=lint \
+            --base=${{ needs.setup.outputs.nx-base }} \
+            --head=HEAD \
+            --parallel=3
 
-      - name: Build Affected
-        run: npx nx affected -t build --base=${{ needs.setup.outputs.nx-base }} --head=HEAD --parallel=3 --verbose
+      - name: Test Affected Projects
+        run: |
+          npx nx affected \
+            --target=test \
+            --base=${{ needs.setup.outputs.nx-base }} \
+            --head=HEAD \
+            --parallel=3 \
+            --configuration=ci
+
+      - name: Build Affected Projects
+        run: |
+          npx nx affected \
+            --target=build \
+            --base=${{ needs.setup.outputs.nx-base }} \
+            --head=HEAD \
+            --parallel=3
+
+      - name: Generate Dependency Graph
+        run: |
+          npx nx graph --file=graph.html
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flashstore-build
+          path: |
+            dist
+            graph.html
+          retention-days: 7
+
+  finish:
+    name: Finish Nx Cloud
+
+    if: always()
+
+    needs:
+      - setup
+      - verify
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Complete Nx Cloud Run
+        run: |
+          npx nx fix-ci

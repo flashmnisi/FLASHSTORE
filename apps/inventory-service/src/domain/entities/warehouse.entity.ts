@@ -8,7 +8,7 @@ export class WarehouseEntity {
     public address: string,
     public city: string,
     public country: string,
-    public isActive: boolean = true,
+    public isActive = true,
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date()
   ) {}

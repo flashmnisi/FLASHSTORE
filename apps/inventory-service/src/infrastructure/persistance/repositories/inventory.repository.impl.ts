@@ -53,7 +53,7 @@ export class InventoryRepositoryImpl implements IInventoryRepository {
     return docs.map((doc) => this.toEntity(doc));
   }
 
-  async findLowStock(threshold: number = 10): Promise<InventoryEntity[]> {
+  async findLowStock(threshold = 10): Promise<InventoryEntity[]> {
     const docs = await InventoryModel.find({
       $expr: { $lt: ['$quantity', threshold] },
     }).sort({ quantity: 1 });

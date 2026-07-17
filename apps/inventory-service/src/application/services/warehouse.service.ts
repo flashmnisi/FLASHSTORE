@@ -78,7 +78,11 @@ export class WarehouseService {
       });
 
       if (data.active !== undefined) {
-        data.active ? warehouse.activate() : warehouse.deactivate();
+        if (data.active) {
+          warehouse.activate();
+        } else {
+          warehouse.deactivate();
+        }
       }
 
       const updated = await this.warehouseRepository.update(warehouse);

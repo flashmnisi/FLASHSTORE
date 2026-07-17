@@ -6,7 +6,7 @@ export class InventoryEntity {
     public readonly productId: string,
     public readonly warehouseId: string,
     public quantity: number,
-    public reserved: number = 0,
+    public reserved = 0,
     public lastUpdated: Date = new Date()
   ) {}
 

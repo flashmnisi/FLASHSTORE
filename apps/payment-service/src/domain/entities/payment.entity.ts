@@ -9,13 +9,13 @@ export class PaymentEntity {
     throw new Error('Method not implemented.');
   }
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
     public orderId: string,
     public userId: string,
     public readonly amount: number,
     public readonly currency: string,
     public status: PaymentStatus = 'pending',
-    public paymentMethod: string = 'card',
+    public paymentMethod = 'card',
     public stripePaymentIntentId?: string,
     public metadata?: Record<string, any>,
     public readonly createdAt: Date = new Date(),

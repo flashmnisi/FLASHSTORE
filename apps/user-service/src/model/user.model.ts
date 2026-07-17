@@ -1,11 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { Address } from '../domain/entities/addreess.entity';
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  address: any[];
+  address: Address[];
   orders: mongoose.Types.ObjectId[];
   isAdmin: boolean;
   cart: { items: any[] };

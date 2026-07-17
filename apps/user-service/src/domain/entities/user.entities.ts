@@ -1,19 +1,21 @@
 // apps/user-service/src/domain/entities/user.entity.ts
 
+import { Address } from "./addreess.entity";
+
 export class UserEntity {
-  constructor(
-    public readonly id: string = '',
-    private _name: string,
-    private _email: string,
-    private _password: string,
-    private _role: string = 'user',
-    private _isAdmin: boolean = false,
-    public readonly createdAt: Date = new Date(),
-    private _updatedAt?: Date,
-    private _addresses: any[] = [],
-    private _phone?: string,
-    private _refreshToken?: string
-  ) {}
+ constructor(
+  public readonly id = '',
+  private _name: string,
+  private _email: string,
+  private _password: string,
+  private _role = 'user',
+  private _isAdmin = false,
+  public readonly createdAt: Date = new Date(),
+  private _updatedAt?: Date,
+  private _addresses: Address[] = [],
+  private _phone?: string,
+  private _refreshToken?: string
+) {}
 
   // ======================
   // GETTERS
@@ -80,12 +82,15 @@ export class UserEntity {
   // ======================
   // ADDRESS METHODS
   // ======================
-  addAddress(address: any): void {
+  addAddress(address: Address): void {
     this._addresses.push(address);
     this._updatedAt = new Date();
   }
 
-  updateAddress(index: number, updatedAddress: any): void {
+  updateAddress(
+  index: number,
+  updatedAddress: Partial<Address>
+): void {
     if (index >= 0 && index < this._addresses.length) {
       this._addresses[index] = { ...this._addresses[index], ...updatedAddress };
       this._updatedAt = new Date();

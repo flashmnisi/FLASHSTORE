@@ -54,12 +54,16 @@
       "outputs": ["{options.outputFile}"]
     },
 
-    "test": {
-      "executor": "@nx/jest:jest",
-      "options": {
-        "passWithNoTests": true
-      }
-    }
+   "test": {
+  "executor": "@nx/jest:jest",
+  "outputs": [
+    "{workspaceRoot}/coverage/{projectRoot}"
+  ],
+  "options": {
+    "jestConfig": "apps/notification-service/jest.config.cts",
+    "passWithNoTests": true
+  }
+}
   },
    "dependencies": {
     "express": "^4.21.2"

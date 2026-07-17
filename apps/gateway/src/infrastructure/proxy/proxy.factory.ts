@@ -168,8 +168,12 @@ export const createServiceProxy = (serviceName: keyof typeof services) => {
          * Publish failure analytics
          */
         try {
-          await gatewayProducer.publishErrorEvent(req, serviceName, err);
-        } catch {}
+  await gatewayProducer.publishErrorEvent(req, serviceName, err);
+} catch (publishError) {
+  logger.warn('Failed to publish gateway error event',
+    { error: publishError }
+  );
+}
 
         if (!res.headersSent) {
           return res.status(502).json({

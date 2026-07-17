@@ -1,5 +1,3 @@
-// apps/notification-service/src/infrastructure/kafka/providers/email/nodemailer.provider.ts
-
 import nodemailer from 'nodemailer';
 import { NotificationEntity } from '../../../domain/entities/notification.entity';
 import env from '../../../config/env';
@@ -48,17 +46,18 @@ export class NodemailerProvider implements IEmailProvider {
         notificationId: notification.id,
         to: email,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       logger.error('❌ Email sending failed', {
         userId: notification.userId,
         notificationId: notification.id,
-        error: err.message,
+        error: error.message,
       });
-      throw err;
+      throw error;
     }
   }
 
-  private buildTemplate(notification: NotificationEntity): string {
+   private buildTemplate(notification: NotificationEntity): string {
     const data = notification.templateData || {};
 
     const itemsHtml = Array.isArray(data.items)
@@ -82,14 +81,13 @@ export class NodemailerProvider implements IEmailProvider {
       : '';
 
     switch (notification.type) {
-      case 'order.created':
+      case 'order.created': {
         const itemsTotal = Number(data.itemsTotal || 0);
         const shippingPrice = Number(data.shippingPrice || 0);
         const totalAmount = Number(data.totalAmount || 0);
 
         return `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
-
           <!-- Header -->
           <div style="background: #16a34a; padding: 30px 24px; text-align: center;">
             <h1 style="color: white; margin: 0; font-size: 28px;">
@@ -98,7 +96,6 @@ export class NodemailerProvider implements IEmailProvider {
           </div>
 
           <div style="padding: 35px 30px;">
-
             <h2 style="margin: 0 0 8px 0;">Thank you for your order!</h2>
             <p style="color: #374151; font-size: 16px;">
               Your order has been successfully placed.
@@ -130,15 +127,11 @@ export class NodemailerProvider implements IEmailProvider {
               <table width="100%" style="border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0;">Subtotal</td>
-                  <td style="text-align:right; padding: 8px 0;">$${itemsTotal.toFixed(
-                    2
-                  )}</td>
+                  <td style="text-align:right; padding: 8px 0;">$${itemsTotal.toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0;">Shipping</td>
-                  <td style="text-align:right; padding: 8px 0;">$${shippingPrice.toFixed(
-                    2
-                  )}</td>
+                  <td style="text-align:right; padding: 8px 0;">$${shippingPrice.toFixed(2)}</td>
                 </tr>
                 <tr style="border-top: 2px solid #e5e7eb; font-weight: bold;">
                   <td style="padding: 12px 0 8px 0;">Total</td>
@@ -148,19 +141,15 @@ export class NodemailerProvider implements IEmailProvider {
                 </tr>
               </table>
             </div>
-
           </div>
 
           <!-- Footer -->
           <div style="padding: 25px; text-align: center; color: #6b7280; font-size: 13px; border-top: 1px solid #e5e7eb;">
             Flashstore © ${new Date().getFullYear()} • Johannesburg, South Africa
           </div>
-
         </div>
       `;
-
-      case 'user.registered':
-        return `...`; // Keep your existing welcome template or let me know if you want it improved
+      }
 
       default:
         return `
@@ -170,5 +159,4 @@ export class NodemailerProvider implements IEmailProvider {
         </div>
       `;
     }
-  }
-}
+  }}

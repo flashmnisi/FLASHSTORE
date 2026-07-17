@@ -1,12 +1,14 @@
 // apps/analytics-service/src/domain/entities/event-log.entity.ts
 
+export type EventPayload = Record<string, unknown>;
+
 export class EventLogEntity {
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
     public readonly eventType: string,
     public readonly sourceService: string,
-    public readonly payload: Record<string, any>,
-    public processed: boolean = false,
+    public readonly payload: EventPayload,
+    public processed = false,
     public processedAt?: Date,
     public readonly timestamp: Date = new Date()
   ) {}

@@ -1,13 +1,15 @@
 // apps/analytics-service/src/domain/entities/analytics.entity.ts
 
+export type AnalyticsMetadata = Record<string, unknown>;
+
 export class AnalyticsEntity {
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
     public readonly eventType: string,
     public readonly userId?: string,
     public readonly productId?: string,
     public readonly orderId?: string,
-    public readonly metadata: Record<string, any> = {},
+    public readonly metadata: AnalyticsMetadata = {},
     public readonly timestamp: Date = new Date()
   ) {}
 

@@ -10,7 +10,7 @@ export class MetricEntity {
   public readonly updatedAt: Date;
 
   constructor(
-    id: string = '',
+    id: '',
     metricType: string,
     value: number,
     date: Date | string,

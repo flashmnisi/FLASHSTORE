@@ -3,6 +3,7 @@
 import { metricsCache } from '../../infrastructure/redis/metrics.cache';
 import { IAnalyticsRepository } from '../../domain/repositories/analytics.repository';
 import logger from '@org/shared-logger';
+import { MetricEntity } from '../../domain/entities/metric.entity';
 
 export class MetricsService {
   constructor(private readonly repository: IAnalyticsRepository) {}
@@ -54,23 +55,25 @@ export class MetricsService {
   /**
    * Get Revenue Metrics with Cache
    */
-  async getRevenueMetrics(startDate: Date, endDate: Date) {
-    const cacheKey = `revenue:${startDate.toISOString().split('T')[0]}:${endDate.toISOString().split('T')[0]}`;
+async getRevenueMetrics(
+  startDate: Date,
+  endDate: Date
+): Promise<MetricEntity[]> {     // Changed return type
 
-    const cached = await metricsCache.get(cacheKey);
-    if (cached) return cached;
+  const cacheKey = `revenue:${startDate.toISOString().split('T')[0]}:${endDate.toISOString().split('T')[0]}`;
 
-    try {
-      const revenue = await this.repository.getRevenueMetrics(startDate, endDate);
+  const cached = await metricsCache.get<MetricEntity[]>(cacheKey);
 
-      await metricsCache.set(cacheKey, revenue, 60 * 60); // 1 hour
-
-      return revenue;
-    } catch (error: any) {
-      logger.error('Failed to get revenue metrics', { error: error.message });
-      throw error;
-    }
+  if (cached) {
+    return cached;
   }
+
+  const revenue = await this.repository.getRevenueMetrics(startDate, endDate);
+
+  await metricsCache.set(cacheKey, revenue, 60 * 60);
+
+  return revenue;
+}
 
   /**
    * Get User Engagement

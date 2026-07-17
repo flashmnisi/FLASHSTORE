@@ -1,3 +1,5 @@
+//apps/cart-service/src/middleware/auth.middleware.ts
+
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, extractToken, type JwtPayload } from '@org/shared-auth';
 import logger from '@org/shared-logger';

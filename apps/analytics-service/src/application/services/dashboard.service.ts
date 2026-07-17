@@ -13,12 +13,11 @@ export class DashboardService {
   async getOverview() {
     const cacheKey = 'dashboard:overview';
 
-    // Try cache first
     const cached = await metricsCache.get(cacheKey);
     if (cached) return cached;
 
     try {
-      const [topProducts, revenue, userStats] = await Promise.all([
+      const [topProducts, revenueMetrics, userStats] = await Promise.all([
         this.metricsService.getTopProducts(5),
         this.metricsService.getRevenueMetrics(
           new Date(Date.now() - 30 * 86400000),
@@ -27,21 +26,22 @@ export class DashboardService {
         this.getUserStats()
       ]);
 
+      const totalRevenue = revenueMetrics.reduce((sum, item) => sum + (item.value || 0), 0);
+
       const dashboardData = {
         success: true,
         data: {
           topProducts,
           revenue: {
-            total: revenue?.totalRevenue || 0,
-            today: revenue?.todayRevenue || 0,
-            growth: revenue?.growthPercentage || 0,
+            total: totalRevenue,
+            today: 0,           // Add your logic
+            growth: 0,          // Add your logic
           },
           userStats,
           lastUpdated: new Date(),
         },
       };
 
-      // Cache for 10 minutes
       await metricsCache.set(cacheKey, dashboardData, 60 * 10);
 
       return dashboardData;

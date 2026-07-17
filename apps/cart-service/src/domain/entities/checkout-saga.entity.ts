@@ -1,5 +1,5 @@
 export class CheckoutSagaEntity {
-  public id: string = '';
+  public id = '';
   public userId: string;
   public orderId: string | null = null;
   public paymentId: string | null = null;

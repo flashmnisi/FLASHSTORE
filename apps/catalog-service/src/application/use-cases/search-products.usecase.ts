@@ -5,10 +5,6 @@ import { elasticsearchRepository } from '../../infrastructure/search/elasticsear
 import logger from '@org/shared-logger';
 
 export class SearchProductsUseCase {
-  constructor() {
-   
-  }
-
   async execute(dto: SearchProductsDto) {
     try {
       logger.info('🔍 Executing product search', {
@@ -45,11 +41,12 @@ export class SearchProductsUseCase {
           totalPages: result.totalPages,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('❌ Search products use case failed', {
         query: dto.query,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
+
       throw error;
     }
   }

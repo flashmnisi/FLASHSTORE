@@ -9,7 +9,7 @@ export class Price {
     this._currency = currency;
   }
 
-  static create(amount: number, currency: string = 'ZAR'): Price {
+  static create(amount: number, currency = 'ZAR'): Price {
     if (amount < 0) {
       throw new Error('Price cannot be negative');
     }

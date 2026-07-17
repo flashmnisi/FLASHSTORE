@@ -35,8 +35,10 @@ export const startSearchConsumer = async () => {
       switch (message.event) {
 
         case EVENTS.PRODUCT_CREATED:
+          break;
 
         case EVENTS.PRODUCT_UPDATED:
+          break;
 
         case EVENTS.PRODUCT_DELETED:
 
@@ -66,8 +68,10 @@ export const startSearchConsumer = async () => {
       switch (message.event) {
 
         case EVENTS.CATEGORY_CREATED:
+          break;
 
         case EVENTS.CATEGORY_UPDATED:
+          break;
 
         case EVENTS.CATEGORY_DELETED:
 

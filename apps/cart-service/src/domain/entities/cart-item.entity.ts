@@ -3,7 +3,7 @@ export class CartItemEntity {
     public readonly productId: string,
     public quantity: number,
     public price: number, 
-    public readonly name: string = '', 
+    public readonly name = '', 
     public readonly image?: string
   ) {}
 
@@ -11,7 +11,7 @@ export class CartItemEntity {
     return this.price * this.quantity;
   }
 
-  increase(by: number = 1): void {
+  increase(by = 1): void {
     this.quantity += by;
   }
 

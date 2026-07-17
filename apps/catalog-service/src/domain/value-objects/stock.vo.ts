@@ -4,12 +4,12 @@ export class Stock {
   private readonly _quantity: number;
   private readonly _reserved: number;
 
-  private constructor(quantity: number, reserved: number = 0) {
+  private constructor(quantity: number, reserved = 0) {
     this._quantity = quantity;
     this._reserved = reserved;
   }
 
-  static create(quantity: number, reserved: number = 0): Stock {
+  static create(quantity: number, reserved = 0): Stock {
     if (quantity < 0) throw new Error('Stock quantity cannot be negative');
     if (reserved < 0) throw new Error('Reserved quantity cannot be negative');
     if (reserved > quantity) throw new Error('Reserved cannot be more than total quantity');
@@ -33,7 +33,7 @@ export class Stock {
     return this.available > 0;
   }
 
-  isLowStock(threshold: number = 10): boolean {
+  isLowStock(threshold = 10): boolean {
     return this.available <= threshold;
   }
 

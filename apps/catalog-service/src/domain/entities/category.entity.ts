@@ -2,7 +2,7 @@
 
 export class CategoryEntity {
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
 
     private _name: string,
     private _slug: string,
@@ -13,10 +13,10 @@ export class CategoryEntity {
     private _imageUrl?: string,
     private _icon?: string,
 
-    private _isFeatured: boolean = false,
-    private _sortOrder: number = 0,
+    private _isFeatured = false,
+    private _sortOrder = 0,
 
-    private _isActive: boolean = true,
+    private _isActive = true,
 
     public readonly createdAt: Date = new Date(),
     private _updatedAt?: Date

@@ -1,12 +1,12 @@
 export class ProductIndexEntity {
   constructor(
-    public readonly id: string, // productId
+    public readonly id: string, 
 
     public name: string,
     public description: string,
 
     public price: number,
-    public currency: string = 'ZAR',
+    public currency = 'ZAR',
 
     public category: string,
     public brand?: string,
@@ -14,10 +14,10 @@ export class ProductIndexEntity {
     public tags: string[] = [],
     public images: string[] = [],
 
-    public inStock: boolean = true,
+    public inStock = true,
 
-    public rating: number = 0,
-    public reviewCount: number = 0,
+    public rating = 0,
+    public reviewCount = 0,
 
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),

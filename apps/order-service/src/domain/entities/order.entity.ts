@@ -20,7 +20,7 @@ export class OrderEntity {
     items: OrderItem[],
     totalAmount: number,
     idempotencyKey: string, 
-    currency: string = 'ZAR', 
+    currency = 'ZAR', 
     status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending',
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' = 'pending',
     createdAt: Date = new Date()

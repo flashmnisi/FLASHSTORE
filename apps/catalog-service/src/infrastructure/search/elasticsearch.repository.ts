@@ -89,10 +89,10 @@ export class ElasticsearchRepository {
    * Search products
    */
   async search(
-    query: string = '', 
+    query = '', 
     filters: any = {}, 
-    page: number = 1, 
-    limit: number = 20
+    page = 1, 
+    limit = 20
   ) {
     const from = (page - 1) * limit;
 

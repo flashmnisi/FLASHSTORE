@@ -2,14 +2,14 @@
 
 export class ProductEntity {
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
 
     private _name: string,
     private _slug: string,
     private _description: string,
 
     private _price: number,
-    private _currency: string = 'ZAR',
+    private _currency = 'ZAR',
 
     // Category
     private _categoryId: string,
@@ -25,19 +25,19 @@ export class ProductEntity {
     private _tags: string[] = [],
 
     // Marketing flags
-    private _isFeatured: boolean = false,
-    private _isHotDeal: boolean = false,
-    private _isNewArrival: boolean = false,
+    private _isFeatured = false,
+    private _isHotDeal = false,
+    private _isNewArrival = false,
 
     // Discount
-    private _discountPercentage: number = 0,
+    private _discountPercentage = 0,
 
     // Inventory
-    private _inStock: boolean = true,
-    private _stockQuantity: number = 0,
+    private _inStock = true,
+    private _stockQuantity = 0,
 
     // Status
-    private _isActive: boolean = true,
+    private _isActive = true,
 
     // Dates
     public readonly createdAt: Date = new Date(),

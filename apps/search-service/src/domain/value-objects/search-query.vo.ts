@@ -18,11 +18,11 @@ export interface SearchFilters {
 
 export class SearchQueryVO {
   constructor(
-    public readonly query: string = '',
+    public readonly query = '',
     public readonly filters: SearchFilters = {},
     public readonly sort: SortOption = 'relevance',
-    public readonly page: number = 1,
-    public readonly limit: number = 20,
+    public readonly page = 1,
+    public readonly limit = 20,
     public readonly minPrice?: number,
     public readonly maxPrice?: number,
     public readonly categories?: string[]

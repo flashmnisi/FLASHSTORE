@@ -2,12 +2,12 @@
 
 export class InventoryEntity {
   constructor(
-    public readonly id: string = '',
+    public readonly id = '',
     public readonly productId: string,
     private _quantity: number,
-    private _reserved: number = 0,
-    private _lowStockThreshold: number = 10,
-    private _isActive: boolean = true,
+    private _reserved = 0,
+    private _lowStockThreshold = 10,
+    private _isActive = true,
     public readonly createdAt: Date = new Date(),
     private _updatedAt?: Date
   ) {}

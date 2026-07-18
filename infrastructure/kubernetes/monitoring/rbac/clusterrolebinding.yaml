@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+
+metadata:
+  name: prometheus
+
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Bind Prometheus ServiceAccount to Prometheus ClusterRole"
+
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus

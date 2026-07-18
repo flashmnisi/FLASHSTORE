@@ -1,0 +1,151 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+
+metadata:
+  name: prometheus
+
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "ClusterRole allowing Prometheus to discover and scrape Kubernetes resources"
+
+rules:
+
+  #########################################################
+  # Core Kubernetes Resources
+  #########################################################
+
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+      - namespaces
+      - configmaps
+      - replicationcontrollers
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # EndpointSlices
+  #########################################################
+
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Workloads
+  #########################################################
+
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Networking
+  #########################################################
+
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Batch Resources
+  #########################################################
+
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Autoscaling
+  #########################################################
+
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Metrics Server
+  #########################################################
+
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - pods
+      - nodes
+    verbs:
+      - get
+      - list
+
+  #########################################################
+  # Prometheus Operator
+  #########################################################
+
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+      - podmonitors
+      - prometheusrules
+      - probes
+      - alertmanagers
+    verbs:
+      - get
+      - list
+      - watch
+
+  #########################################################
+  # Non Resource Endpoints
+  #########################################################
+
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+      - /healthz
+      - /readyz
+    verbs:
+      - get

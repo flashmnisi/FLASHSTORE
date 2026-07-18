@@ -16,6 +16,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
     "tslib": "^2.3.0"
   }
 }

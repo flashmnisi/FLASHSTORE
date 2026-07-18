@@ -1,0 +1,112 @@
+name: FlashStore Repository Cleanup
+
+on:
+  schedule:
+    # Every Sunday at 03:00 UTC
+    - cron: "0 3 * * 0"
+
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Cleanup Repository
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Delete Old Workflow Artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const DAYS_TO_KEEP = 14;
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - DAYS_TO_KEEP);
+
+            let page = 1;
+
+            while (true) {
+              const { data } = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+
+              if (data.artifacts.length === 0) break;
+
+              for (const artifact of data.artifacts) {
+                const created = new Date(artifact.created_at);
+
+                if (created < cutoff) {
+                  console.log(`Deleting artifact: ${artifact.name}`);
+
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: artifact.id
+                  });
+                }
+              }
+
+              page++;
+            }
+
+      - name: Mark Stale Issues and Pull Requests
+        uses: actions/stale@v9
+        with:
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has had
+            no recent activity. It will be closed in 7 days if no further activity occurs.
+
+          stale-pr-message: >
+            This pull request has been automatically marked as stale because it has
+            had no recent activity. It will be closed in 7 days if no further activity occurs.
+
+          close-issue-message: >
+            Closing this issue due to prolonged inactivity.
+
+          close-pr-message: >
+            Closing this pull request due to prolonged inactivity.
+
+          days-before-stale: 30
+          days-before-close: 7
+
+          stale-issue-label: stale
+          stale-pr-label: stale
+
+          exempt-issue-labels: bug,enhancement,help wanted
+          exempt-pr-labels: bug,enhancement
+
+          remove-stale-when-updated: true
+
+      - name: Cleanup Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "========================================"
+          echo "FlashStore Repository Cleanup Complete"
+          echo "========================================"
+          echo "Repository : $GITHUB_REPOSITORY"
+          echo "Branch     : ${GITHUB_REF_NAME}"
+          echo "Run ID     : $GITHUB_RUN_ID"
+          echo "Actor      : $GITHUB_ACTOR"
+          echo ""
+          echo "Completed Tasks"
+          echo "✔ Deleted workflow artifacts older than 14 days"
+          echo "✔ Marked stale issues"
+          echo "✔ Marked stale pull requests"
+          echo "✔ Closed inactive issues and PRs"
+          echo "========================================"

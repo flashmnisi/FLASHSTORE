@@ -1,0 +1,61 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: prometheus
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Restrict network access to Prometheus"
+
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+      ports:
+        - protocol: TCP
+          port: 9090
+
+  egress:
+
+    # Kubernetes API
+    - ports:
+        - protocol: TCP
+          port: 443
+
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Metrics endpoints
+    - ports:
+        - protocol: TCP
+          port: 8080
+
+        - protocol: TCP
+          port: 9093
+
+        - protocol: TCP
+          port: 9100

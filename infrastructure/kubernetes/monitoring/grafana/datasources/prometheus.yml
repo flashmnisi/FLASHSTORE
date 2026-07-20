@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Grafana Prometheus Datasource"
+
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+
+    deleteDatasources:
+      - name: Prometheus
+        orgId: 1
+
+    datasources:
+      - name: Prometheus
+        uid: prometheus
+        type: prometheus
+        access: proxy
+
+        url: http://prometheus:9090
+
+        isDefault: true
+        editable: false
+
+        version: 1
+
+        jsonData:
+          httpMethod: POST
+          manageAlerts: true
+
+          prometheusType: Prometheus
+          prometheusVersion: 3.5.0
+
+          cacheLevel: High
+          timeInterval: 15s

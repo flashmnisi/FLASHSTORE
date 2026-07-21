@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "2.16.0"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Kubernetes State Metrics"
+
+spec:
+  replicas: 1
+
+  revisionHistoryLimit: 5
+
+  strategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/instance: flashstore
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/instance: flashstore
+        app.kubernetes.io/component: monitoring
+        app.kubernetes.io/part-of: flashstore
+
+    spec:
+      serviceAccountName: kube-state-metrics
+
+      containers:
+        - name: kube-state-metrics
+
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.16.0
+
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - --port=8080
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+            limits:
+              cpu: 300m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - serviceaccount.yml
+  - clusterrole.yml
+  - clusterrolebinding.yml
+  - deployment.yml
+  - service.yml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/instance: flashstore
+      app.kubernetes.io/component: monitoring
+      app.kubernetes.io/part-of: flashstore

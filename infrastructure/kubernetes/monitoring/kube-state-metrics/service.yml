@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "2.16.0"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Kubernetes State Metrics Service"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: flashstore
+
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

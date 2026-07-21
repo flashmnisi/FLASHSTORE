@@ -21,6 +21,9 @@ spec:
 
   revisionHistoryLimit: 5
 
+  strategy:
+    type: Recreate
+
   selector:
     matchLabels:
       app.kubernetes.io/name: prometheus

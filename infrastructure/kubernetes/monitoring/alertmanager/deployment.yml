@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: alertmanager
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "0.28.1"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Alertmanager Deployment"
+
+spec:
+  replicas: 1
+
+  revisionHistoryLimit: 5
+
+  strategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/instance: flashstore
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager
+        app.kubernetes.io/instance: flashstore
+        app.kubernetes.io.component: monitoring
+        app.kubernetes.io/part-of: flashstore
+
+    spec:
+      serviceAccountName: alertmanager
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: alertmanager
+
+          image: prom/alertmanager:v0.28.1
+
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--data.retention=120h"
+
+          ports:
+            - name: http
+              containerPort: 9093
+              protocol: TCP
+
+          startupProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+
+            failureThreshold: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+            limits:
+              cpu: 300m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+
+            - name: storage
+              mountPath: /alertmanager
+
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager-config
+
+        - name: storage
+          persistentVolumeClaim:
+            claimName: alertmanager-storage

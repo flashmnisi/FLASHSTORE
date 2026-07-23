@@ -107,6 +107,9 @@
     },
     {
       "path": "./apps/inventory-service"
+    },
+    {
+      "path": "./libs/shared-metrics"
     }
   ]
 }

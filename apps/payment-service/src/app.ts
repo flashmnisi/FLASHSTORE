@@ -7,6 +7,11 @@ import morgan from 'morgan';
 
 import paymentRoutes from './presentation/routes/payment.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
+
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
 //import logger from '@org/shared-logger';
 
 const app = express();
@@ -32,6 +37,12 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   app.use(morgan('combined'));
 }
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('payment-service'));
+
+app.use('/metrics', metricsRouter);
 
 // ====================== HEALTH CHECK ======================
 app.get('/health', (req, res) => {

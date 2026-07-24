@@ -11,6 +11,11 @@ import productRoutes from './presentation/routes/product.routes';
 import categoryRoutes from './presentation/routes/category.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 // ====================== UPLOADS FOLDER ======================
@@ -32,6 +37,12 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('catalog-service'));
+
+app.use('/metrics', metricsRouter);
 
 // ====================== HEALTH ======================
 app.get('/health', (req, res) => {

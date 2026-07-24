@@ -4,6 +4,11 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 import inventoryRoutes from './presentation/routes/inventory.routes';
 
 const app = express();
@@ -16,6 +21,12 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('inventory-service'));
+
+app.use('/metrics', metricsRouter);
 
 /**
  * =========================

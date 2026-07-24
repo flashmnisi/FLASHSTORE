@@ -4,7 +4,7 @@ export type AnalyticsMetadata = Record<string, unknown>;
 
 export class AnalyticsEntity {
   constructor(
-    public readonly id = '',
+    public readonly id : string,
     public readonly eventType: string,
     public readonly userId?: string,
     public readonly productId?: string,

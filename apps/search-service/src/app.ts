@@ -11,6 +11,11 @@ import indexRoutes from './presentation/routes/index.routes';
 
 import { errorMiddleware } from './middlewares/error.middleware';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 // Global Middlewares
@@ -28,6 +33,12 @@ if (process.env.NODE_ENV !== 'production') {
 app.use('/api/search', searchRoutes);
 app.use('/api/suggest', suggestRoutes);
 app.use('/api/index', indexRoutes);
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('search-service'));
+
+app.use('/metrics', metricsRouter);
 
 // Health Check
 app.get('/health', (_req, res) => {

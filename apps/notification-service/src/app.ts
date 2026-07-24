@@ -5,6 +5,11 @@ import notificationRoutes from './presentation/routes/notification.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { requestLogger } from './middlewares/requestLogger.middleware';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 // Security & Parsing
@@ -15,6 +20,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Correlation ID + Request Logging Middleware
 app.use(requestLogger);
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('notification-service'));
+
+app.use('/metrics', metricsRouter);
 
 // Health Check
 app.get('/health', (req, res) => {

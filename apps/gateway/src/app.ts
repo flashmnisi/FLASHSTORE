@@ -9,6 +9,11 @@ import routes from './routes';
 import { errorMiddleware }
   from './middlewares/error.middleware';
 
+  import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 /**
@@ -34,6 +39,12 @@ app.use(express.urlencoded({
   limit: '50mb',
 }));
 
+  
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('gateway'));
+
+app.use('/metrics', metricsRouter);
 
 /**
  * =========================

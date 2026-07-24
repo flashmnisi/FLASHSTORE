@@ -10,7 +10,7 @@ export interface NotificationDocument extends Document {
   title?: string;
   message?: string;
 
-  status: 'pending' | 'sent' | 'failed';
+  status: 'pending' | 'sent' | 'failed'| 'permanently_failed';
   channel: 'email' | 'sms' | 'push';
 
   createdAt: Date;

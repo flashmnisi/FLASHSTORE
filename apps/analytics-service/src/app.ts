@@ -8,6 +8,11 @@ import morgan from 'morgan';
 import analyticsRoutes from './presentation/routes/analytics.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 // ====================== GLOBAL MIDDLEWARE ======================
@@ -24,6 +29,13 @@ app.use(cors({
 // Body Parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('analytics-service'));
+
+app.use('/metrics', metricsRouter);
+
 
 // Logging
 if (process.env.NODE_ENV !== 'production') {

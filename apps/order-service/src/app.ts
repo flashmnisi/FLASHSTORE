@@ -3,6 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import orderRoutes from './presentation/routes/order.routes';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 const app = express();
 
 // Security & Parsing Middleware
@@ -10,6 +15,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('order-service'));
+
+app.use('/metrics', metricsRouter);
 
 // Health Check
 app.get('/health', (req, res) => {

@@ -98,10 +98,21 @@ export class PaymentRepositoryImpl implements IPaymentRepository {
     return paymentDocs.map(doc => this.toEntity(doc));
   }
 
-  async findByStatus(status: string): Promise<PaymentEntity[]> {
-    const paymentDocs = await PaymentModel.find({ status });
-    return paymentDocs.map(doc => this.toEntity(doc));
+async findByStatus(status: string): Promise<PaymentEntity[]> {
+ 
+  const validStatuses = ['pending', 'processing', 'succeeded', 'failed'] as const;
+  
+  if (!validStatuses.includes(status as any)) {
+    logger.warn('Invalid payment status queried', { status });
+    return [];
   }
+
+  const paymentDocs = await PaymentModel.find({ 
+    status: status as 'pending' | 'processing' | 'succeeded' | 'failed' 
+  });
+
+  return paymentDocs.map(doc => this.toEntity(doc));
+}
 
   async existsByOrderId(orderId: string): Promise<boolean> {
     const count = await PaymentModel.countDocuments({ orderId });

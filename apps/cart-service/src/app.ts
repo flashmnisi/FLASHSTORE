@@ -8,6 +8,11 @@ import cartRoutes from './presentation/routes/cart.routes';
 import logger from '@org/shared-logger';
 import { errorMiddleware } from './middleware/error.middleware';
 
+import {
+  metricsMiddleware,
+  metricsRouter,
+} from '@org/shared-metrics';
+
 export const app = express();
 
 // =============================
@@ -16,6 +21,12 @@ export const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// ====================== PROMETHEUS ======================
+
+app.use(metricsMiddleware('cart-service'));
+
+app.use('/metrics', metricsRouter);
 
 // =============================
 // 📦 Routes

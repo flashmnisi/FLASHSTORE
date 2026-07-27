@@ -52,7 +52,7 @@ export const disconnectRedis = async (): Promise<void> => {
 export const setWithExpiry = async (
   key: string,
   value: string | number | object,
-  ttlSeconds: number = 3600
+  ttlSeconds = 3600
 ): Promise<void> => {
   const redis = await getRedis();
 

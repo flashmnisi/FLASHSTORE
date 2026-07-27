@@ -4,11 +4,17 @@ kind: Service
 metadata:
   name: user-service
   namespace: flashstore
+
   labels:
     app: user-service
     app.kubernetes.io/name: user-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "3001"
 
 spec:
   type: ClusterIP

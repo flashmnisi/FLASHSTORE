@@ -1,3 +1,5 @@
+//libs/shared-redis/redis.client.ts
+
 import { createClient, RedisClientType } from 'redis';
 import  logger  from '@org/shared-logger';
 import { redisConfig } from '../config/redis.config';

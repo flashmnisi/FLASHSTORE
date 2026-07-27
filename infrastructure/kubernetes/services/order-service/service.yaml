@@ -4,17 +4,23 @@ kind: Service
 metadata:
   name: order-service
   namespace: flashstore
+
   labels:
     app: order-service
     app.kubernetes.io/name: order-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
 
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "3004"
+
 spec:
   type: ClusterIP
 
   selector:
-    app: user-service
+    app: order-service
 
   ports:
     - name: http

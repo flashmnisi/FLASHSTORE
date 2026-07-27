@@ -4,11 +4,17 @@ kind: Service
 metadata:
   name: notification-service
   namespace: flashstore
+
   labels:
     app: notification-service
     app.kubernetes.io/name: notification-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "3007"
 
 spec:
   type: ClusterIP

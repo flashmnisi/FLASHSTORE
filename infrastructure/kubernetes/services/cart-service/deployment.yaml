@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: order-service
+  name: cart-service
   namespace: flashstore
 
   labels:
-    app: order-service
-    app.kubernetes.io/name: order-service
+    app: cart-service
+    app.kubernetes.io/name: cart-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
 
@@ -24,20 +24,20 @@ spec:
 
   selector:
     matchLabels:
-      app: order-service
+      app: cart-service
 
   template:
     metadata:
       labels:
-        app: order-service
-        app.kubernetes.io/name: order-service
+        app: cart-service
+        app.kubernetes.io/name: cart-service
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: flashstore
 
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
-        prometheus.io/port: "3004"
+        prometheus.io/port: "3003"
 
     spec:
       terminationGracePeriodSeconds: 30
@@ -48,14 +48,14 @@ spec:
         fsGroup: 1001
 
       containers:
-        - name: order-service
+        - name: cart-service
 
-          image: flashmnisi/flashstore-order:latest
+          image: flashmnisi/flashstore-cart:latest
           imagePullPolicy: Always
 
           ports:
             - name: http
-              containerPort: 3004
+              containerPort: 3003
 
           envFrom:
             - configMapRef:
@@ -87,7 +87,7 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: 3004
+              port: 3003
 
             failureThreshold: 30
             periodSeconds: 10
@@ -95,7 +95,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 3004
+              port: 3003
 
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -105,7 +105,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 3004
+              port: 3003
 
             initialDelaySeconds: 30
             periodSeconds: 20

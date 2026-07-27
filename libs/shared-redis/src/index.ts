@@ -1,5 +1,4 @@
-//export * from './lib/shared-redis.js';
-// Main entry point for @org/shared-redis
+//libs/shared-redis/index.ts
 
 export * from './client/redis.client';
 export * from './config/redis.config';

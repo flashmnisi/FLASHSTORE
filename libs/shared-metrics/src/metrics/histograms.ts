@@ -2,12 +2,19 @@ import { Histogram } from 'prom-client';
 import register from '../registry';
 
 /**
- * HTTP latency.
+ * HTTP request latency.
  */
 export const httpRequestDuration = new Histogram({
   name: 'flashstore_http_request_duration_seconds',
   help: 'HTTP request duration',
-  labelNames: ['method', 'route', 'status'],
+
+  labelNames: [
+    'service',
+    'method',
+    'route',
+    'status',
+  ],
+
   buckets: [
     0.005,
     0.01,
@@ -20,6 +27,7 @@ export const httpRequestDuration = new Histogram({
     2,
     5,
   ],
+
   registers: [register],
 });
 
@@ -29,7 +37,13 @@ export const httpRequestDuration = new Histogram({
 export const dbQueryDuration = new Histogram({
   name: 'flashstore_db_query_duration_seconds',
   help: 'MongoDB query duration',
-  labelNames: ['collection', 'operation'],
+
+  labelNames: [
+    'service',
+    'collection',
+    'operation',
+  ],
+
   buckets: [
     0.001,
     0.005,
@@ -41,5 +55,6 @@ export const dbQueryDuration = new Histogram({
     1,
     2,
   ],
+
   registers: [register],
 });

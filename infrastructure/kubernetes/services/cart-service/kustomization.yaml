@@ -4,12 +4,12 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
-  #- network-policy.yaml
+  # - network-policy.yaml
   - hpa.yaml
 
 labels:
   - pairs:
-      app: gateway
-      app.kubernetes.io/name: gateway
+      app: cart-service
+      app.kubernetes.io/name: cart-service
       app.kubernetes.io/component: backend
       app.kubernetes.io/part-of: flashstore

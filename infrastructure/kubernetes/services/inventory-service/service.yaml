@@ -2,28 +2,28 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: analytics-service
+  name: inventory-service
   namespace: flashstore
 
   labels:
-    app: analytics-service
-    app.kubernetes.io/name: analytics-service
+    app: inventory-service
+    app.kubernetes.io/name: inventory-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
 
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/path: "/metrics"
-    prometheus.io/port: "3006"
+    prometheus.io/port: "3008"
 
 spec:
   type: ClusterIP
 
   selector:
-    app: analytics-service
+    app: inventory-service
 
   ports:
     - name: http
       protocol: TCP
-      port: 3006
-      targetPort: 3006
+      port: 3008
+      targetPort: 3008

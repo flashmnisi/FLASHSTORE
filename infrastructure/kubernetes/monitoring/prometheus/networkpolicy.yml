@@ -25,15 +25,22 @@ spec:
     - Ingress
     - Egress
 
+  ###############################################################
+  # Ingress
+  ###############################################################
+
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: monitoring
-
       ports:
         - protocol: TCP
           port: 9090
+
+  ###############################################################
+  # Egress
+  ###############################################################
 
   egress:
 
@@ -49,13 +56,53 @@ spec:
         - protocol: TCP
           port: 53
 
-    # Metrics endpoints
-    - ports:
-        - protocol: TCP
-          port: 8080
-
+    # Alertmanager
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
         - protocol: TCP
           port: 9093
 
+    # Grafana
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 3000
+
+    # kube-state-metrics
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+
+    # node-exporter
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
         - protocol: TCP
           port: 9100
+
+    # FlashStore Microservices
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flashstore
+      ports:
+        - protocol: TCP
+          port: 3000 # gateway
+        - protocol: TCP
+          port: 3001 # user-service
+        - protocol: TCP
+          port: 3004 # order-service
+        - protocol: TCP
+          port: 3006 # analytics-service

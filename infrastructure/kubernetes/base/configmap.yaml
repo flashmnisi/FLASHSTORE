@@ -65,7 +65,7 @@ data:
 
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
-  REDIS_URL: "redis://:changemeplease@redis:6379"
+  REDIS_URL: redis://:CHANGE_ME@redis:6379
 
   #####################################
   # Kafka

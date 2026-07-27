@@ -2,28 +2,28 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: analytics-service
+  name: catalog-service
   namespace: flashstore
 
   labels:
-    app: analytics-service
-    app.kubernetes.io/name: analytics-service
+    app: catalog-service
+    app.kubernetes.io/name: catalog-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
 
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/path: "/metrics"
-    prometheus.io/port: "3006"
+    prometheus.io/port: "3002"
 
 spec:
   type: ClusterIP
 
   selector:
-    app: analytics-service
+    app: catalog-service
 
   ports:
     - name: http
       protocol: TCP
-      port: 3006
-      targetPort: 3006
+      port: 3002
+      targetPort: 3002

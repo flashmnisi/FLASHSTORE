@@ -4,11 +4,12 @@ kind: Deployment
 metadata:
   name: gateway
   namespace: flashstore
+
   labels:
     app: gateway
     app.kubernetes.io/name: gateway
     app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: flashstore 
+    app.kubernetes.io/part-of: flashstore
 
 spec:
   replicas: 2
@@ -33,6 +34,11 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: flashstore
 
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3000"
+
     spec:
       terminationGracePeriodSeconds: 30
 
@@ -41,16 +47,11 @@ spec:
         runAsUser: 1001
         fsGroup: 1001
 
-      # Uncomment if Docker Hub repository is private
-      #
-      # imagePullSecrets:
-      #   - name: dockerhub-secret
-
       containers:
         - name: gateway
 
-          image: flashmnisi/flashstore-gateway:v1.0.1
-          imagePullPolicy: IfNotPresent
+          image: flashmnisi/flashstore-gateway:latest
+          imagePullPolicy: Always
 
           ports:
             - name: http
@@ -114,6 +115,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
+
             capabilities:
               drop:
                 - ALL

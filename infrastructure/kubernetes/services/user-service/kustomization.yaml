@@ -4,8 +4,8 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
-  - network-policy.yaml
-  # - hpa.yaml
+  #- network-policy.yaml
+  - hpa.yaml
 
 labels:
   - pairs:

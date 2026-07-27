@@ -4,11 +4,12 @@ kind: Deployment
 metadata:
   name: user-service
   namespace: flashstore
+
   labels:
     app: user-service
     app.kubernetes.io/name: user-service
     app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: flashstore 
+    app.kubernetes.io/part-of: flashstore
 
 spec:
   replicas: 2
@@ -33,6 +34,11 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: flashstore
 
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3001"
+
     spec:
       terminationGracePeriodSeconds: 30
 
@@ -41,15 +47,10 @@ spec:
         runAsUser: 1001
         fsGroup: 1001
 
-      # Uncomment if Docker Hub repository is private
-      #
-      # imagePullSecrets:
-      #   - name: dockerhub-secret
-
       containers:
         - name: user-service
 
-          image: flashmnisi/flashstore-user:v1.0.1
+          image: flashmnisi/flashstore-user:latest
           imagePullPolicy: Always
 
           ports:
@@ -114,6 +115,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
+
             capabilities:
               drop:
                 - ALL

@@ -1,3 +1,5 @@
+//libs/shared-metrics/src/middleware/metrics.route.ts
+
 import { Router } from 'express';
 
 import { register, contentType } from '../registry';
@@ -9,7 +11,7 @@ const router = Router();
  *
  * GET /metrics
  */
-router.get('/metrics', async (_req, res) => {
+router.get('/', async (_req, res) => {
   try {
     res.setHeader('Content-Type', contentType);
 

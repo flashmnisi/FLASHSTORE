@@ -1,3 +1,5 @@
+//apps/searc-service/infrastructure/elasticsearch
+
 import { Client } from '@elastic/elasticsearch';
 import logger from '@org/shared-logger';
 
@@ -8,7 +10,7 @@ export const getElasticClient = (): Client => {
     client = new Client({
       node: process.env.ELASTIC_URL || 'http://localhost:9200',
       auth: {
-        username: process.env.ELASTIC_USER || 'elastic',
+        username: process.env.ELASTIC_USERNAME || 'elastic',
         password: process.env.ELASTIC_PASSWORD || 'changeme',
       },
       maxRetries: 5,

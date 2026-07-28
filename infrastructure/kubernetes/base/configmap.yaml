@@ -99,3 +99,11 @@ data:
   SERVICE_NAME: "api-gateway"
   RATE_LIMIT_MAX: "100"
   RATE_LIMIT_WINDOW_MS: "900000"
+
+    #####################################
+  # elastic search
+  #####################################
+
+  ELASTIC_URL: http://elasticsearch:9200
+  ELASTIC_USERNAME: "elastic"
+  ELASTIC_PASSWORD: "changeme"

@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: flashstore
+
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: elasticsearch
+      app.kubernetes.io/instance: flashstore
+      app.kubernetes.io/component: database
+      app.kubernetes.io/part-of: flashstore

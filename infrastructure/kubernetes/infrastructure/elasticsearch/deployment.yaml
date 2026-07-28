@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: elasticsearch
+  namespace: flashstore
+
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: elasticsearch
+
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+
+    spec:
+      containers:
+        - name: elasticsearch
+
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 9200
+              name: http
+
+            - containerPort: 9300
+              name: transport
+
+          env:
+            - name: discovery.type
+              value: single-node
+
+            - name: xpack.security.enabled
+              value: "false"
+
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+
+            limits:
+              cpu: "1"
+              memory: 2Gi
+
+          volumeMounts:
+            - name: elasticsearch-data
+              mountPath: /usr/share/elasticsearch/data
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 60
+            periodSeconds: 20
+
+      volumes:
+        - name: elasticsearch-data
+          persistentVolumeClaim:
+            claimName: elasticsearch-pvc

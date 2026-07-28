@@ -1,3 +1,5 @@
+//apps/ssearcg-servive/config/elastic
+
 import { Client } from '@elastic/elasticsearch';
 import env from './env';
 import logger from '@org/shared-logger';

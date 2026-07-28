@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { app } from './app';
 import { connectRedis } from './config/redis';
 import { startCartConsumer } from './infrastructure/kafka/consumer';
@@ -15,13 +14,13 @@ import { CouponRepositoryImpl } from './infrastructure/persistence/repositories/
 import { connectKafka } from './config/kafka';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 import { outboxService } from './infrastructure/container/cart.container';
+import { connectDatabase } from './config/database';
 
 const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cart';
 
 const start = async () => {
   try {
-    await mongoose.connect(MONGO_URI);
+     await connectDatabase();
     logger.info('✅ MongoDB connected');
 
     await connectRedis();

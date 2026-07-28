@@ -50,7 +50,7 @@ spec:
       containers:
         - name: notification-service
 
-          image: flashmnisi/flashstore-notification:latest
+          image: flashmnisi/flashstore-notification-service:latest
           imagePullPolicy: Always
 
           ports:

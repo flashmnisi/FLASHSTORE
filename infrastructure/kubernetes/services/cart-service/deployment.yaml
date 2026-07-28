@@ -50,7 +50,7 @@ spec:
       containers:
         - name: cart-service
 
-          image: flashmnisi/flashstore-cart:latest
+          image: flashmnisi/flashstore-cart-service:latest
           imagePullPolicy: Always
 
           ports:

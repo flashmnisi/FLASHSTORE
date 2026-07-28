@@ -50,7 +50,7 @@ spec:
       containers:
         - name: user-service
 
-          image: flashmnisi/flashstore-inventory:latest
+          image: flashmnisi/flashstore-inventory-service:latest
           imagePullPolicy: Always
 
           ports:

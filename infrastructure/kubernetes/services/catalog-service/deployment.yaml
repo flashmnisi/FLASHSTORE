@@ -50,7 +50,7 @@ spec:
       containers:
         - name: catalog-service
 
-          image: flashmnisi/flashstore-catalog:latest
+          image: flashmnisi/flashstore-catalog-service:latest
           imagePullPolicy: Always
 
           ports:

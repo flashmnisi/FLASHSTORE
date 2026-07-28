@@ -50,7 +50,7 @@ spec:
       containers:
         - name: analytics-service
 
-          image: flashmnisi/flashstore-analytics:latest
+          image: flashmnisi/flashstore-analytics-service:latest
           imagePullPolicy: Always
 
           ports:

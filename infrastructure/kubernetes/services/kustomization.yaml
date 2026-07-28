@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - gateway
+  - user-service
+  - catalog-service
+  - cart-service
+  - order-service
+  - payment-service
+  - notification-service
+  - analytics-service
+  - inventory-service
+  - search-service

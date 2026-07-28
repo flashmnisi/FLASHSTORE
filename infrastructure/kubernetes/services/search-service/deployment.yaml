@@ -50,7 +50,7 @@ spec:
       containers:
         - name: search-service
 
-          image: flashmnisi/flashstore-search:latest
+          image: flashmnisi/flashstore-search-service:latest
           imagePullPolicy: Always
 
           ports:

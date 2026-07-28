@@ -12,9 +12,9 @@ resources:
 
   - grafana
 
-  # - alertmanager
-  # - node-exporter
-  # - kube-state-metrics
+  - alertmanager
+  - node-exporter
+  - kube-state-metrics
 
 labels:
   - pairs:

@@ -50,7 +50,7 @@ spec:
       containers:
         - name: payment-service
 
-          image: flashmnisi/flashstore-payment:latest
+          image: flashmnisi/flashstore-payment-service:latest
           imagePullPolicy: Always
 
           ports:

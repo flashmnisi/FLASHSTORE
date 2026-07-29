@@ -4,7 +4,7 @@ import { CircuitBreakerOptions } from './breaker.types.js';
 export const withCircuitBreaker = <T>(
   action: (...args: any[]) => Promise<T>,
   serviceName: string,
-  operation: 'default',
+  operation = 'default',
   options: CircuitBreakerOptions = {}
 ) => {
 

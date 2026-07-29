@@ -5,7 +5,7 @@ export const exponentialBackoff = (
   attempt: number,
   baseDelay = 300,
   maxDelay = 3000,
-  jitter: true
+  jitter = true
 ): number => {
   const delay = Math.min(
     baseDelay * Math.pow(2, attempt - 1),

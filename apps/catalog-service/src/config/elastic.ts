@@ -8,10 +8,10 @@ let client: Client;
 
 export const getElasticClient = () => {
   if (!client) {
-    const auth = env.ELASTICSEARCH_USERNAME && env.ELASTICSEARCH_PASSWORD
+    const auth = env.ELASTIC_USERNAME && env.ELASTIC_PASSWORD
       ? {
-          username: env.ELASTICSEARCH_USERNAME,
-          password: env.ELASTICSEARCH_PASSWORD,
+          username: env.ELASTIC_USERNAME,
+          password: env.ELASTIC_PASSWORD,
         }
       : undefined;
 

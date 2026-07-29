@@ -38,8 +38,8 @@ export default {
 
   // Elasticsearch
   ELASTIC_UR: process.env.ELASTIC_UR,
-  ELASTICSEARCH_USERNAME: process.env.ELASTICSEARCH_USERNAME,
-  ELASTICSEARCH_PASSWORD: process.env.ELASTICSEARCH_PASSWORD,
+  ELASTIC_USERNAME: process.env.ELASTIC_USERNAME,
+  ELASTIC_PASSWORD: process.env.ELASTIC_PASSWORD,
 
   // Image Upload
   IMAGE_BASE_URL: process.env.IMAGE_BASE_URL,

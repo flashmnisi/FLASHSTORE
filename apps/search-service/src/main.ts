@@ -4,11 +4,11 @@ import app from './app';
 import env from './config/env';
 import { connectDatabase } from './config/database';
 import { connectRedis } from './config/redis';
-import { getElasticClient } from './config/elastic';
 import { initProductIndex } from './config/init-index';
 import { startSearchConsumer } from './infrastructure/kafka/consumer';
 
 import logger from '@org/shared-logger';
+import { getElasticClient } from './infrastructure/elasticsearch/client';
 
 const startServer = async () => {
   try {

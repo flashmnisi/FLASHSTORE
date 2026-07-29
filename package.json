@@ -58,7 +58,7 @@
     "libs/shared/*"
   ],
   "dependencies": {
-    "@elastic/elasticsearch": "^9.3.4",
+    "@elastic/elasticsearch": "^8.15.0",
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

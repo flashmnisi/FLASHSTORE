@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { SuggestService } from '../../application/services/suggest.service';
 //import { TrendingService } from '../../analytics/trending.service';
-import { getElasticClient } from '../../config/elastic';
 import logger from '@org/shared-logger';
 import { TrendingService } from '../../application/services/trending.service';
+import { getElasticClient } from '../../infrastructure/elasticsearch/client';
 
 const suggestService = new SuggestService(getElasticClient());
 const trendingService = new TrendingService();

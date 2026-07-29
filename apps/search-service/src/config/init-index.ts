@@ -1,5 +1,5 @@
+import { getElasticClient } from '../infrastructure/elasticsearch/client';
 import { productMapping } from '../infrastructure/elasticsearch/mappings/product.mapping';
-import { getElasticClient } from './elastic';
 import logger from '@org/shared-logger';
 
 const INDEX_NAME = 'products';

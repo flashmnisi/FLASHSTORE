@@ -8,8 +8,8 @@ import { SearchAnalyticsService } from '../../infrastructure/analytics/search-an
 import { searchCache } from '../../infrastructure/cache/search-cache';
 import { SearchQueryVO } from '../../domain/value-objects/search-query.vo';
 import logger from '@org/shared-logger';
-import { getElasticClient } from '../../config/elastic';
 import { ElasticSearchRepository } from '../../infrastructure/analytics/elasticsearch.repository';
+import { getElasticClient } from '../../infrastructure/elasticsearch/client';
 
 // =============================
 // 🔥 DEPENDENCIES

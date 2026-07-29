@@ -7,7 +7,7 @@ const breakers = new Map<string, CircuitBreaker>();
 export const getCircuitBreaker = (
   action: (...args: any[]) => Promise<any>,
   serviceName: string,
-  operation: string = 'default',
+  operation: 'default',
   options: CircuitBreakerOptions = {}
 ): CircuitBreaker => {
   const key = `${serviceName}:${operation}`;

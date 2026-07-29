@@ -37,7 +37,7 @@ export default {
   REDIS_URL: process.env.REDIS_URL,
 
   // Elasticsearch
-  ELASTICSEARCH_URL: process.env.ELASTICSEARCH_URL,
+  ELASTIC_UR: process.env.ELASTIC_UR,
   ELASTICSEARCH_USERNAME: process.env.ELASTICSEARCH_USERNAME,
   ELASTICSEARCH_PASSWORD: process.env.ELASTICSEARCH_PASSWORD,
 

@@ -1,4 +1,4 @@
-// apps/search-service/config/elastic.ts
+// apps/catalog-service/config/elastic.ts
 
 import { Client } from '@elastic/elasticsearch';
 import env from './env';
@@ -16,7 +16,7 @@ export const getElasticClient = () => {
       : undefined;
 
     client = new Client({
-      node: env.ELASTICSEARCH_URL,
+      node: env.ELASTIC_UR,
       auth,
       maxRetries: 5,
       requestTimeout: 10000,
@@ -24,7 +24,7 @@ export const getElasticClient = () => {
     });
 
     logger.info('⚡ Elasticsearch client initialized', {
-      node: env.ELASTICSEARCH_URL,
+      node: env.ELASTIC_UR,
       hasAuth: !!auth,
     });
   }

@@ -12,6 +12,7 @@ import { connectRedis } from './config/radis';
 import app from './app';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 import { outboxService } from './container';
+import { getElasticClient } from './config/elastic';
 
 const PORT = process.env.PORT || 3002;
 
@@ -31,11 +32,16 @@ const startServer = async () => {
     await initKafka();
     logger.info('✅ Kafka initialized');
 
+        // 4. Elasticsearch
+    const elasticClient = getElasticClient();
+    await elasticClient.ping();
+    logger.info('✅ Elasticsearch connected and index initialized');
+
     const outboxProcessor = new OutboxProcessor(outboxService);
     outboxProcessor.start();
     logger.info('✅ Order Outbox Processor started');
 
-    // 4. Start Express Server
+    // .5 Start Express Server
     app.listen(PORT, () => {
       logger.info(`🚀 Catalog Service running on http://localhost:${PORT}`);
     });

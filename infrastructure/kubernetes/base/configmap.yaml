@@ -23,9 +23,9 @@ data:
   #####################################
 
   USER_SERVICE_PORT: "3001"
-  ORDER_SERVICE_PORT: "3002"
-  CATALOG_SERVICE_PORT: "3003"
-  CART_SERVICE_PORT: "3004"
+  ORDER_SERVICE_PORT: "3004"
+  CATALOG_SERVICE_PORT: "3002"
+  CART_SERVICE_PORT: "3003"
   PAYMENT_SERVICE_PORT: "3005"
   ANALYTICS_SERVICE_PORT: "3006"
   NOTIFICATION_SERVICE_PORT: "3007"
@@ -37,9 +37,9 @@ data:
   #####################################
 
   USER_SERVICE_URL: "http://user-service:3001"
-  ORDER_SERVICE_URL: "http://order-service:3002"
-  CATALOG_SERVICE_URL: "http://catalog-service:3003"
-  CART_SERVICE_URL: "http://cart-service:3004"
+  ORDER_SERVICE_URL: "http://order-service:3004"
+  CATALOG_SERVICE_URL: "http://catalog-service:3002"
+  CART_SERVICE_URL: "http://cart-service:3003"
   PAYMENT_SERVICE_URL: "http://payment-service:3005"
   ANALYTICS_SERVICE_URL: "http://analytics-service:3006"
   NOTIFICATION_SERVICE_URL: "http://notification-service:3007"

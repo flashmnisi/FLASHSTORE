@@ -12,7 +12,7 @@ export class ElasticsearchRepository {
 
   constructor() {
     this.client = new Client({
-      node: env.ELASTIC_UR,
+      node: env.ELASTIC_URL,
       auth: env.ELASTIC_USERNAME && env.ELASTIC_PASSWORD ? {
         username: env.ELASTIC_USERNAME,
         password: env.ELASTIC_PASSWORD,

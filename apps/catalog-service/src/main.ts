@@ -12,7 +12,8 @@ import { connectRedis } from './config/radis';
 import app from './app';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 import { outboxService } from './container';
-import { getElasticClient } from './config/elastic';
+import { getElasticClient } from './infrastructure/elasticsearch/client';
+import { initProductIndex } from './infrastructure/elasticsearch/indices';
 
 const PORT = process.env.PORT || 3002;
 
@@ -35,6 +36,7 @@ const startServer = async () => {
         // 4. Elasticsearch
     const elasticClient = getElasticClient();
     await elasticClient.ping();
+    await initProductIndex();
     logger.info('✅ Elasticsearch connected and index initialized');
 
     const outboxProcessor = new OutboxProcessor(outboxService);

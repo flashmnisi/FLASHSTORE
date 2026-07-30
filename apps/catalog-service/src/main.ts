@@ -13,7 +13,7 @@ import app from './app';
 import { OutboxProcessor } from './infrastructure/outbox/outbox.processor';
 import { outboxService } from './container';
 import { getElasticClient } from './infrastructure/elasticsearch/client';
-import { initProductIndex } from './infrastructure/elasticsearch/indices';
+import { initProductIndex } from './config/init-index';
 
 const PORT = process.env.PORT || 3002;
 

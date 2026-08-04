@@ -1,0 +1,109 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: grafana
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+    description: "Restrict network access for Grafana"
+
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/instance: flashstore
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  #################################################################
+  # INGRESS
+  #################################################################
+  ingress:
+
+    # Allow Prometheus (health checks if needed)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+              app.kubernetes.io/instance: flashstore
+
+      ports:
+        - protocol: TCP
+          port: 3000
+
+    # Allow Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+
+      ports:
+        - protocol: TCP
+          port: 3000
+
+  #################################################################
+  # EGRESS
+  #################################################################
+  egress:
+
+    # Prometheus datasource
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+              app.kubernetes.io/instance: flashstore
+
+      ports:
+        - protocol: TCP
+          port: 9090
+
+    # Alertmanager (Grafana Alerting)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+              app.kubernetes.io/instance: flashstore
+
+      ports:
+        - protocol: TCP
+          port: 9093
+
+    # Kubernetes DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+
+      ports:
+        - protocol: UDP
+          port: 53
+
+        - protocol: TCP
+          port: 53

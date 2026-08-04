@@ -12,7 +12,7 @@ export const services = {
   analytics: env.ANALYTICS_SERVICE_URL,
   search: env.SEARCH_SERVICE_URL,
   notification: env.NOTIFICATION_SERVICE_URL,
-  inventory: env.INENTORY_SERVICE_URL
+  inventory: env.INVENTORY_SERVICE_URL
 } as const;
 
 export type ServiceKey = keyof typeof services;

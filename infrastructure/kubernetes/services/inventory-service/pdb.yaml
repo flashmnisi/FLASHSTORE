@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: inventory-service
+  namespace: flashstore
+
+  labels:
+    app: inventory-service
+    app.kubernetes.io/name: inventory-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: inventory-service

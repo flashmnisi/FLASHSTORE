@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+  - name: grafana-dashboards-microservices
+
+    files:
+      - microservices-dashboard.json
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+labels:
+  - pairs:
+      grafana_dashboard: "1"
+
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/component: dashboards
+      app.kubernetes.io/part-of: flashstore

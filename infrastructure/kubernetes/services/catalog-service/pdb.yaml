@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: catalog-service
+  namespace: flashstore
+
+  labels:
+    app: catalog-service
+    app.kubernetes.io/name: catalog-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: catalog-service

@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: analytics-service
+  namespace: flashstore
+
+  labels:
+    app: analytics-service
+    app.kubernetes.io/name: analytics-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: analytics-service

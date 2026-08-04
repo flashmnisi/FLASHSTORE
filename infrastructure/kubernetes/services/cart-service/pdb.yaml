@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: cart-service
+  namespace: flashstore
+
+  labels:
+    app: cart-service
+    app.kubernetes.io/name: cart-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: cart-service

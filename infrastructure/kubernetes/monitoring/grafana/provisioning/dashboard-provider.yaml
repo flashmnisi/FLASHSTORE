@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: dashboards
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kustomize
+
+data:
+  dashboard-provider.yaml: |
+    apiVersion: 1
+
+    providers:
+      - name: "flashstore"
+        orgId: 1
+        folder: "FlashStore"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+
+        options:
+          path: /var/lib/grafana/dashboards
+
+      - name: "microservices"
+        orgId: 1
+        folder: "Microservices"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+
+        options:
+          path: /var/lib/grafana/dashboards/microservices
+
+      - name: "kubernetes"
+        orgId: 1
+        folder: "Kubernetes"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+
+        options:
+          path: /var/lib/grafana/dashboards/kubernetes
+
+      - name: "infrastructure"
+        orgId: 1
+        folder: "Infrastructure"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+
+        options:
+          path: /var/lib/grafana/dashboards/infrastructure
+
+      - name: "overview"
+        orgId: 1
+        folder: "Overview"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+        updateIntervalSeconds: 30
+
+        options:
+          path: /var/lib/grafana/dashboards/overview
+
+      - name: "alerts"
+        orgId: 1
+        folder: "Alerts"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+        editable: true
+
+        options:
+          path: /var/lib/grafana/dashboards/alerts

@@ -10,7 +10,7 @@ const services = {
   analytics: 'http://analytics-service:3006',
   search: 'http://search-service:4005',
   notification: 'http://notification-service:3007',
-  inventory: 'http://notification-service:3008',
+  inventory: 'http://inventory-service:3008',
 };
 
 export const createProxy = (serviceName: keyof typeof services) => {

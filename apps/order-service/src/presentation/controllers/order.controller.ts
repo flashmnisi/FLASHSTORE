@@ -5,6 +5,7 @@ import { createOrderSchema } from '../../application/dtos/create-order.dto';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { OrderService } from '../../application/sevices/order.service';
 import logger from '@org/shared-logger';
+import { ordersCreatedTotal } from '@org/shared-metrics';
 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -16,7 +17,6 @@ export class OrderController {
    */
   createOrder = async (req: AuthRequest, res: Response) => {
     try {
-      // Get user from JWT (via gateway middleware)
       if (!req.user?.userId) {
         return res.status(401).json({
           success: false,
@@ -24,7 +24,6 @@ export class OrderController {
         });
       }
 
-      // Enrich DTO with authenticated user data
       const dto = createOrderSchema.parse({
         ...req.body,
         userId: req.user.userId,
@@ -43,6 +42,12 @@ export class OrderController {
         correlationId: req.id,
       });
 
+      // Business metric — only after successful create
+      ordersCreatedTotal.inc({
+        service: 'order-service',
+        status: order.status ?? 'created',
+      });
+
       return res.status(201).json({
         success: true,
         data: order,
@@ -51,7 +56,6 @@ export class OrderController {
       logger.error('Create order failed', { error: error.message });
 
       if (error?.issues) {
-        // Zod validation error
         return res.status(400).json({
           success: false,
           message: 'Validation failed',

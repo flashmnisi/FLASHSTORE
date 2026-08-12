@@ -4,98 +4,107 @@ import { Request, Response } from 'express';
 import { ProductService } from '../../application/services/product.service';
 import { validators } from '../../utils/validators';
 import logger from '@org/shared-logger';
+import { productViewsTotal } from '@org/shared-metrics';
 
 export class ProductController {
-  constructor(
-    private readonly productService: ProductService
-  ) {}
+  constructor(private readonly productService: ProductService) {}
 
-/**
- * =========================================
- * CREATE PRODUCT
- * =========================================
- */
-createProduct = async (req: Request, res: Response) => {
-  try {
-    
-       const files = req.files as Express.Multer.File[];
+  /**
+   * =========================================
+   * CREATE PRODUCT
+   * =========================================
+   */
+  createProduct = async (req: Request, res: Response) => {
+    try {
+      const files = req.files as Express.Multer.File[];
 
-        if (!files || files.length === 0) {
-            res.status(400).json({ error: "No images uploaded" });
-            return;
-        }
+      if (!files || files.length === 0) {
+        res.status(400).json({ error: 'No images uploaded' });
+        return;
+      }
 
-        console.log('BODY:', req.body);
-        console.log('FILES:', req.files);
+      console.log('BODY:', req.body);
+      console.log('FILES:', req.files);
 
-    // Build image URLs
-    const imageBaseUrl = process.env.IMAGE_BASE_URL || 'http://localhost:8080/uploads/products/';
+      // Build image URLs
+      const imageBaseUrl =
+        process.env.IMAGE_BASE_URL || 'http://localhost:8080/uploads/products/';
 
-    const images = files?.map(file => `${imageBaseUrl}${file.filename}`) || [];
+      const images =
+        files?.map((file) => `${imageBaseUrl}${file.filename}`) || [];
 
-    // Prepare data for validation
-    const rawData = {
-      ...req.body,
-      images,
-      price: Number(req.body.price),
-      stockQuantity: Number(req.body.stockQuantity || 0),
-      discountPercentage: Number(req.body.discountPercentage || 0),
-      
-      // Handle tags (comma-separated or array)
-      tags: typeof req.body.tags === 'string'
-        ? req.body.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-        : Array.isArray(req.body.tags) ? req.body.tags : [],
+      // Prepare data for validation
+      const rawData = {
+        ...req.body,
+        images,
+        price: Number(req.body.price),
+        stockQuantity: Number(req.body.stockQuantity || 0),
+        discountPercentage: Number(req.body.discountPercentage || 0),
 
-      // Boolean conversion
-      isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true,
-      isHotDeal: req.body.isHotDeal === 'true' || req.body.isHotDeal === true,
-      isNewArrival: req.body.isNewArrival === 'true' || req.body.isNewArrival === true,
-      inStock: req.body.inStock !== 'false', // default true
-    };
+        // Handle tags (comma-separated or array)
+        tags:
+          typeof req.body.tags === 'string'
+            ? req.body.tags
+                .split(',')
+                .map((t: string) => t.trim())
+                .filter(Boolean)
+            : Array.isArray(req.body.tags)
+            ? req.body.tags
+            : [],
 
-    const dto = validators.createProduct.parse(rawData);
+        // Boolean conversion
+        isFeatured:
+          req.body.isFeatured === 'true' || req.body.isFeatured === true,
+        isHotDeal: req.body.isHotDeal === 'true' || req.body.isHotDeal === true,
+        isNewArrival:
+          req.body.isNewArrival === 'true' || req.body.isNewArrival === true,
+        inStock: req.body.inStock !== 'false', // default true
+      };
 
-    const product = await this.productService.createProduct(dto);
+      const dto = validators.createProduct.parse(rawData);
 
-    logger.info('✅ Product created successfully', {
-      productId: product.id,
-      name: product.name,
-      imagesCount: images.length,
-    });
+      const product = await this.productService.createProduct(dto);
 
-    return res.status(201).json({
-      success: true,
-      message: 'Product created successfully',
-      data: product.toJSON ? product.toJSON() : product,
-    });
+      logger.info('✅ Product created successfully', {
+        productId: product.id,
+        name: product.name,
+        imagesCount: images.length,
+      });
 
-  } catch (error: any) {
-    logger.error('❌ Create product failed', { 
-      error: error.message,
-      body: req.body 
-    });
+      return res.status(201).json({
+        success: true,
+        message: 'Product created successfully',
+        data: product.toJSON ? product.toJSON() : product,
+      });
+    } catch (error: any) {
+      logger.error('❌ Create product failed', {
+        error: error.message,
+        body: req.body,
+      });
 
-    return res.status(400).json({
-      success: false,
-      message: error.message || 'Failed to create product',
-    });
-  }
-};
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to create product',
+      });
+    }
+  };
 
   /**
    * =========================================
    * GET PRODUCT BY ID
    * =========================================
    */
-  getProductById = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getProductById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
 
-      const product =
-        await this.productService.getProductById(id);
+      const product = await this.productService.getProductById(id);
+
+      productViewsTotal.inc({
+      service: 'catalog-service',
+      productId: product.id ?? id,
+      category: product.categoryId ?? 'unknown',
+    });
 
       res.status(200).json({
         success: true,
@@ -118,15 +127,11 @@ createProduct = async (req: Request, res: Response) => {
    * GET PRODUCT BY SLUG
    * =========================================
    */
-  getProductBySlug = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getProductBySlug = async (req: Request, res: Response): Promise<void> => {
     try {
       const { slug } = req.params;
 
-      const product =
-        await this.productService.getProductBySlug(slug);
+      const product = await this.productService.getProductBySlug(slug);
 
       res.status(200).json({
         success: true,
@@ -149,52 +154,34 @@ createProduct = async (req: Request, res: Response) => {
    * SEARCH PRODUCTS
    * =========================================
    */
-  searchProducts = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  searchProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       const dto = validators.searchProducts.parse({
         ...req.query,
 
-        page: req.query.page
-          ? Number(req.query.page)
-          : 1,
+        page: req.query.page ? Number(req.query.page) : 1,
 
-        limit: req.query.limit
-          ? Number(req.query.limit)
-          : 20,
+        limit: req.query.limit ? Number(req.query.limit) : 20,
 
-        minPrice: req.query.minPrice
-          ? Number(req.query.minPrice)
-          : undefined,
+        minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
 
-        maxPrice: req.query.maxPrice
-          ? Number(req.query.maxPrice)
-          : undefined,
+        maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
 
-        isFeatured:
-          req.query.isFeatured === 'true',
+        isFeatured: req.query.isFeatured === 'true',
 
-        isHotDeal:
-          req.query.isHotDeal === 'true',
+        isHotDeal: req.query.isHotDeal === 'true',
 
-        isNewArrival:
-          req.query.isNewArrival === 'true',
+        isNewArrival: req.query.isNewArrival === 'true',
 
-        inStock:
-          req.query.inStock === 'true',
+        inStock: req.query.inStock === 'true',
 
         tags:
           typeof req.query.tags === 'string'
-            ? req.query.tags
-                .split(',')
-                .map((t) => t.trim())
+            ? req.query.tags.split(',').map((t) => t.trim())
             : undefined,
       });
 
-      const result =
-        await this.productService.searchProducts(dto);
+      const result = await this.productService.searchProducts(dto);
 
       res.status(200).json({
         success: true,
@@ -217,30 +204,22 @@ createProduct = async (req: Request, res: Response) => {
    * UPDATE PRODUCT
    * =========================================
    */
-  updateProduct = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       const files = req.files as Express.Multer.File[] | undefined;
 
       const imageBaseUrl =
-        process.env.IMAGE_BASE_URL ||
-        'http://localhost:8080/uploads/';
+        process.env.IMAGE_BASE_URL || 'http://localhost:8080/uploads/';
 
       const uploadedImages =
-        files?.map(
-          (file) => `${imageBaseUrl}${file.filename}`
-        ) || undefined;
+        files?.map((file) => `${imageBaseUrl}${file.filename}`) || undefined;
 
       const dto = validators.updateProduct.parse({
         ...req.body,
 
         images: uploadedImages,
 
-        price: req.body.price
-          ? Number(req.body.price)
-          : undefined,
+        price: req.body.price ? Number(req.body.price) : undefined,
 
         stockQuantity: req.body.stockQuantity
           ? Number(req.body.stockQuantity)
@@ -256,33 +235,21 @@ createProduct = async (req: Request, res: Response) => {
             : req.body.tags,
 
         isFeatured:
-          req.body.isFeatured === 'true' ||
-          req.body.isFeatured === true,
+          req.body.isFeatured === 'true' || req.body.isFeatured === true,
 
-        isHotDeal:
-          req.body.isHotDeal === 'true' ||
-          req.body.isHotDeal === true,
+        isHotDeal: req.body.isHotDeal === 'true' || req.body.isHotDeal === true,
 
         isNewArrival:
-          req.body.isNewArrival === 'true' ||
-          req.body.isNewArrival === true,
+          req.body.isNewArrival === 'true' || req.body.isNewArrival === true,
 
-        inStock:
-          req.body.inStock === 'true' ||
-          req.body.inStock === true,
+        inStock: req.body.inStock === 'true' || req.body.inStock === true,
 
-        isActive:
-          req.body.isActive === 'true' ||
-          req.body.isActive === true,
+        isActive: req.body.isActive === 'true' || req.body.isActive === true,
       });
 
       const { id } = req.params;
 
-      const product =
-        await this.productService.updateProduct(
-          id,
-          dto
-        );
+      const product = await this.productService.updateProduct(id, dto);
 
       logger.info('✅ Product updated', {
         productId: id,
@@ -300,8 +267,7 @@ createProduct = async (req: Request, res: Response) => {
 
       res.status(400).json({
         success: false,
-        message:
-          error.message || 'Failed to update product',
+        message: error.message || 'Failed to update product',
       });
     }
   };
@@ -311,10 +277,7 @@ createProduct = async (req: Request, res: Response) => {
    * DELETE PRODUCT
    * =========================================
    */
-  deleteProduct = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  deleteProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -335,8 +298,7 @@ createProduct = async (req: Request, res: Response) => {
 
       res.status(400).json({
         success: false,
-        message:
-          error.message || 'Failed to delete product',
+        message: error.message || 'Failed to delete product',
       });
     }
   };
@@ -346,13 +308,9 @@ createProduct = async (req: Request, res: Response) => {
    * FEATURED PRODUCTS
    * =========================================
    */
-  getFeaturedProducts = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getFeaturedProducts = async (req: Request, res: Response): Promise<void> => {
     try {
-      const products =
-        await this.productService.getFeaturedProducts();
+      const products = await this.productService.getFeaturedProducts();
 
       res.status(200).json({
         success: true,
@@ -375,13 +333,9 @@ createProduct = async (req: Request, res: Response) => {
    * HOT DEALS
    * =========================================
    */
-  getHotDeals = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getHotDeals = async (req: Request, res: Response): Promise<void> => {
     try {
-      const products =
-        await this.productService.getHotDeals();
+      const products = await this.productService.getHotDeals();
 
       res.status(200).json({
         success: true,
@@ -404,13 +358,9 @@ createProduct = async (req: Request, res: Response) => {
    * NEW ARRIVALS
    * =========================================
    */
-  getNewArrivals = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getNewArrivals = async (req: Request, res: Response): Promise<void> => {
     try {
-      const products =
-        await this.productService.getNewArrivals();
+      const products = await this.productService.getNewArrivals();
 
       res.status(200).json({
         success: true,

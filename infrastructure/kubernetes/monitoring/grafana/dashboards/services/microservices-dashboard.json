@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -35,13 +32,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "from": 1, "result": { "color": "green", "text": "UP" } }, "type": "range" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           },
@@ -54,13 +60,12 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "reduceOptions": { "calcs": ["lastNotNull"] }
       },
       "targets": [
         {
-          "expr": "max(flashstore_service_health{service=\"$service\"}) or on() vector(0)",
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\", deployment=\"$service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\", deployment=\"$service\"}",
+          "instant": true,
           "legendFormat": "Status",
           "refId": "A"
         }
@@ -73,11 +78,7 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "unit": "reqps",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "blue", "value": null }]
-          }
+          "unit": "reqps"
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
@@ -104,6 +105,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "unit": "percent",
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -111,8 +113,7 @@
               { "color": "orange", "value": 1 },
               { "color": "red", "value": 5 }
             ]
-          },
-          "max": 100
+          }
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
@@ -125,7 +126,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(rate(flashstore_http_requests_total{service=\"$service\",status=~\"5..\"}[$interval])) / sum(rate(flashstore_http_requests_total{service=\"$service\"}[$interval]))) * 100 or vector(0)",
+          "expr": "100 * (sum(rate(flashstore_http_requests_total{service=\"$service\", status=~\"5..\"}[$interval])) or vector(0)) / clamp_min(sum(rate(flashstore_http_requests_total{service=\"$service\"}[$interval])), 1e-9)",
           "legendFormat": "Error %",
           "refId": "A"
         }
@@ -185,12 +186,13 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=~\".*$service.*\"} == 1) or on() vector(0)",
-          "legendFormat": "Pods",
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\", deployment=\"$service\"} or vector(0)",
+          "instant": true,
+          "legendFormat": "Ready",
           "refId": "A"
         }
       ],
-      "title": "Active Pods",
+      "title": "Ready Pods",
       "type": "stat"
     },
     {
@@ -218,7 +220,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{pod=~\"$service.*\"}[1h])) or vector(0)",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"flashstore\", pod=~\"$service-.*\"}[1h])) or vector(0)",
           "legendFormat": "Restarts",
           "refId": "A"
         }
@@ -319,7 +321,7 @@
       "id": 9,
       "targets": [
         {
-          "expr": "(sum(rate(flashstore_http_requests_total{service=\"$service\",status=~\"5..\"}[$interval])) / sum(rate(flashstore_http_requests_total{service=\"$service\"}[$interval]))) * 100 or vector(0)",
+          "expr": "100 * (sum(rate(flashstore_http_requests_total{service=\"$service\", status=~\"5..\"}[$interval])) or vector(0)) / clamp_min(sum(rate(flashstore_http_requests_total{service=\"$service\"}[$interval])), 1e-9)",
           "legendFormat": "Error Rate %",
           "refId": "A"
         }
@@ -344,17 +346,17 @@
       "id": 10,
       "targets": [
         {
-          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\",status=~\"2..\"}[$interval])) or vector(0)",
+          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\", status=~\"2..\"}[$interval])) or vector(0)",
           "legendFormat": "2xx",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\",status=~\"4..\"}[$interval])) or vector(0)",
+          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\", status=~\"4..\"}[$interval])) or vector(0)",
           "legendFormat": "4xx",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\",status=~\"5..\"}[$interval])) or vector(0)",
+          "expr": "sum(rate(flashstore_http_requests_total{service=\"$service\", status=~\"5..\"}[$interval])) or vector(0)",
           "legendFormat": "5xx",
           "refId": "C"
         }
@@ -366,7 +368,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
       "id": 102,
-      "title": "Resources",
+      "title": "Resources (Requests — no cAdvisor yet)",
       "type": "row"
     },
     {
@@ -386,12 +388,12 @@
       "id": 11,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"$service.*\", container!=\"\", container!=\"POD\"}[$interval])) by (pod)",
+          "expr": "sum(kube_pod_container_resource_requests{namespace=\"flashstore\", resource=\"cpu\", pod=~\"$service-.*\"}) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage by Pod",
+      "title": "CPU Requests by Pod",
       "type": "timeseries"
     },
     {
@@ -411,12 +413,12 @@
       "id": 12,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{pod=~\"$service.*\", container!=\"\", container!=\"POD\"}) by (pod)",
+          "expr": "sum(kube_pod_container_resource_requests{namespace=\"flashstore\", resource=\"memory\", pod=~\"$service-.*\"}) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],
-      "title": "Memory Usage by Pod",
+      "title": "Memory Requests by Pod",
       "type": "timeseries"
     },
     {
@@ -463,7 +465,7 @@
       "id": 14,
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(flashstore_db_query_duration_seconds_bucket{service=\"$service\"}[$interval])) by (le, collection)) or vector(0)",
+          "expr": "histogram_quantile(0.95, sum(rate(flashstore_mongodb_query_duration_seconds_bucket{service=\"$service\"}[$interval])) by (le, collection)) or vector(0)",
           "legendFormat": "{{collection}}",
           "refId": "A"
         }
@@ -489,7 +491,7 @@
       },
       "targets": [
         {
-          "expr": "flashstore_http_requests_active{service=\"$service\"} or vector(0)",
+          "expr": "sum(flashstore_http_requests_active{service=\"$service\"}) or vector(0)",
           "legendFormat": "Active",
           "refId": "A"
         }
@@ -505,19 +507,15 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "user-service",
-          "value": "user-service"
-        },
+        "current": { "selected": true, "text": "gateway", "value": "gateway" },
         "hide": 0,
         "includeAll": false,
         "label": "Service",
         "multi": false,
         "name": "service",
         "options": [
-          { "selected": false, "text": "gateway", "value": "gateway" },
-          { "selected": true, "text": "user-service", "value": "user-service" },
+          { "selected": true, "text": "gateway", "value": "gateway" },
+          { "selected": false, "text": "user-service", "value": "user-service" },
           { "selected": false, "text": "catalog-service", "value": "catalog-service" },
           { "selected": false, "text": "cart-service", "value": "cart-service" },
           { "selected": false, "text": "order-service", "value": "order-service" },
@@ -534,11 +532,7 @@
         "auto": true,
         "auto_count": 30,
         "auto_min": "10s",
-        "current": {
-          "selected": true,
-          "text": "5m",
-          "value": "5m"
-        },
+        "current": { "selected": true, "text": "5m", "value": "5m" },
         "hide": 0,
         "label": "Interval",
         "name": "interval",
@@ -553,16 +547,11 @@
       }
     ]
   },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {
-    "refresh_intervals": ["10s", "30s", "1m", "5m"]
-  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["10s", "30s", "1m", "5m"] },
   "timezone": "browser",
   "title": "FlashStore Microservice Dashboard",
   "uid": "microservice-dashboard",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

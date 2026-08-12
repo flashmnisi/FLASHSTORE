@@ -18,14 +18,30 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "decimals": 2,
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DEGRADED" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "HEALTHY" } }, "type": "value" }
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 1,
+                "result": { "text": "HEALTHY", "color": "green" }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0.999,
+                "result": { "text": "DEGRADED", "color": "orange" }
+              }
+            }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "orange", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -41,8 +57,8 @@
       },
       "targets": [
         {
-          "expr": "(count(up{job=\"flashstore-services\"} == 1) == count(up{job=\"flashstore-services\"}))",
-          "legendFormat": "Status",
+          "expr": "sum(kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}) / sum(kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"})",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -57,6 +73,7 @@
           "unit": "percent",
           "min": 0,
           "max": 100,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -77,11 +94,12 @@
       },
       "targets": [
         {
-          "expr": "(sum(up{job=\"flashstore-services\"}) / count(up{job=\"flashstore-services\"})) * 100 or vector(0)",
+          "expr": "100 * sum(kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}) / sum(kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"})",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Service Availability %",
+      "title": "Replica Availability %",
       "type": "stat"
     },
     {
@@ -89,14 +107,14 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
               { "color": "red", "value": 1 }
             ]
-          },
-          "unit": "short"
+          }
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
@@ -109,11 +127,12 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=\"flashstore-services\"} == 0) or vector(0)",
+          "expr": "count(kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"} < kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}) or vector(0)",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Services Down",
+      "title": "Services Not Fully Ready",
       "type": "stat"
     },
     {
@@ -121,14 +140,14 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "green", "value": 10 }
+              { "color": "green", "value": 9 }
             ]
-          },
-          "unit": "short"
+          }
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
@@ -141,11 +160,12 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=\"flashstore-services\"} == 1) or vector(0)",
+          "expr": "count(kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"} == kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}) or vector(0)",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Healthy Services",
+      "title": "Fully Healthy Services",
       "type": "stat"
     },
     {
@@ -163,45 +183,35 @@
       },
       "targets": [
         {
-          "expr": "count(kube_pod_status_phase{namespace=\"flashstore\", phase=\"Running\"} == 1) or vector(0)",
+          "expr": "sum(kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"})",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Running Pods",
+      "title": "Ready Replicas",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "unit": "percent",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 5 }
-            ]
-          },
-          "max": 100
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
       "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
       "id": 6,
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
       "targets": [
         {
-          "expr": "(sum(rate(flashstore_http_requests_total{status=~\"5..\"}[5m])) / sum(rate(flashstore_http_requests_total[5m]))) * 100 or vector(0)",
+          "expr": "sum(kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"})",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Error Rate %",
+      "title": "Desired Replicas",
       "type": "stat"
     },
     {
@@ -217,13 +227,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -237,7 +256,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"gateway\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"gateway\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"gateway\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Gateway",
       "type": "stat"
     },
@@ -247,13 +272,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -267,7 +301,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"user-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"user-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"user-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "User Service",
       "type": "stat"
     },
@@ -277,13 +317,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -297,7 +346,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"catalog-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"catalog-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"catalog-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Catalog",
       "type": "stat"
     },
@@ -307,13 +362,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -327,7 +391,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"cart-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"cart-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"cart-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Cart",
       "type": "stat"
     },
@@ -337,13 +407,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -357,7 +436,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"order-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"order-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"order-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Order",
       "type": "stat"
     },
@@ -367,13 +452,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -387,7 +481,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"payment-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"payment-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"payment-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Payment",
       "type": "stat"
     },
@@ -397,13 +497,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -417,7 +526,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"notification-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"notification-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"notification-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Notification",
       "type": "stat"
     },
@@ -427,13 +542,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -447,7 +571,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"analytics-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"analytics-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"analytics-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Analytics",
       "type": "stat"
     },
@@ -457,13 +587,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -477,7 +616,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"inventory-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"inventory-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"inventory-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Inventory",
       "type": "stat"
     },
@@ -487,13 +632,22 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" } }, "type": "value" },
-            { "options": { "1": { "color": "green", "text": "UP" } }, "type": "value" }
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.01,
+                "to": 0.99,
+                "result": { "text": "DEGRADED", "color": "yellow" }
+              }
+            },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.01 },
               { "color": "green", "value": 1 }
             ]
           }
@@ -507,7 +661,13 @@
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
-      "targets": [{ "expr": "max(up{job=\"flashstore-services\", service=\"search-service\"})", "refId": "A" }],
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=\"search-service\"} / kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=\"search-service\"}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
       "title": "Search",
       "type": "stat"
     },
@@ -515,112 +675,54 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
       "id": 105,
-      "title": "Services Currently Down",
+      "title": "Replica Status Table",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "custom": {
-            "align": "auto",
-            "cellOptions": { "type": "auto" },
-            "inspect": false
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": { "color": "red", "text": "DOWN" }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null }
-            ]
-          }
-        }
-      },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 15 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 15 },
       "id": 40,
-      "options": {
-        "cellHeight": "sm",
-        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
-        "showHeader": true
-      },
+      "options": { "showHeader": true, "cellHeight": "sm" },
       "targets": [
         {
-          "expr": "up{job=\"flashstore-services\"} == 0",
+          "expr": "kube_deployment_spec_replicas{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "kube_deployment_status_replicas_ready{namespace=\"flashstore\",deployment=~\"gateway|user-service|catalog-service|cart-service|order-service|payment-service|notification-service|analytics-service|inventory-service|search-service\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
         }
       ],
-      "title": "Services Currently Down",
+      "title": "Desired vs Ready Replicas",
       "transformations": [
+        { "id": "merge", "options": {} },
         {
           "id": "organize",
           "options": {
             "excludeByName": {
               "Time": true,
               "__name__": true,
-              "app": true,
-              "app_kubernetes_io_component": true,
-              "app_kubernetes_io_name": true,
-              "app_kubernetes_io_part_of": true,
-              "instance": true,
+              "namespace": true,
               "job": true,
-              "namespace": true
+              "instance": true
             },
             "renameByName": {
-              "service": "Service",
-              "Value": "Status"
+              "deployment": "Service",
+              "Value #A": "Desired",
+              "Value #B": "Ready"
             }
           }
         }
       ],
       "type": "table"
     },
-    {
+     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
-      "id": 102,
-      "title": "Uptime by Service",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "unit": "short",
-          "min": 0,
-          "max": 1
-        }
-      },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
-      "id": 41,
-      "targets": [
-        {
-          "expr": "up{job=\"flashstore-services\"}",
-          "legendFormat": "{{service}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Service Uptime (1 = UP, 0 = DOWN)",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
       "id": 103,
       "title": "Traffic & Resources",
       "type": "row"
@@ -630,7 +732,7 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 31 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
       "id": 30,
       "targets": [
         {
@@ -647,11 +749,11 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "s" }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 31 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 33 },
       "id": 31,
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(flashstore_http_request_duration_seconds_bucket[5m])) by (le)) or vector(0)",
+          "expr": "histogram_quantile(0.95, sum(rate(flashstore_http_request_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "p95",
           "refId": "A"
         }
@@ -664,7 +766,7 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "percent" }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 31 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 33 },
       "id": 32,
       "targets": [
         {
@@ -681,14 +783,19 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 },
       "id": 33,
       "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"flashstore\", container!=\"\", container!=\"POD\"}[5m])) by (pod)",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
+      {
+    "expr": "sum(kube_pod_container_resource_requests{namespace=\"flashstore\", resource=\"cpu\"}) by (pod)",
+    "legendFormat": "{{pod}} req",
+    "refId": "A"
+  },
+  {
+    "expr": "sum(kube_pod_container_resource_limits{namespace=\"flashstore\", resource=\"cpu\"}) by (pod)",
+    "legendFormat": "{{pod}} lim",
+    "refId": "B"
+  }
       ],
       "title": "CPU by Pod (flashstore)",
       "type": "timeseries"
@@ -698,14 +805,19 @@
       "fieldConfig": {
         "defaults": { "color": { "mode": "palette-classic" }, "unit": "bytes" }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 },
       "id": 34,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"flashstore\", container!=\"\", container!=\"POD\"}) by (pod)",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
+    "expr": "sum(kube_pod_container_resource_requests{namespace=\"flashstore\", resource=\"memory\"}) by (pod)",
+    "legendFormat": "{{pod}} req",
+    "refId": "A"
+  },
+  {
+    "expr": "sum(kube_pod_container_resource_limits{namespace=\"flashstore\", resource=\"memory\"}) by (pod)",
+    "legendFormat": "{{pod}} lim",
+    "refId": "B"
+  }
       ],
       "title": "Memory by Pod (flashstore)",
       "type": "timeseries"
@@ -720,5 +832,5 @@
   "timezone": "browser",
   "title": "FlashStore System Health",
   "uid": "flashstore-system-health",
-  "version": 2
+  "version": 9
 }

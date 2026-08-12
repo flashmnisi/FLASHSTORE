@@ -5,6 +5,11 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { userService, authService, addressService } from '../../container';
 import { CreateUserDto } from '../../application/dtos/create-user.dto';
+import {
+  userRegistrationsTotal,
+  userLoginsTotal,
+  userLoginFailuresTotal,
+} from '@org/shared-metrics';
 
 /**
  * User Controller - Thin layer that delegates to services
@@ -18,10 +23,13 @@ export const userController = {
     try {
       const createUserDto = req.body as CreateUserDto;
 
-      // ✅ This returns { user, accessToken, refreshToken }
       const result = await userService.register(createUserDto);
-
       const { user, accessToken, refreshToken } = result;
+
+      // Business metric — only after successful registration
+      userRegistrationsTotal.inc({
+        service: 'user-service',
+      });
 
       logger.info('User registered successfully', {
         userId: user.id,
@@ -61,6 +69,11 @@ export const userController = {
     try {
       const result = await authService.login(req.body);
 
+      // Business metric — only after successful login
+      userLoginsTotal.inc({
+        service: 'user-service',
+      });
+
       return res.status(200).json({
         success: true,
         message: 'Login successful',
@@ -74,7 +87,13 @@ export const userController = {
         },
       });
     } catch (error: any) {
+      // Business metric — failed login
+      userLoginFailuresTotal.inc({
+        service: 'user-service',
+      });
+
       logger.error('Login failed', { error: error.message });
+
       return res.status(401).json({
         success: false,
         message: error.message || 'Invalid credentials',
@@ -189,9 +208,6 @@ export const userController = {
 
   // ====================== ADDRESS ROUTES ======================
 
-  /**
-   * Get all addresses
-   */
   async getAddresses(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
@@ -219,9 +235,6 @@ export const userController = {
     }
   },
 
-  /**
-   * Add new address
-   */
   async addAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
@@ -250,9 +263,6 @@ export const userController = {
     }
   },
 
-  /**
-   * Update address by index
-   */
   async updateAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {
@@ -295,9 +305,6 @@ export const userController = {
     }
   },
 
-  /**
-   * Delete address by index
-   */
   async deleteAddress(req: AuthRequest, res: Response) {
     try {
       if (!req.user?.userId) {

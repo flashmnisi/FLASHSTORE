@@ -127,7 +127,7 @@ export const productViewsTotal = new Counter({
   help: 'Product views',
   labelNames: ['service', 'productId', 'category'],
   registers: [register],
-});
+}); 
 
 /**
  * Shopping carts created.

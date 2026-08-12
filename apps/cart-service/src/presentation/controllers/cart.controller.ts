@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CartService } from '../../application/services/cart.service';
 import logger from '@org/shared-logger';
+import { checkoutsTotal } from '@org/shared-metrics';
 
 export class CartController {
   constructor(private readonly cartService: CartService) {}
@@ -8,6 +9,7 @@ export class CartController {
   // =============================
   // 🛒 ADD TO CART
   // =============================
+  
   addToCart = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.userId;
@@ -178,6 +180,11 @@ export class CartController {
       const result = await this.cartService.checkout({
         ...req.body,
         userId,
+      });
+
+      // Business metric — only after successful checkout
+      checkoutsTotal.inc({
+        service: 'cart-service',
       });
 
       res.status(200).json({

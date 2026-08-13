@@ -13,6 +13,7 @@ import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 
 import logger from '@org/shared-logger';
 import { EVENTS, TOPICS } from '@org/shared-kafka';
+import { emailsSentTotal } from '@org/shared-metrics';
 
 export class NotificationService {
   constructor(
@@ -103,6 +104,10 @@ export class NotificationService {
 
       // ====================== PUBLISH OUTBOX EVENT ======================
       await this.publishNotificationEvent(saved, sendSuccess, dto);
+       // Business metric — once, after successful create
+    emailsSentTotal.inc({
+      service: 'notification-service',
+    });
 
       if (sendSuccess) {
         logger.info('✅ Notification sent successfully', {

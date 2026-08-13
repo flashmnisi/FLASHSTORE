@@ -4,7 +4,6 @@ import { Request, Response } from 'express';
 import { ProductService } from '../../application/services/product.service';
 import { validators } from '../../utils/validators';
 import logger from '@org/shared-logger';
-import { productViewsTotal } from '@org/shared-metrics';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -99,12 +98,6 @@ export class ProductController {
       const { id } = req.params;
 
       const product = await this.productService.getProductById(id);
-
-      productViewsTotal.inc({
-      service: 'catalog-service',
-      productId: product.id ?? id,
-      category: product.categoryId ?? 'unknown',
-    });
 
       res.status(200).json({
         success: true,

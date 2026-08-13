@@ -7,6 +7,7 @@ import { ReserveStockDto } from '../dtos/reserve-stock.dto';
 import { ReleaseStockDto } from '../dtos/release-stock.dto';
 
 import logger from '@org/shared-logger';
+import { inventoryUpdatesTotal } from '@org/shared-metrics';
 
 export class ReservationService {
   constructor(
@@ -17,6 +18,11 @@ export class ReservationService {
   async reserveStock(dto: ReserveStockDto) {
     try {
       const result = await this.reserveStockUseCase.execute(dto);
+
+      inventoryUpdatesTotal.inc({
+        service: 'inventory-service',
+        operation: 'reserve',
+      });
 
       logger.info('✅ Stock reserved successfully', {
         productId: dto.productId,
@@ -39,6 +45,11 @@ export class ReservationService {
   async releaseStock(dto: ReleaseStockDto) {
     try {
       const result = await this.releaseStockUseCase.execute(dto);
+
+      inventoryUpdatesTotal.inc({
+        service: 'inventory-service',
+        operation: 'release',
+      });
 
       logger.info('✅ Stock released successfully', {
         productId: dto.productId,

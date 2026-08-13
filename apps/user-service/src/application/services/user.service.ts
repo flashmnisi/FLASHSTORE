@@ -11,6 +11,7 @@ import { AppError } from '../../middlewares/error.middleware';
 import logger from '@org/shared-logger';
 import { UserEntity } from '../../domain/entities/user.entities';
 import { TOPICS, EVENTS } from '@org/shared-kafka';
+import { userRegistrationsTotal } from '@org/shared-metrics';
 
 export class UserService {
   constructor(
@@ -40,6 +41,11 @@ export class UserService {
         role: createdUser.role,
       },
       key: createdUser.id,
+    });
+
+    // Business metric — once, after successful create
+    userRegistrationsTotal.inc({
+      service: 'user-service',
     });
 
     // Generate tokens

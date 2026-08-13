@@ -1,3 +1,5 @@
+// libs/shared-metrics/src/registry.ts
+
 import {
   Registry,
   collectDefaultMetrics,

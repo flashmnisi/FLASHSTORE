@@ -4,7 +4,6 @@ import { Request, Response } from 'express';
 import { PaymentService } from '../../application/services/payment.service';
 import { validators } from '../../utils/validators';
 import logger from '@org/shared-logger';
-import { paymentsTotal } from '@org/shared-metrics';
 
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
@@ -17,13 +16,6 @@ export class PaymentController {
       const validated = validators.processPayment.parse(req.body);
 
       const result = await this.paymentService.processPayment(validated);
-
-     // Business metric — only after payment processing succeeds
-    paymentsTotal.inc({
-      service: 'payment-service',
-      provider: 'stripe',
-      status: result.status ?? 'initiated',
-    });
 
       return res.status(201).json({
         success: true,

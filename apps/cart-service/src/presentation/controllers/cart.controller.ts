@@ -9,7 +9,7 @@ export class CartController {
   // =============================
   // 🛒 ADD TO CART
   // =============================
-  
+
   addToCart = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.userId;

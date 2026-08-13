@@ -1,7 +1,5 @@
 {
-  "annotations": {
-    "list": []
-  },
+  "annotations": { "list": [] },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -19,8 +17,14 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "currencyUSD"
+          "color": { "mode": "thresholds" },
+          "unit": "currencyZAR",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
@@ -33,7 +37,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(revenue_total[1d])) or vector(0)",
+          "expr": "sum(increase(flashstore_revenue_total[1d])) or vector(0)",
           "legendFormat": "Today",
           "refId": "A"
         }
@@ -44,10 +48,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "currencyUSD"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
       },
       "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
       "id": 2,
@@ -59,8 +60,8 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(revenue_total[7d])) or vector(0)",
-          "legendFormat": "This Week",
+          "expr": "sum(increase(flashstore_revenue_total[7d])) or vector(0)",
+          "legendFormat": "Week",
           "refId": "A"
         }
       ],
@@ -70,10 +71,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "currencyUSD"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
       },
       "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
       "id": 3,
@@ -85,8 +83,8 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(revenue_total[30d])) or vector(0)",
-          "legendFormat": "This Month",
+          "expr": "sum(increase(flashstore_revenue_total[30d])) or vector(0)",
+          "legendFormat": "Month",
           "refId": "A"
         }
       ],
@@ -96,10 +94,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "short"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
       "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
       "id": 4,
@@ -111,7 +106,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(orders_total[1d])) or vector(0)",
+          "expr": "sum(increase(flashstore_orders_created_total[1d])) or vector(0)",
           "legendFormat": "Orders",
           "refId": "A"
         }
@@ -122,10 +117,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "currencyUSD"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
       },
       "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
       "id": 5,
@@ -137,7 +129,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(revenue_total[1d])) / sum(increase(orders_total[1d])) or vector(0)",
+          "expr": "sum(increase(flashstore_revenue_total[1d])) / clamp_min(sum(increase(flashstore_orders_completed_total[1d])) or sum(increase(flashstore_orders_created_total[1d])), 1) or vector(0)",
           "legendFormat": "AOV",
           "refId": "A"
         }
@@ -151,7 +143,9 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "unit": "percent",
+          "max": 100,
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
               { "color": "orange", "value": 70 },
@@ -170,7 +164,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(increase(payments_successful_total[1d])) / sum(increase(payments_total[1d]))) * 100 or vector(0)",
+          "expr": "100 * sum(increase(flashstore_payments_total{status=\"succeeded\"}[1d])) / clamp_min(sum(increase(flashstore_payments_total{status=~\"succeeded|failed\"}[1d])), 1) or vector(0)",
           "legendFormat": "Success %",
           "refId": "A"
         }
@@ -182,7 +176,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
       "id": 101,
-      "title": "Customers & Orders",
+      "title": "Trends",
       "type": "row"
     },
     {
@@ -190,24 +184,20 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          },
-          "unit": "currencyUSD"
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 },
+          "unit": "currencyZAR"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "id": 10,
       "targets": [
         {
-          "expr": "sum(increase(revenue_total[1d]))",
-          "legendFormat": "Daily Revenue",
+          "expr": "sum(increase(flashstore_revenue_total[1h])) or vector(0)",
+          "legendFormat": "Revenue",
           "refId": "A"
         }
       ],
-      "title": "Daily Revenue",
+      "title": "Revenue Over Time",
       "type": "timeseries"
     },
     {
@@ -215,20 +205,27 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 },
+          "unit": "short"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "id": 11,
       "targets": [
         {
-          "expr": "sum(increase(orders_total[1d]))",
-          "legendFormat": "Orders per Day",
+          "expr": "sum(increase(flashstore_orders_created_total[1h])) or vector(0)",
+          "legendFormat": "Created",
           "refId": "A"
+        },
+        {
+          "expr": "sum(increase(flashstore_orders_completed_total[1h])) or vector(0)",
+          "legendFormat": "Completed",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(increase(flashstore_orders_cancelled_total[1h])) or vector(0)",
+          "legendFormat": "Cancelled",
+          "refId": "C"
         }
       ],
       "title": "Orders Over Time",
@@ -239,23 +236,25 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 },
+          "unit": "short"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "id": 12,
       "targets": [
         {
-          "expr": "sum(increase(users_registered_total[1d]))",
-          "legendFormat": "New Users",
+          "expr": "sum(increase(flashstore_users_registered_total[1h])) or vector(0)",
+          "legendFormat": "Registrations",
           "refId": "A"
+        },
+        {
+          "expr": "sum(increase(flashstore_user_logins_total[1h])) or vector(0)",
+          "legendFormat": "Logins",
+          "refId": "B"
         }
       ],
-      "title": "New User Registrations",
+      "title": "Users: Registrations & Logins",
       "type": "timeseries"
     },
     {
@@ -263,44 +262,43 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
       "id": 13,
       "targets": [
         {
-          "expr": "sum(increase(payments_successful_total[5m]))",
-          "legendFormat": "Successful",
+          "expr": "sum(increase(flashstore_payments_total{status=\"succeeded\"}[1h])) or vector(0)",
+          "legendFormat": "Succeeded",
           "refId": "A"
         },
         {
-          "expr": "sum(increase(payments_failed_total[5m]))",
+          "expr": "sum(increase(flashstore_payments_total{status=\"failed\"}[1h])) or vector(0)",
           "legendFormat": "Failed",
           "refId": "B"
+        },
+        {
+          "expr": "sum(increase(flashstore_payments_total{status=\"initiated\"}[1h])) or vector(0)",
+          "legendFormat": "Initiated",
+          "refId": "C"
         }
       ],
-      "title": "Payments Success vs Failed",
+      "title": "Payments by Status",
       "type": "timeseries"
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
       "id": 102,
-      "title": "Inventory & Products",
+      "title": "Inventory & Users",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "short"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 23 },
       "id": 20,
@@ -312,12 +310,12 @@
       },
       "targets": [
         {
-          "expr": "sum(products_total) or vector(0)",
+          "expr": "sum(flashstore_inventory_products) or vector(0)",
           "legendFormat": "Products",
           "refId": "A"
         }
       ],
-      "title": "Total Products",
+      "title": "Total Products (inventory)",
       "type": "stat"
     },
     {
@@ -326,6 +324,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
               { "color": "orange", "value": 5 },
@@ -344,8 +343,8 @@
       },
       "targets": [
         {
-          "expr": "sum(products_out_of_stock) or vector(0)",
-          "legendFormat": "Out of Stock",
+          "expr": "sum(flashstore_inventory_out_of_stock) or vector(0)",
+          "legendFormat": "OOS",
           "refId": "A"
         }
       ],
@@ -358,6 +357,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
               { "color": "orange", "value": 10 },
@@ -376,8 +376,8 @@
       },
       "targets": [
         {
-          "expr": "sum(products_low_stock) or vector(0)",
-          "legendFormat": "Low Stock",
+          "expr": "sum(flashstore_inventory_low_stock) or vector(0)",
+          "legendFormat": "Low",
           "refId": "A"
         }
       ],
@@ -387,10 +387,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "short"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 23 },
       "id": 23,
@@ -402,8 +399,8 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(users_registered_total[1d])) or vector(0)",
-          "legendFormat": "New Users",
+          "expr": "sum(increase(flashstore_users_registered_total[1d])) or vector(0)",
+          "legendFormat": "New users",
           "refId": "A"
         }
       ],
@@ -414,7 +411,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
       "id": 103,
-      "title": "Key Business KPIs",
+      "title": "Funnel & Cart",
       "type": "row"
     },
     {
@@ -423,7 +420,9 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "unit": "percent",
+          "max": 100,
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
               { "color": "orange", "value": 2 },
@@ -442,12 +441,12 @@
       },
       "targets": [
         {
-          "expr": "(sum(increase(orders_total[1d])) / sum(increase(visitors_total[1d]))) * 100 or vector(0)",
-          "legendFormat": "Conversion",
+          "expr": "100 * sum(increase(flashstore_orders_created_total[1d])) / clamp_min(sum(increase(flashstore_product_views_total[1d])), 1) or vector(0)",
+          "legendFormat": "View→Order %",
           "refId": "A"
         }
       ],
-      "title": "Conversion Rate",
+      "title": "Conversion (Views → Orders)",
       "type": "stat"
     },
     {
@@ -456,7 +455,9 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "unit": "percent",
+          "max": 100,
           "thresholds": {
+            "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
               { "color": "orange", "value": 40 },
@@ -475,8 +476,8 @@
       },
       "targets": [
         {
-          "expr": "(sum(increase(carts_abandoned_total[1d])) / sum(increase(carts_created_total[1d]))) * 100 or vector(0)",
-          "legendFormat": "Abandonment",
+          "expr": "100 * sum(increase(flashstore_carts_abandoned_total[1d])) / clamp_min(sum(increase(flashstore_carts_created_total[1d])), 1) or vector(0)",
+          "legendFormat": "Abandon %",
           "refId": "A"
         }
       ],
@@ -486,10 +487,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "short"
-        }
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }
       },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 28 },
       "id": 32,
@@ -501,55 +499,106 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(order_items_total[1d])) / sum(increase(orders_total[1d])) or vector(0)",
-          "legendFormat": "Basket Size",
+          "expr": "sum(increase(flashstore_checkouts_total[1d])) or vector(0)",
+          "legendFormat": "Checkouts",
           "refId": "A"
         }
       ],
-      "title": "Average Basket Size",
+      "title": "Checkouts Today",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "percent"
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 80 },
+              { "color": "green", "value": 95 }
+            ]
+          }
         }
       },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 28 },
       "id": 33,
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": { "calcs": ["lastNotNull"] }
       },
       "targets": [
         {
-          "expr": "(sum(increase(returning_customers_total[7d])) / sum(increase(customers_total[7d]))) * 100 or vector(0)",
-          "legendFormat": "Repeat Rate",
+          "expr": "100 * sum(increase(flashstore_user_logins_total[1d])) / clamp_min(sum(increase(flashstore_user_logins_total[1d])) + sum(increase(flashstore_user_login_failures_total[1d])), 1) or vector(0)",
+          "legendFormat": "Login success",
           "refId": "A"
         }
       ],
-      "title": "Repeat Customer Rate",
+      "title": "Login Success %",
       "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "Funnel Volume (24h)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 70 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 33 },
+      "id": 40,
+      "targets": [
+        {
+          "expr": "sum(increase(flashstore_product_views_total[1d])) or vector(0)",
+          "legendFormat": "Product views",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(flashstore_carts_created_total[1d])) or vector(0)",
+          "legendFormat": "Carts created",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(increase(flashstore_checkouts_total[1d])) or vector(0)",
+          "legendFormat": "Checkouts",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(increase(flashstore_orders_created_total[1d])) or vector(0)",
+          "legendFormat": "Orders",
+          "refId": "D"
+        },
+        {
+          "expr": "sum(increase(flashstore_payments_total{status=\"succeeded\"}[1d])) or vector(0)",
+          "legendFormat": "Payments succeeded",
+          "refId": "E"
+        }
+      ],
+      "title": "Conversion Funnel (last 24h totals)",
+      "type": "timeseries"
     }
   ],
   "refresh": "1m",
   "schemaVersion": 39,
   "style": "dark",
-  "tags": ["business", "metrics", "ceo", "flashstore"],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-7d",
-    "to": "now"
-  },
-  "timepicker": {},
+  "tags": ["business", "flashstore", "ceo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-7d", "to": "now" },
   "timezone": "browser",
-  "title": "Business Metrics",
+  "title": "FlashStore Business Metrics",
   "uid": "business-metrics",
-  "version": 1
+  "version": 2
 }

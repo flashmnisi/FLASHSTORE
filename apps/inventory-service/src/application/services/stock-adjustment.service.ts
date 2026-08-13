@@ -5,6 +5,7 @@ import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 
 import logger from '@org/shared-logger';
 import { EVENTS, TOPICS } from '@org/shared-kafka';
+import { inventoryUpdatesTotal } from '@org/shared-metrics';
 
 export class StockAdjustmentService {
   constructor(
@@ -61,6 +62,12 @@ export class StockAdjustmentService {
           timestamp: new Date().toISOString(),
         },
       });
+
+      // after successful update:
+inventoryUpdatesTotal.inc({
+  service: 'inventory-service',
+  operation: data.quantity > 0 ? 'add' : 'adjust_deduct',
+});
 
       logger.info('📊 Stock adjustment completed and queued', {
         productId: data.productId,

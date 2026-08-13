@@ -2,14 +2,21 @@
 
 import { IInventoryRepository } from '../interfaces/inventory.repository';
 import { OutboxService } from '../../infrastructure/outbox/outbox.service';
-
 import logger from '@org/shared-logger';
 import { EVENTS, TOPICS } from '@org/shared-kafka';
+import {
+  inventoryUpdatesTotal,
+  inventoryProductsGauge,
+  inventoryOutOfStockGauge,
+  inventoryLowStockGauge,
+} from '@org/shared-metrics';
+
+const LOW_STOCK_THRESHOLD = 10;
 
 export class InventoryService {
   constructor(
     private readonly inventoryRepository: IInventoryRepository,
-    private readonly outboxService: OutboxService    
+    private readonly outboxService: OutboxService
   ) {}
 
   async getInventory(productId: string) {
@@ -17,16 +24,16 @@ export class InventoryService {
   }
 
   async getInventoryByWarehouse(productId: string, warehouseId: string) {
-    return this.inventoryRepository.findByProductAndWarehouse(productId, warehouseId);
+    return this.inventoryRepository.findByProductAndWarehouse(
+      productId,
+      warehouseId
+    );
   }
 
-  async getLowStock(threshold = 10) {
+  async getLowStock(threshold = LOW_STOCK_THRESHOLD) {
     return this.inventoryRepository.findLowStock(threshold);
   }
 
-  /**
-   * Deduct stock after successful payment/order
-   */
   async deductStock(data: {
     productId: string;
     warehouseId: string;
@@ -35,20 +42,29 @@ export class InventoryService {
     reason?: string;
   }) {
     try {
-      const inventory = await this.inventoryRepository.findByProductAndWarehouse(
-        data.productId,
-        data.warehouseId
-      );
+      const inventory =
+        await this.inventoryRepository.findByProductAndWarehouse(
+          data.productId,
+          data.warehouseId
+        );
 
       if (!inventory) {
-        throw new Error(`Inventory record not found for product ${data.productId}`);
+        throw new Error(
+          `Inventory record not found for product ${data.productId}`
+        );
       }
 
       inventory.deduct(data.quantity);
-
       const updated = await this.inventoryRepository.update(inventory);
 
-      // Publish to Outbox
+      inventoryUpdatesTotal.inc({
+        service: 'inventory-service',
+        operation: 'deduct',
+      });
+
+      // Refresh gauges if repository supports listing all records
+      await this.refreshInventoryGauges();
+
       await this.outboxService.write({
         topic: TOPICS.INVENTORY,
         event: EVENTS.STOCK_DEDUCTED,
@@ -78,6 +94,41 @@ export class InventoryService {
         error: error.message,
       });
       throw error;
+    }
+  }
+
+  /**
+   * Call after stock mutations. Requires repository.findAll() or similar.
+   * If you don't have findAll yet, skip gauges and only use the counter.
+   */
+  private async refreshInventoryGauges() {
+    try {
+      // Adjust to your repository API, e.g. findAll() / listAll()
+      const all =
+        typeof (this.inventoryRepository as any).findAll === 'function'
+          ? await (this.inventoryRepository as any).findAll()
+          : null;
+
+      if (!all || !Array.isArray(all)) {
+        return;
+      }
+
+      const total = all.length;
+      const outOfStock = all.filter(
+        (i: any) => (i.availableStock ?? i.quantity ?? 0) <= 0
+      ).length;
+      const lowStock = all.filter((i: any) => {
+        const stock = i.availableStock ?? i.quantity ?? 0;
+        return stock > 0 && stock <= LOW_STOCK_THRESHOLD;
+      }).length;
+
+      inventoryProductsGauge.set({ service: 'inventory-service' }, total);
+      inventoryOutOfStockGauge.set({ service: 'inventory-service' }, outOfStock);
+      inventoryLowStockGauge.set({ service: 'inventory-service' }, lowStock);
+    } catch (error: any) {
+      logger.warn('Could not refresh inventory gauges', {
+        error: error.message,
+      });
     }
   }
 }

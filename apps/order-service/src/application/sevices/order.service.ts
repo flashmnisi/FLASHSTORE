@@ -6,11 +6,15 @@ import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 import { EVENTS, idempotencyService, TOPICS } from '@org/shared-kafka';
 import { CreateOrderDto } from '../dtos/create-order.dto';
 import logger from '@org/shared-logger';
-
 import {
   createOrderCreatedEvent,
   createOrderStatusUpdatedEvent,
 } from '../../domain/events/order.events';
+import {
+  ordersCreatedTotal,
+  ordersCompletedTotal,
+  ordersCancelledTotal,
+} from '@org/shared-metrics';
 
 export class OrderService {
   constructor(
@@ -18,11 +22,6 @@ export class OrderService {
     private readonly outboxService: OutboxService
   ) {}
 
-  /**
-   * =============================
-   * 🟢 CREATE ORDER
-   * =============================
-   */
   async createOrder(dto: CreateOrderDto, context?: { correlationId?: string }) {
     try {
       logger.info('Creating new order', {
@@ -40,12 +39,11 @@ export class OrderService {
         throw new Error('Duplicate order request');
       }
 
-      // Create order entity with items
       const order = new OrderEntity(
         '',
         dto.userId,
         dto.items as OrderItem[],
-        0, // temporary total
+        0,
         dto.idempotencyKey,
         dto.currency || 'ZAR',
         'pending',
@@ -56,22 +54,25 @@ export class OrderService {
       const shippingPrice = dto.shippingPrice || 0;
       order.totalAmount = itemsTotal + shippingPrice;
 
-      // Save to database
       const savedOrder = await this.repository.create(order);
+
+      // Business metric — after successful DB create
+      ordersCreatedTotal.inc({
+        service: 'order-service',
+        status: savedOrder.status || 'pending',
+      });
 
       const orderCreatedEvent = createOrderCreatedEvent({
         orderId: savedOrder.id,
         userId: savedOrder.userId,
         userEmail: dto.userEmail,
         customerName: dto.customerName || dto.shippingAddress?.name,
-
         items: savedOrder.items.map((item) => ({
           productId: item.productId,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
         })),
-
         itemsTotal,
         shippingPrice,
         totalAmount: savedOrder.totalAmount,
@@ -79,7 +80,6 @@ export class OrderService {
         shippingAddress: dto.shippingAddress,
       });
 
-      // Write to outbox
       await this.outboxService.write({
         topic: TOPICS.ORDERS,
         event: EVENTS.ORDER_CREATED,
@@ -105,11 +105,6 @@ export class OrderService {
     }
   }
 
-  /**
-   * =============================
-   * 💳 HANDLE PAYMENT SUCCESS
-   * =============================
-   */
   async handlePaymentCompleted(event: any) {
     try {
       const { orderId, paymentId } = event.data;
@@ -132,8 +127,12 @@ export class OrderService {
 
       const previousStatus = order.status;
       order.confirmOrder();
-
       await this.repository.update(order);
+
+      // Business metric — order completed
+      ordersCompletedTotal.inc({
+        service: 'order-service',
+      });
 
       const statusUpdatedEvent = createOrderStatusUpdatedEvent({
         orderId: order.id,
@@ -142,7 +141,6 @@ export class OrderService {
         newStatus: order.status,
       });
 
-      // ✅ Use OutboxService
       await this.outboxService.write({
         topic: TOPICS.ORDERS,
         event: statusUpdatedEvent.event,
@@ -163,11 +161,6 @@ export class OrderService {
     }
   }
 
-  /**
-   * =============================
-   * ❌ HANDLE PAYMENT FAILURE
-   * =============================
-   */
   async handlePaymentFailed(event: any) {
     try {
       const { orderId, paymentId } = event.data;
@@ -190,8 +183,13 @@ export class OrderService {
 
       const previousStatus = order.status;
       order.cancelOrder();
-
       await this.repository.update(order);
+
+      // Business metric — order cancelled
+      ordersCancelledTotal.inc({
+        service: 'order-service',
+        reason: 'payment_failed',
+      });
 
       const statusUpdatedEvent = createOrderStatusUpdatedEvent({
         orderId: order.id,
@@ -200,7 +198,6 @@ export class OrderService {
         newStatus: order.status,
       });
 
-      // ✅ Use OutboxService
       await this.outboxService.write({
         topic: TOPICS.ORDERS,
         event: statusUpdatedEvent.event,
@@ -221,26 +218,12 @@ export class OrderService {
     }
   }
 
-  /**
-   * =============================
-   * GET ORDER BY ID
-   * =============================
-   */
   async getOrderById(orderId: string) {
     const order = await this.repository.findById(orderId);
-
-    if (!order) {
-      throw new Error('Order not found');
-    }
-
+    if (!order) throw new Error('Order not found');
     return order;
   }
 
-  /**
-   * =============================
-   * GET USER ORDERS
-   * =============================
-   */
   async getOrdersByUser(userId: string) {
     return this.repository.findByUserId(userId);
   }

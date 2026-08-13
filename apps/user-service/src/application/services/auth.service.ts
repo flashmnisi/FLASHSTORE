@@ -7,6 +7,7 @@ import { OutboxService } from '../../infrastructure/outbox/outbox.service';
 import { AppError } from '../../middlewares/error.middleware';
 import { UserEntity } from '../../domain/entities/user.entities';
 import { TOPICS, EVENTS } from '@org/shared-kafka';
+import { userLoginsTotal, userLoginFailuresTotal } from '@org/shared-metrics';
 
 export class AuthService {
   constructor(
@@ -43,6 +44,9 @@ export class AuthService {
     const user = await this.userRepository.findByEmail(dto.email);
 
     if (!user) {
+      userLoginFailuresTotal.inc({
+        service: 'user-service',
+      });
       throw new AppError('Invalid email or password', 401);
     }
 
@@ -58,6 +62,10 @@ export class AuthService {
         name: user.name,
         loggedInAt: new Date().toISOString(),
       },
+    });
+
+    userLoginsTotal.inc({
+      service: 'user-service',
     });
 
     logger.info('User logged in successfully', {
@@ -76,7 +84,7 @@ export class AuthService {
    * LOGOUT
    */
   async logout(userId: string): Promise<void> {
-    await this.userRepository.clearRefreshToken(userId); 
+    await this.userRepository.clearRefreshToken(userId);
     logger.info('User logged out successfully', { userId });
   }
 

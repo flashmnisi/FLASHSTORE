@@ -5,7 +5,6 @@ import { createOrderSchema } from '../../application/dtos/create-order.dto';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { OrderService } from '../../application/sevices/order.service';
 import logger from '@org/shared-logger';
-import { ordersCreatedTotal } from '@org/shared-metrics';
 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -40,12 +39,6 @@ export class OrderController {
 
       const order = await this.orderService.createOrder(dto, {
         correlationId: req.id,
-      });
-
-      // Business metric — only after successful create
-      ordersCreatedTotal.inc({
-        service: 'order-service',
-        status: order.status ?? 'created',
       });
 
       return res.status(201).json({

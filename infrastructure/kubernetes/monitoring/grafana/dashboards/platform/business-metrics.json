@@ -21,9 +21,7 @@
           "unit": "currencyZAR",
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              { "color": "blue", "value": null }
-            ]
+            "steps": [{ "color": "blue", "value": null }]
           }
         }
       },
@@ -48,7 +46,10 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "currencyZAR"
+        }
       },
       "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
       "id": 2,
@@ -71,7 +72,10 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "currencyZAR"
+        }
       },
       "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
       "id": 3,
@@ -117,7 +121,10 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "palette-classic" }, "unit": "currencyZAR" }
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "currencyZAR"
+        }
       },
       "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
       "id": 5,
@@ -262,7 +269,11 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": { "mode": "normal" }
+          },
           "unit": "short"
         }
       },
@@ -534,7 +545,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(increase(flashstore_user_logins_total[1d])) / clamp_min(sum(increase(flashstore_user_logins_total[1d])) + sum(increase(flashstore_user_login_failures_total[1d])), 1) or vector(0)",
+          "expr": "100 * sum(increase(flashstore_user_logins_total[24h])) / clamp_min(sum(increase(flashstore_user_logins_total[24h])) + (sum(increase(flashstore_user_login_failures_total[24h])) or vector(0)), 1)",
           "legendFormat": "Login success",
           "refId": "A"
         }

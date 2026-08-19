@@ -15,6 +15,9 @@ resources:
   - alertmanager
   - node-exporter
   - kube-state-metrics
+  - loki
+  - alloy
+  - tempo
 
 labels:
   - pairs:

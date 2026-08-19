@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - pvc.yaml
+  - networkpolicy.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: tempo
+      app.kubernetes.io/instance: flashstore
+      app.kubernetes.io/version: "2.8.1"
+      app.kubernetes.io/component: tracing
+      app.kubernetes.io/part-of: flashstore
+      app.kubernetes.io/managed-by: kubectl

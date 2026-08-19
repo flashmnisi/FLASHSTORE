@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: tempo
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/version: "2.8.1"
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: tempo
+      app.kubernetes.io/instance: flashstore
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+
+    # Grafana querying Tempo
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+      ports:
+        - protocol: TCP
+          port: 3200
+
+    # OpenTelemetry Collector sending traces
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+      ports:
+        - protocol: TCP
+          port: 4317
+
+        - protocol: TCP
+          port: 4318
+
+  egress:
+
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+
+      ports:
+        - protocol: UDP
+          port: 53
+
+        - protocol: TCP
+          port: 53

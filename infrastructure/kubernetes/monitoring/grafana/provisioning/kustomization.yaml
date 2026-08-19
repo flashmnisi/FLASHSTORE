@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - dashboard-provider.yaml
-  - dashboard-configmap.yaml
 
 labels:
   - pairs:

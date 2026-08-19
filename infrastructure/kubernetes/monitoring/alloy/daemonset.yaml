@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+      app.kubernetes.io/instance: flashstore
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alloy
+        app.kubernetes.io/instance: flashstore
+        app.kubernetes.io/component: logging
+        app.kubernetes.io/part-of: flashstore
+
+    spec:
+      serviceAccountName: alloy
+
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.7.1
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - run
+            - /etc/alloy/config.alloy
+            - --storage.path=/var/lib/alloy/data
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --stability.level=generally-available
+
+          ports:
+            - name: http
+              containerPort: 12345
+              protocol: TCP
+
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+              readOnly: true
+
+            - name: data
+              mountPath: /var/lib/alloy/data
+
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+
+            - name: varlogcontainers
+              mountPath: /var/log/containers
+              readOnly: true
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+            items:
+              - key: config.alloy
+                path: config.alloy
+
+        - name: data
+          emptyDir: {}
+
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+            type: Directory
+
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+            type: Directory
+
+      tolerations:
+        - operator: Exists

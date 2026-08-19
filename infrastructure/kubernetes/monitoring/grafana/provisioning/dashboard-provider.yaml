@@ -3,7 +3,6 @@ kind: ConfigMap
 metadata:
   name: grafana-dashboard-provider
   namespace: monitoring
-
   labels:
     app.kubernetes.io/name: grafana
     app.kubernetes.io/component: dashboards
@@ -15,69 +14,53 @@ data:
     apiVersion: 1
 
     providers:
-      - name: "flashstore"
+
+      - name: alerts
         orgId: 1
-        folder: "FlashStore"
+        folder: Alerts
         type: file
         disableDeletion: false
-        allowUiUpdates: true
-        editable: true
-
+        allowUiUpdates: false
+        updateIntervalSeconds: 30
         options:
-          path: /var/lib/grafana/dashboards
+          path: /var/lib/grafana/dashboards/alerts
 
-      - name: "microservices"
+      - name: kubernetes
         orgId: 1
-        folder: "Microservices"
+        folder: Kubernetes
         type: file
         disableDeletion: false
         allowUiUpdates: true
-        editable: true
-
-        options:
-          path: /var/lib/grafana/dashboards/microservices
-
-      - name: "kubernetes"
-        orgId: 1
-        folder: "Kubernetes"
-        type: file
-        disableDeletion: false
-        allowUiUpdates: true
-        editable: true
-
+        updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards/kubernetes
 
-      - name: "infrastructure"
+      - name: infrastructure
         orgId: 1
-        folder: "Infrastructure"
+        folder: Infrastructure
         type: file
         disableDeletion: false
         allowUiUpdates: true
-        editable: true
-
+        updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards/infrastructure
 
-      - name: "overview"
+      - name: platform
         orgId: 1
-        folder: "Overview"
+        folder: Platform
         type: file
         disableDeletion: false
         allowUiUpdates: true
-        editable: true
         updateIntervalSeconds: 30
-
         options:
-          path: /var/lib/grafana/dashboards/overview
+          path: /var/lib/grafana/dashboards/platform
 
-      - name: "alerts"
+      - name: services
         orgId: 1
-        folder: "Alerts"
+        folder: Services
         type: file
         disableDeletion: false
         allowUiUpdates: true
-        editable: true
-
+        updateIntervalSeconds: 30
         options:
-          path: /var/lib/grafana/dashboards/alerts
+          path: /var/lib/grafana/dashboards/services

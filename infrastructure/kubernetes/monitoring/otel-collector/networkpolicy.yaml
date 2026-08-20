@@ -1,0 +1,82 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: otel-collector
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: flashstore
+
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+      app.kubernetes.io/instance: flashstore
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+
+    # FlashStore application services
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flashstore
+
+      ports:
+        - protocol: TCP
+          port: 4317
+
+        - protocol: TCP
+          port: 4318
+
+    # Monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+      ports:
+        - protocol: TCP
+          port: 4317
+
+        - protocol: TCP
+          port: 4318
+
+        - protocol: TCP
+          port: 8888
+
+  egress:
+
+    # OpenTelemetry Collector → Tempo
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tempo
+
+      ports:
+        - protocol: TCP
+          port: 4317
+
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+
+      ports:
+        - protocol: UDP
+          port: 53
+
+        - protocol: TCP
+          port: 53

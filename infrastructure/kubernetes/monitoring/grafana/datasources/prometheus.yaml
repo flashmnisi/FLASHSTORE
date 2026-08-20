@@ -24,6 +24,12 @@ data:
       - name: Prometheus
         orgId: 1
 
+      - name: Loki
+        orgId: 1
+
+      - name: Tempo
+        orgId: 1
+
     datasources:
 
       - name: Prometheus
@@ -60,3 +66,26 @@ data:
 
         jsonData:
           maxLines: 1000
+
+      # Tempo
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+
+        url: http://tempo:3200
+
+        isDefault: false
+        editable: false
+
+        version: 1
+
+        jsonData:
+          httpMethod: GET
+          tracesToLogs:
+            datasourceUid: loki
+            filterByTraceID: true
+            filterBySpanID: true
+            tags:
+              - key: service.name
+                value: app_name

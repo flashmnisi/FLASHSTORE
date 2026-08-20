@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: monitoring
+
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/instance: flashstore
+    app.kubernetes.io/component: tracing
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/managed-by: kubectl
+
+data:
+  config.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 400
+        spike_limit_mib: 100
+
+      resource:
+        attributes:
+          - key: cluster
+            value: flashstore
+            action: upsert
+
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+
+    exporters:
+      otlp/tempo:
+        endpoint: tempo.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
+
+      debug:
+        verbosity: basic
+
+    service:
+      extensions:
+        - health_check
+
+      telemetry:
+        logs:
+          level: info
+
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+
+          processors:
+            - memory_limiter
+            - resource
+            - batch
+
+          exporters:
+            - otlp/tempo
+            - debug

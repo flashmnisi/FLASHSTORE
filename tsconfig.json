@@ -110,6 +110,9 @@
     },
     {
       "path": "./libs/shared-metrics"
+    },
+    {
+      "path": "./libs/shared-telemetry"
     }
   ]
 }

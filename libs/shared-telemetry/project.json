@@ -1,0 +1,19 @@
+{
+  "name": "@org/shared-telemetry",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-telemetry/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:library"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared-telemetry",
+        "main": "libs/shared-telemetry/src/index.ts",
+        "tsConfig": "libs/shared-telemetry/tsconfig.lib.json",
+        "assets": []
+      }
+    }
+  }
+}

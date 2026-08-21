@@ -32,6 +32,7 @@ data:
 
     datasources:
 
+      # Prometheus
       - name: Prometheus
         uid: prometheus
         type: prometheus
@@ -52,6 +53,7 @@ data:
           cacheLevel: High
           timeInterval: 15s
 
+      # Loki
       - name: Loki
         uid: loki
         type: loki

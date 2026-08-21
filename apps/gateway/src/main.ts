@@ -1,63 +1,41 @@
-// apps/gateway/src/main.ts
-
+import logger from '@org/shared-logger';
+import { setupTelemetry, shutdownTelemetry } from '@org/shared-telemetry';
 import dotenv from 'dotenv';
+import { env } from 'process';
+import app from './app';
 
 dotenv.config();
 
-import logger from '@org/shared-logger';
+setupTelemetry({
+  serviceName: process.env.OTEL_SERVICE_NAME ?? 'gateway',
+  serviceVersion: '1.0.0',
+  environment: process.env.NODE_ENV ?? 'development',
+});
 
-import app from './app';
+// Dynamic import AFTER SDK start
+async function main() {
 
-import env from './config/env';
+  const PORT = env.PORT || 3000;
 
-const startGateway = async () => {
-  try {
-    logger.info('🚀 Starting Flashstore API Gateway...');
+  const server = app.listen(PORT, () => {
+    logger.info('✅ Flashstore Gateway is running successfully');
+    logger.info(`📡 Listening on http://localhost:${PORT}`);
+  });
 
-    const PORT = env.PORT || 3000;
-
-    const server = app.listen(PORT, () => {
-      logger.info('✅ Flashstore Gateway is running successfully');
-
-      logger.info(`📡 Listening on http://localhost:${PORT}`);
-
-      logger.info(`🌍 Environment: ${env.NODE_ENV}`);
-
-      logger.info(`🕒 Timestamp: ${new Date().toISOString()}`);
+  const shutdown = async (signal: string) => {
+    logger.warn(`Received ${signal}, shutting down...`);
+    server.close(async () => {
+      await shutdownTelemetry();
+      process.exit(0);
     });
+    setTimeout(() => process.exit(1), 10_000);
+  };
 
-    /**
-     * ======================
-     * GRACEFUL SHUTDOWN
-     * ======================
-     */
-    const gracefulShutdown = (signal: string) => {
-      logger.warn(`⚠️ Received ${signal}. Shutting down Gateway gracefully...`);
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+}
 
-      server.close(() => {
-        logger.info('✅ HTTP server closed');
-
-        process.exit(0);
-      });
-
-      setTimeout(() => {
-        logger.error('❌ Force shutting down');
-
-        process.exit(1);
-      }, 10000);
-    };
-
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  } catch (error: any) {
-    logger.error('❌ Failed to start Flashstore Gateway', {
-      error: error.message,
-      stack: error.stack,
-    });
-
-    process.exit(1);
-  }
-};
-
-startGateway();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

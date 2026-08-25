@@ -7,8 +7,9 @@ import {
   shutdownTelemetry,
 } from '@org/shared-telemetry';
 
-import type { Express } from 'express';
+import logger from '@org/shared-logger';
 
+import type { Express } from 'express';
 /**
  * =====================================================
  * TELEMETRY
@@ -48,15 +49,6 @@ async function main() {
 
   const app =
     appModule.default as unknown as Express;
-
-  /**
-   * ===================================================
-   * LOGGER
-   * ===================================================
-   */
-  const {
-    logger,
-  } = await import('@org/shared-logger');
 
   /**
    * ===================================================

@@ -75,6 +75,23 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
 
+            - name: OTEL_SERVICE_NAME
+              value: gateway
+
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.monitoring.svc.cluster.local:4318
+
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.namespace=flashstore,deployment.environment=production
+
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name      
+
           resources:
             requests:
               cpu: 200m

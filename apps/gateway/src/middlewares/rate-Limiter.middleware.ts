@@ -1,5 +1,13 @@
 // apps/gateway/src/presentation/middlewares/rate-limit.middleware.ts
 
-import { globalRateLimit, authRateLimit, strictRateLimit } from '../config/rate-limit';
+import {
+  globalRateLimit,
+  authRateLimit,
+  strictRateLimit,
+} from '../config/rate-limit';
 
-export { globalRateLimit, authRateLimit, strictRateLimit };
+export {
+  globalRateLimit,
+  authRateLimit,
+  strictRateLimit,
+};

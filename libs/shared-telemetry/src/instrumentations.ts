@@ -7,6 +7,10 @@ export function createTelemetryInstrumentations() {
         enabled: false,
       },
 
+      '@opentelemetry/instrumentation-pino': {
+        enabled: false,
+      },
+
       '@opentelemetry/instrumentation-http': {
         enabled: true,
       },

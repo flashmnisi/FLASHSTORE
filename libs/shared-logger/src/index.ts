@@ -1,37 +1,25 @@
-import pino from 'pino';
+// libs/shared-logger/src/index.ts
 
-const isDev = process.env.NODE_ENV !== 'production';
+/**
+ * Total Pino bypass: Stubbing out pino with console logging 
+ * to troubleshoot configuration and compilation conflicts.
+ */
+export const logger = {
+  info: (msg: string, meta?: Record<string, unknown>) => {
+    if (meta) console.log(msg, JSON.stringify(meta)); else console.log(msg);
+  },
 
-const baseLogger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  timestamp: pino.stdTimeFunctions.isoTime,
-  transport: isDev
-    ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      }
-    : undefined,
-});
+  warn: (msg: string, meta?: Record<string, unknown>) => {
+    if (meta) console.warn(msg, JSON.stringify(meta)); else console.warn(msg);
+  },
 
-// Create a clean logger interface
-const logger = {
-  info: (msg: string, meta?: Record<string, unknown>) => 
-    baseLogger.info(meta ?? {}, msg),
+  error: (msg: string, meta?: Record<string, unknown>) => {
+    if (meta) console.error(msg, JSON.stringify(meta)); else console.error(msg);
+  },
 
-  warn: (msg: string, meta?: Record<string, unknown>) => 
-    baseLogger.warn(meta ?? {}, msg),
-
-  error: (msg: string, meta?: Record<string, unknown>) => 
-    baseLogger.error(meta ?? {}, msg),
-
-  debug: (msg: string, meta?: Record<string, unknown>) => 
-    baseLogger.debug(meta ?? {}, msg),
+  debug: (msg: string, meta?: Record<string, unknown>) => {
+    if (meta) console.debug(msg, JSON.stringify(meta)); else console.debug(msg);
+  },
 };
 
-// Export both default and named for flexibility
 export default logger;
-export { logger };

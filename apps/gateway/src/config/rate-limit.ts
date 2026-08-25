@@ -1,55 +1,104 @@
-// apps/gateway/src/config/rate-limit.ts
-
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
+
 import { getRedis } from '@org/shared-redis';
 import logger from '@org/shared-logger';
+
 import env from './env';
 
-let redisStore: RedisStore | null = null;
+let redisStore: RedisStore | undefined;
 
 /**
- * Initialize Redis-backed rate limiter (Call this in bootstrap/main.ts)
+ * Safely get the client IP.
+ *
+ * ipKeyGenerator() is required by express-rate-limit
+ * for IPv6-safe rate limiting.
+ */
+const getClientIp = (req: any): string => {
+  const forwarded = req.headers['x-forwarded-for'];
+
+  const ip =
+    typeof forwarded === 'string'
+      ? forwarded.split(',')[0].trim()
+      : req.ip;
+
+  return ipKeyGenerator(ip || 'anonymous');
+};
+
+/**
+ * Safely extract user identifier from JWT payload.
+ */
+const getUserId = (user: any): string | null => {
+  if (!user) {
+    return null;
+  }
+
+  return (
+    user.userId ||
+    user.id ||
+    user.sub ||
+    user._id ||
+    null
+  );
+};
+
+/**
+ * Initialize Redis-backed rate limiting.
+ *
+ * This must be called during application bootstrap.
  */
 export const initRateLimiter = async (): Promise<void> => {
   try {
     const redisClient = await getRedis();
 
     redisStore = new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+      sendCommand: (...args: string[]) =>
+        redisClient.sendCommand(args),
     });
 
-    logger.info('✅ Redis Rate Limiter Store initialized successfully');
+    logger.info(
+      '✅ Redis Rate Limiter Store initialized successfully',
+    );
   } catch (error: any) {
-    logger.error('❌ Failed to initialize Redis Rate Limiter', {
-      error: error.message,
-    });
-    logger.warn('Falling back to in-memory rate limiting');
+    redisStore = undefined;
+
+    logger.error(
+      '❌ Failed to initialize Redis Rate Limiter',
+      {
+        error: error?.message ?? String(error),
+      },
+    );
+
+    logger.warn(
+      '⚠️ Falling back to in-memory rate limiting',
+    );
   }
 };
 
 /**
- * Safely extract user identifier from JWT payload
- */
-const getUserId = (user: any): string | null => {
-  if (!user) return null;
-  return user.userId || user.id || user.sub || user._id || null;
-};
-
-/**
- * Global Rate Limiter
+ * =========================================================
+ * GLOBAL RATE LIMITER
+ * =========================================================
  */
 export const globalRateLimit = rateLimit({
-  windowMs: env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000,
-  max: env.RATE_LIMIT_MAX || 100,
+  windowMs:
+    env.RATE_LIMIT_WINDOW_MS ||
+    15 * 60 * 1000,
+
+  max:
+    env.RATE_LIMIT_MAX ||
+    100,
 
   standardHeaders: true,
   legacyHeaders: false,
 
-  // Use initialized Redis store if available
-  store: redisStore 
-    ? redisStore 
-    : undefined,
+  /**
+   * IMPORTANT:
+   *
+   * redisStore is initialized before the application
+   * imports the routes because main.ts bootstraps it first.
+   */
+  store: redisStore,
 
   keyGenerator: (req: any) => {
     const userId = getUserId(req.user);
@@ -58,66 +107,86 @@ export const globalRateLimit = rateLimit({
       return `user:${userId}`;
     }
 
-    // Fallback to IP
-    const ip = 
-      req.headers['x-forwarded-for']?.toString().split(',')[0] ||
-      req.headers['x-real-ip']?.toString() ||
-      req.ip ||
-      'anonymous';
-
-    return `ip:${ip}`;
+    return `ip:${getClientIp(req)}`;
   },
 
-  skip: (req) => req.path === '/health' || req.path === '/healthz',
+  skip: (req) =>
+    req.path === '/health' ||
+    req.path === '/healthz',
 
   message: {
     success: false,
-    message: 'Too many requests, please try again later.',
+    message:
+      'Too many requests, please try again later.',
   },
 });
 
 /**
- * Auth Rate Limiter (Login/Register)
+ * =========================================================
+ * AUTH RATE LIMITER
+ * =========================================================
  */
 export const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
+
   max: 10,
 
   standardHeaders: true,
   legacyHeaders: false,
 
-  store: redisStore ? redisStore : undefined,
+  store: redisStore,
 
   keyGenerator: (req: any) => {
-    const identifier = req.body?.email || getUserId(req.user) || req.ip || 'anonymous';
-    return `auth:${identifier}`;
+    const email = req.body?.email;
+
+    if (email) {
+      return `auth:email:${String(email).toLowerCase()}`;
+    }
+
+    const userId = getUserId(req.user);
+
+    if (userId) {
+      return `auth:user:${userId}`;
+    }
+
+    return `auth:ip:${getClientIp(req)}`;
   },
 
   message: {
     success: false,
-    message: 'Too many authentication attempts. Please try again later.',
+    message:
+      'Too many authentication attempts. Please try again later.',
   },
 });
 
 /**
- * Strict Rate Limiter (Sensitive endpoints)
+ * =========================================================
+ * STRICT RATE LIMITER
+ * =========================================================
  */
 export const strictRateLimit = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
+  windowMs: 60 * 1000,
+
   max: 5,
 
   standardHeaders: true,
   legacyHeaders: false,
 
-  store: redisStore ? redisStore : undefined,
+  store: redisStore,
 
   keyGenerator: (req: any) => {
     const userId = getUserId(req.user);
-    return `strict:${userId || req.ip || 'anonymous'}`;
+
+    if (userId) {
+      return `strict:user:${userId}`;
+    }
+
+    return `strict:ip:${getClientIp(req)}`;
   },
 
   message: {
     success: false,
-    message: 'Too many requests to this sensitive endpoint.',
+    message:
+      'Too many requests to this sensitive endpoint.',
   },
 });

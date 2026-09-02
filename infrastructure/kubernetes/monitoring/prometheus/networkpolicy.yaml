@@ -20,9 +20,6 @@ spec:
     - Ingress
     - Egress
 
-  ###############################################################
-  # Ingress
-  ###############################################################
   ingress:
     - from:
         - namespaceSelector:
@@ -32,102 +29,76 @@ spec:
         - protocol: TCP
           port: 9090
 
-  ###############################################################
-  # Egress
-  ###############################################################
   egress:
-    ###############################################################
     # DNS
-    ###############################################################
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
       ports:
-        - protocol: UDP
-          port: 53
-        - protocol: TCP
-          port: 53
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
 
-    ###############################################################
-    # Kubernetes API
-    ###############################################################
+    # Kubernetes API (service discovery)
     - to:
         - ipBlock:
             cidr: 10.96.0.1/32
       ports:
-        - protocol: TCP
-          port: 443
+        - port: 443
+          protocol: TCP
 
-    ###############################################################
-    # Alertmanager
-    ###############################################################
+    # node-exporter hostNetwork (Docker Desktop node IPs)
+    - to:
+        - ipBlock:
+            cidr: 172.19.0.0/16
+      ports:
+        - port: 9100
+          protocol: TCP
+
+    # Monitoring namespace scrapes (pod network)
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: monitoring
       ports:
-        - protocol: TCP
-          port: 9093
+        - port: 9093
+          protocol: TCP
+        - port: 3000
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+        - port: 9100
+          protocol: TCP
+        - port: 3100
+          protocol: TCP
+        - port: 3200
+          protocol: TCP
 
-    ###############################################################
-    # Grafana
-    ###############################################################
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: monitoring
-      ports:
-        - protocol: TCP
-          port: 3000
-
-    ###############################################################
-    # kube-state-metrics
-    ###############################################################
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: monitoring
-      ports:
-        - protocol: TCP
-          port: 8080
-
-    ###############################################################
-    # node-exporter
-    ###############################################################
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: monitoring
-      ports:
-        - protocol: TCP
-          port: 9100
-
-    ###############################################################
-    # FlashStore Services
-    ###############################################################
+    # FlashStore app metrics
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: flashstore
       ports:
-        - protocol: TCP
-          port: 3000
-        - protocol: TCP
-          port: 3001
-        - protocol: TCP
-          port: 3002
-        - protocol: TCP
-          port: 3003
-        - protocol: TCP
-          port: 3004
-        - protocol: TCP
-          port: 3005
-        - protocol: TCP
-          port: 3006
-        - protocol: TCP
-          port: 3007
-        - protocol: TCP
-          port: 3008
-        - protocol: TCP
-          port: 4005
+        - port: 3000
+          protocol: TCP
+        - port: 3001
+          protocol: TCP
+        - port: 3002
+          protocol: TCP
+        - port: 3003
+          protocol: TCP
+        - port: 3004
+          protocol: TCP
+        - port: 3005
+          protocol: TCP
+        - port: 3006
+          protocol: TCP
+        - port: 3007
+          protocol: TCP
+        - port: 3008
+          protocol: TCP
+        - port: 4005
+          protocol: TCP

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: flashstore
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: flashstore
+    app.kubernetes.io/part-of: flashstore
+    app.kubernetes.io/component: gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/flashmnisi/FLASHSTORE.git
+    targetRevision: main
+    path: infrastructure/kubernetes
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: flashstore
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

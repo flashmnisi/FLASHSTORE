@@ -58,7 +58,7 @@ async function main() {
   const parsedPort = Number.parseInt(
     process.env.PORT ?? '3000',
     10,
-  );
+  ); 
 
   const PORT =
     Number.isInteger(parsedPort) &&

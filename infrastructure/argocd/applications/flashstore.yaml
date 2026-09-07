@@ -7,19 +7,48 @@ metadata:
     app.kubernetes.io/name: flashstore
     app.kubernetes.io/part-of: flashstore
     app.kubernetes.io/component: gitops
+
 spec:
   project: default
+
   source:
     repoURL: https://github.com/flashmnisi/FLASHSTORE.git
     targetRevision: main
     path: infrastructure/kubernetes
+
   destination:
     server: https://kubernetes.default.svc
     namespace: flashstore
+
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: kafka
+      namespace: flashstore
+      jsonPointers:
+        - /status
+        - /spec/persistentVolumeClaimRetentionPolicy
+        - /spec/volumeClaimTemplates
+        - /metadata/generation
+        - /metadata/resourceVersion
+        - /metadata/managedFields
+    - group: apps
+      kind: StatefulSet
+      name: mongodb
+      namespace: flashstore
+      jsonPointers:
+        - /status
+        - /spec/persistentVolumeClaimRetentionPolicy
+        - /spec/volumeClaimTemplates
+        - /metadata/generation
+        - /metadata/resourceVersion
+        - /metadata/managedFields
+
   syncPolicy:
     automated:
       prune: false
       selfHeal: true
+
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

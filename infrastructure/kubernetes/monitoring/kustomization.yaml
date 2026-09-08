@@ -19,6 +19,7 @@ resources:
   - alloy
   - tempo
   - otel-collector
+  - metrics-server
 
 labels:
   - pairs:

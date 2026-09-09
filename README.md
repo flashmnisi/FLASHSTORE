@@ -1,112 +1,550 @@
- HEAD
-# New Nx Repository
+# 🛒 FLASHSTORE
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+### Scalable Cloud-Native E-Commerce Platform
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+**FlashStore** is a production-oriented e-commerce platform built as a **TypeScript Nx monorepo** using a distributed microservices architecture.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+The platform demonstrates modern software engineering and DevOps practices including **event-driven architecture, Kafka messaging, containerization, Kubernetes orchestration, automated CI/CD, GitOps, observability, autoscaling, and infrastructure automation**.
 
-## Try the full Nx platform
-🚀 If you haven't connected to Nx Cloud yet, [complete your setup here](https://cloud.nx.app/setup/connect-workspace/guide). Get faster builds with remote caching, distributed task execution, and self-healing CI. [See how your workspace can benefit](#nx-cloud).
+> 🚀 Built to demonstrate how a modern e-commerce platform can be designed, deployed, monitored, and operated as a cloud-native system.
 
-## Generate a library
+---
 
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+## ✨ Highlights
+
+* 🧩 **Microservices architecture**
+* 📦 **Nx monorepo**
+* ⚡ **Apache Kafka event-driven communication**
+* 🗄️ **MongoDB** for persistent data
+* ⚡ **Redis** for caching
+* 🔎 **Elasticsearch** for search
+* 🐳 **Docker** containerization
+* ☸️ **Kubernetes** orchestration
+* 📦 **Kustomize** configuration management
+* 📈 **Horizontal Pod Autoscaling (HPA)**
+* 🛡️ **Pod Disruption Budgets (PDB)**
+* 🌐 **NGINX Ingress**
+* 🔄 **GitHub Actions CI/CD**
+* 🚀 **Docker Hub image publishing**
+* 🔁 **Argo CD GitOps deployment**
+* 📊 **Prometheus + Grafana monitoring**
+* 📝 **Loki + Alloy log aggregation**
+* 🔎 **OpenTelemetry + Tempo distributed tracing**
+* 🏗️ **Helm and Terraform infrastructure roadmap**
+
+---
+
+## 🏗️ Architecture
+
+```text
+                         ┌─────────────────────┐
+                         │       Clients       │
+                         │  Web / Mobile Apps  │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │    NGINX Ingress    │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │     API Gateway     │
+                         └──────────┬──────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+        User Service          Catalog Service        Cart Service
+              │                     │                     │
+              └─────────────────────┼─────────────────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+        Order Service         Payment Service       Inventory Service
+              │                     │                     │
+              └─────────────────────┼─────────────────────┘
+                                    │
+                                    ▼
+                              Apache Kafka
+                                    │
+                ┌───────────────────┼───────────────────┐
+                │                   │                   │
+                ▼                   ▼                   ▼
+         Notification          Analytics             Search
+            Service             Service              Service
+
+                                    │
+                ┌───────────────────┼───────────────────┐
+                │                   │                   │
+                ▼                   ▼                   ▼
+             MongoDB              Redis            Elasticsearch
 ```
 
-## Run tasks
+---
 
-To build the library use:
+## 🔧 Technology Stack
 
-```sh
-npx nx build pkg1
+### Backend
+
+| Technology        | Purpose                    |
+| ----------------- | -------------------------- |
+| **Node.js**       | Backend runtime            |
+| **TypeScript**    | Application language       |
+| **Express.js**    | HTTP APIs                  |
+| **Nx**            | Monorepo management        |
+| **Kafka**         | Event-driven communication |
+| **MongoDB**       | Primary database           |
+| **Redis**         | Caching                    |
+| **Elasticsearch** | Search                     |
+
+### DevOps & Cloud Native
+
+| Technology         | Purpose                         |
+| ------------------ | ------------------------------- |
+| **Docker**         | Containerization                |
+| **Kubernetes**     | Container orchestration         |
+| **Kustomize**      | Kubernetes configuration        |
+| **NGINX Ingress**  | Traffic routing                 |
+| **HPA**            | Automatic scaling               |
+| **PDB**            | Availability during disruptions |
+| **GitHub Actions** | CI/CD                           |
+| **Docker Hub**     | Container image registry        |
+| **Argo CD**        | GitOps continuous delivery      |
+
+### Observability
+
+| Technology        | Purpose               |
+| ----------------- | --------------------- |
+| **Prometheus**    | Metrics               |
+| **Grafana**       | Visualization         |
+| **Loki**          | Log aggregation       |
+| **Alloy**         | Telemetry collection  |
+| **OpenTelemetry** | Distributed telemetry |
+| **Tempo**         | Distributed tracing   |
+
+---
+
+## 🧩 Microservices
+
+FlashStore is structured around independently deployable services:
+
+```text
+apps/
+├── api-gateway/
+├── user-service/
+├── catalog-service/
+├── cart-service/
+├── order-service/
+├── payment-service/
+├── inventory-service/
+├── notification-service/
+├── analytics-service/
+└── search-service/
 ```
 
-To run any task with Nx use:
+Shared functionality is organized into reusable Nx libraries:
 
-```sh
+```text
+libs/
+├── shared-auth/
+├── shared-config/
+├── shared-db/
+├── shared-kafka/
+├── shared-logger/
+├── shared-types/
+└── shared-utils/
+```
+
+This allows services to remain independently organized while sharing common infrastructure and domain contracts.
+
+---
+
+## ⚡ Event-Driven Architecture
+
+Services communicate asynchronously through **Kafka events**.
+
+Example:
+
+```text
+Customer
+   │
+   ▼
+Order Service
+   │
+   ├── order.created
+   │
+   ▼
+Kafka
+   │
+   ├──────────────► Inventory Service
+   │
+   ├──────────────► Payment Service
+   │
+   ├──────────────► Notification Service
+   │
+   └──────────────► Analytics Service
+```
+
+This architecture reduces tight coupling between services and allows consumers to process events independently.
+
+The platform also uses patterns such as:
+
+* Event producers
+* Event consumers
+* Topic-based communication
+* Idempotent event processing
+* Retry handling
+* Dead-letter queues
+* Outbox-based event publishing
+
+---
+
+## ☸️ Kubernetes
+
+FlashStore is deployed to Kubernetes using declarative manifests managed through Kustomize.
+
+The Kubernetes platform includes:
+
+* Deployments
+* Services
+* ConfigMaps
+* Secrets
+* Ingress
+* HPA
+* PDB
+* StatefulSets
+* PersistentVolumes
+* NetworkPolicies
+* RBAC
+
+Example deployment flow:
+
+```text
+GitHub
+   │
+   ▼
+GitHub Actions
+   │
+   ├── Test
+   ├── Lint
+   ├── Build
+   ├── Security Scan
+   └── Docker Build
+           │
+           ▼
+       Docker Hub
+           │
+           ▼
+        Argo CD
+           │
+           ▼
+       Kubernetes
+```
+
+---
+
+## 📈 Autoscaling
+
+FlashStore uses Kubernetes **Horizontal Pod Autoscaling** based on CPU and memory utilization.
+
+```text
+                 Traffic
+                    │
+                    ▼
+                  HPA
+              ┌─────┴─────┐
+              │            │
+           CPU ↑        Memory ↑
+              │            │
+              └─────┬──────┘
+                    ▼
+              Scale Replicas
+```
+
+This allows services to automatically increase or decrease their replica count based on workload.
+
+---
+
+## 📊 Observability
+
+FlashStore implements the three major pillars of observability:
+
+```text
+                 Grafana
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+        ▼           ▼           ▼
+     Metrics       Logs       Traces
+        │           │           │
+   Prometheus      Loki        Tempo
+                                ▲
+                                │
+                         OpenTelemetry
+```
+
+### Metrics
+
+**Prometheus** collects application and infrastructure metrics which are visualized through Grafana dashboards.
+
+### Logs
+
+**Alloy** collects logs and forwards them to **Loki** for centralized log aggregation.
+
+### Traces
+
+**OpenTelemetry** provides distributed tracing across services, with **Tempo** storing and serving trace data to Grafana.
+
+This makes it possible to follow a request across multiple services and correlate:
+
+```text
+Request
+   │
+   ├── Metrics
+   ├── Logs
+   └── Trace
+```
+
+---
+
+## 🔄 CI/CD
+
+GitHub Actions automates the software delivery pipeline.
+
+```text
+Push / Pull Request
+        │
+        ▼
+   GitHub Actions
+        │
+        ├── Format
+        ├── Lint
+        ├── Test
+        ├── Build
+        ├── Security Scan
+        │
+        ▼
+   Docker Images
+        │
+        ▼
+     Docker Hub
+        │
+        ▼
+      Argo CD
+        │
+        ▼
+    Kubernetes
+```
+
+The goal is to keep deployments reproducible, automated, and Git-driven.
+
+---
+
+## 📁 Project Structure
+
+```text
+FLASHSTORE/
+│
+├── apps/
+│   ├── api-gateway/
+│   ├── user-service/
+│   ├── catalog-service/
+│   ├── cart-service/
+│   ├── order-service/
+│   ├── payment-service/
+│   ├── inventory-service/
+│   ├── notification-service/
+│   ├── analytics-service/
+│   └── search-service/
+│
+├── libs/
+│   ├── shared-auth/
+│   ├── shared-config/
+│   ├── shared-db/
+│   ├── shared-kafka/
+│   ├── shared-logger/
+│   ├── shared-types/
+│   └── shared-utils/
+│
+├── infrastructure/
+│   ├── docker/
+│   └── kubernetes/
+│
+├── .github/
+│   └── workflows/
+│
+├── nx.json
+├── package.json
+├── tsconfig.base.json
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Make sure you have installed:
+
+* Node.js
+* npm
+* Docker Desktop
+* Kubernetes
+* kubectl
+* Git
+
+### Clone the repository
+
+```bash
+git clone https://github.com/flashmnisi/FLASHSTORE.git
+
+cd FLASHSTORE
+```
+
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Explore the Nx workspace
+
+```bash
+npx nx graph
+```
+
+### Run Nx tasks
+
+```bash
 npx nx <target> <project-name>
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+---
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## 🐳 Docker
 
-## Versioning and releasing
+FlashStore services are containerized using Docker.
 
-To version and release the library use
+Build an individual service:
 
-```
-npx nx release
-```
-
-Pass `--dry-run` to see what would happen without actually releasing the library.
-
-[Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Keep TypeScript project references up to date
-
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
-
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
-
-```sh
-npx nx sync
+```bash
+docker build \
+  -f infrastructure/docker/<service>.Dockerfile \
+  -t flashmnisi/flashstore-<service>:latest .
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+---
 
-```sh
-npx nx sync:check
+## ☸️ Deploy to Kubernetes
+
+The Kubernetes resources are organized using Kustomize.
+
+```bash
+kubectl apply -k infrastructure/kubernetes
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+Verify the workloads:
 
-## Nx Cloud
-
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Set up CI (non-Github Actions CI)
-
-**Note:** This is only required if your CI provider is not GitHub Actions.
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```bash
+kubectl get pods -n flashstore
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Check services:
 
-## Install Nx Console
+```bash
+kubectl get svc -n flashstore
+```
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+Check ingress:
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+kubectl get ingress -n flashstore
+```
 
-## Useful links
+---
 
-Learn more:
+## 📈 Monitoring
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Access Grafana to explore:
 
-And join the Nx community:
+* Application metrics
+* Kubernetes metrics
+* Infrastructure metrics
+* Service health
+* Logs
+* Distributed traces
+* HPA activity
 
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+---
 
-# FLASHSTORE
-Scalable e-commerce platform built with Nx Monorepo (It features multiple backend services (User, Order, Catalog, Cart, Payment, etc.)), TypeScript, Node.js microservices, Kafka, MongoDB, Redis, Docker, Kubernetes, and GitHub Actions for CI/CD.
-ff2d95e3482d4fefb8de38d73b9702ee8f5ee3d6
+## 🛣️ Roadmap
+
+### Completed
+
+* [x] Nx monorepo
+* [x] Microservices architecture
+* [x] Kafka event-driven architecture
+* [x] MongoDB
+* [x] Redis
+* [x] Elasticsearch
+* [x] Docker
+* [x] Kubernetes
+* [x] Kustomize
+* [x] HPA
+* [x] PDB
+* [x] NGINX Ingress
+* [x] GitHub Actions CI/CD
+* [x] Docker Hub
+* [x] Prometheus
+* [x] Grafana
+* [x] Grafana dashboards
+* [x] Loki
+* [x] Alloy
+* [x] OpenTelemetry
+* [x] Tempo
+* [x] Argo CD / GitOps
+
+### Next
+
+* [ ] Helm
+* [ ] Terraform
+* [ ] Cloud deployment
+* [ ] Production hardening
+* [ ] Additional automated testing
+
+---
+
+## 🎯 Project Goals
+
+FlashStore was built to demonstrate practical experience with:
+
+* Distributed systems
+* Microservices
+* Event-driven architecture
+* Cloud-native development
+* Kubernetes
+* DevOps
+* CI/CD
+* GitOps
+* Observability
+* Infrastructure automation
+* Scalable application architecture
+
+---
+
+## 👨‍💻 Author
+
+**Flash Mnisi**
+
+Full-Stack / React Native Developer focused on building scalable applications with modern JavaScript/TypeScript technologies.
+
+---
+
+## ⭐ Support
+
+If you find the project useful or interesting, consider giving the repository a ⭐.
+
+**Built with TypeScript, Node.js, Nx, Kafka, Kubernetes, and a lot of debugging. 🚀**

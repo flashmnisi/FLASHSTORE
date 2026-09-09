@@ -153,6 +153,10 @@ libs/
 ├── shared-db/
 ├── shared-kafka/
 ├── shared-logger/
+├── shared-metrics/
+├── shared-redis/
+├── shared-resilience/
+├── shared-telemetry/
 ├── shared-types/
 └── shared-utils/
 ```
@@ -365,6 +369,10 @@ FLASHSTORE/
 │   ├── shared-db/
 │   ├── shared-kafka/
 │   ├── shared-logger/
+│   ├── shared-metrics/
+│   ├── shared-redis/ 
+│   ├── shared-resilience/
+│   ├── shared-telemetry/
 │   ├── shared-types/
 │   └── shared-utils/
 │

@@ -66,7 +66,7 @@ const start = async () => {
         .catch((err) =>
           logger.error('Retry Job Error', { error: err.message })
         );
-    }, 45000); // ← Increased to 45 seconds
+    }, 45000); 
 
     setInterval(() => {
       deadLetterJob

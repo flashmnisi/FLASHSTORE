@@ -18,7 +18,6 @@ export class NodemailerProvider implements IEmailProvider {
       },
     });
   }
-
   async send(notification: NotificationEntity): Promise<void> {
     const email = notification.templateData?.email as string | undefined;
 
@@ -59,6 +58,7 @@ export class NodemailerProvider implements IEmailProvider {
 
    private buildTemplate(notification: NotificationEntity): string {
     const data = notification.templateData || {};
+    const name = String(data.name || 'Valued Customer');
 
     const itemsHtml = Array.isArray(data.items)
       ? data.items
@@ -81,6 +81,52 @@ export class NodemailerProvider implements IEmailProvider {
       : '';
 
     switch (notification.type) {
+
+      case 'user.registered':
+      case 'welcome-email': {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+          <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 36px 24px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Flashstore</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 12px 0 0; font-size: 16px;">
+              Your account is ready
+            </p>
+          </div>
+
+          <div style="padding: 36px 30px;">
+            <h2 style="margin: 0 0 12px 0; color: #111827;">Hi ${name},</h2>
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+              Thanks for joining <strong>Flashstore</strong>. We’re glad to have you.
+            </p>
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+              You can browse products, manage your cart, and track orders — all in one place.
+            </p>
+
+            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 28px;">
+              <p style="margin: 0; color: #374151; font-size: 15px;">
+                <strong>Your email:</strong> ${data.email || ''}
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="https://flashstore.local"
+                 style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none;
+                        padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Start shopping
+              </a>
+            </div>
+
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin: 0;">
+              If you did not create this account, you can ignore this email.
+            </p>
+          </div>
+
+          <div style="padding: 25px; text-align: center; color: #6b7280; font-size: 13px; border-top: 1px solid #e5e7eb;">
+            Flashstore © ${new Date().getFullYear()} • Johannesburg, South Africa
+          </div>
+        </div>
+      `;
+    }
       case 'order.created': {
         const itemsTotal = Number(data.itemsTotal || 0);
         const shippingPrice = Number(data.shippingPrice || 0);

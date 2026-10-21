@@ -14,7 +14,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 0
       maxSurge: 1
   selector:
     matchLabels:
@@ -23,6 +23,7 @@ spec:
     metadata:
       labels:
         app: catalog-service
+        deployment-color: blue
         app.kubernetes.io/name: catalog-service
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: flashstore

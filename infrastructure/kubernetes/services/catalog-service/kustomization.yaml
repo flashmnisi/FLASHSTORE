@@ -8,6 +8,7 @@ resources:
   - service-green-test.yaml
   # - network-policy.yaml
   - hpa.yaml
+  - hpa-green.yaml
   - pdb.yaml
 
 labels:

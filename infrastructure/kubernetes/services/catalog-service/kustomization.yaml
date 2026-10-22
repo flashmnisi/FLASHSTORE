@@ -4,10 +4,10 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - deployment-green.yaml
+  - deployment-blue.yaml
   - service.yaml
   - service-green-test.yaml
   # - network-policy.yaml
-  - hpa.yaml
   - hpa-green.yaml
   - pdb.yaml
 

@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/name: catalog-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -31,6 +33,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: "3002"
+
     spec:
       terminationGracePeriodSeconds: 30
       securityContext:

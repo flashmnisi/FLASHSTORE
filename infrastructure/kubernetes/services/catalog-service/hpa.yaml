@@ -10,7 +10,8 @@ metadata:
     app.kubernetes.io/name: catalog-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: flashstore
-
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

@@ -15,6 +15,7 @@ The platform demonstrates modern software engineering and DevOps practices inclu
 * 🧩 **Microservices architecture**
 * 📦 **Nx monorepo**
 * ⚡ **Apache Kafka event-driven communication**
+* 🚀 **Blue-green deployment**
 * 🗄️ **MongoDB** for persistent data
 * ⚡ **Redis** for caching
 * 🔎 **Elasticsearch** for search

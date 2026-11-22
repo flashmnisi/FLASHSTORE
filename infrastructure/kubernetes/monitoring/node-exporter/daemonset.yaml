@@ -38,12 +38,9 @@ spec:
 
     spec:
       serviceAccountName: prometheus
-
-      hostNetwork: true
       hostPID: true
 
-      dnsPolicy: ClusterFirstWithHostNet
-
+      dnsPolicy: ClusterFirst
       tolerations:
         - operator: Exists
 

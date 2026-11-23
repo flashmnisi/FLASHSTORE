@@ -12,26 +12,26 @@ The platform demonstrates modern software engineering and DevOps practices inclu
 
 ## ✨ Highlights
 
-* 🧩 **Microservices architecture**
-* 📦 **Nx monorepo**
-* ⚡ **Apache Kafka event-driven communication**
-* 🚀 **Blue-green deployment**
-* 🗄️ **MongoDB** for persistent data
-* ⚡ **Redis** for caching
-* 🔎 **Elasticsearch** for search
-* 🐳 **Docker** containerization
-* ☸️ **Kubernetes** orchestration
-* 📦 **Kustomize** configuration management
-* 📈 **Horizontal Pod Autoscaling (HPA)**
-* 🛡️ **Pod Disruption Budgets (PDB)**
-* 🌐 **NGINX Ingress**
-* 🔄 **GitHub Actions CI/CD**
-* 🚀 **Docker Hub image publishing**
-* 🔁 **Argo CD GitOps deployment**
-* 📊 **Prometheus + Grafana monitoring**
-* 📝 **Loki + Alloy log aggregation**
-* 🔎 **OpenTelemetry + Tempo distributed tracing**
-* 🏗️ **Helm and Terraform infrastructure roadmap**
+- 🧩 **Microservices architecture**
+- 📦 **Nx monorepo**
+- ⚡ **Apache Kafka event-driven communication**
+- 🚀 **Blue-green deployment**
+- 🗄️ **MongoDB** for persistent data
+- ⚡ **Redis** for caching
+- 🔎 **Elasticsearch** for search
+- 🐳 **Docker** containerization
+- ☸️ **Kubernetes** orchestration
+- 📦 **Kustomize** configuration management
+- 📈 **Horizontal Pod Autoscaling (HPA)**
+- 🛡️ **Pod Disruption Budgets (PDB)**
+- 🌐 **NGINX Ingress**
+- 🔄 **GitHub Actions CI/CD**
+- 🚀 **Docker Hub image publishing**
+- 🔁 **Argo CD GitOps deployment**
+- 📊 **Prometheus + Grafana monitoring**
+- 📝 **Loki + Alloy log aggregation**
+- 🔎 **OpenTelemetry + Tempo distributed tracing**
+- 🏗️ **Helm and Terraform infrastructure roadmap**
 
 ---
 
@@ -196,13 +196,13 @@ This architecture reduces tight coupling between services and allows consumers t
 
 The platform also uses patterns such as:
 
-* Event producers
-* Event consumers
-* Topic-based communication
-* Idempotent event processing
-* Retry handling
-* Dead-letter queues
-* Outbox-based event publishing
+- Event producers
+- Event consumers
+- Topic-based communication
+- Idempotent event processing
+- Retry handling
+- Dead-letter queues
+- Outbox-based event publishing
 
 ---
 
@@ -212,17 +212,17 @@ FlashStore is deployed to Kubernetes using declarative manifests managed through
 
 The Kubernetes platform includes:
 
-* Deployments
-* Services
-* ConfigMaps
-* Secrets
-* Ingress
-* HPA
-* PDB
-* StatefulSets
-* PersistentVolumes
-* NetworkPolicies
-* RBAC
+- Deployments
+- Services
+- ConfigMaps
+- Secrets
+- Ingress
+- HPA
+- PDB
+- StatefulSets
+- PersistentVolumes
+- NetworkPolicies
+- RBAC
 
 Example deployment flow:
 
@@ -371,7 +371,7 @@ FLASHSTORE/
 │   ├── shared-kafka/
 │   ├── shared-logger/
 │   ├── shared-metrics/
-│   ├── shared-redis/ 
+│   ├── shared-redis/
 │   ├── shared-resilience/
 │   ├── shared-telemetry/
 │   ├── shared-types/
@@ -398,12 +398,12 @@ FLASHSTORE/
 
 Make sure you have installed:
 
-* Node.js
-* npm
-* Docker Desktop
-* Kubernetes
-* kubectl
-* Git
+- Node.js
+- npm
+- Docker Desktop
+- Kubernetes
+- kubectl
+- Git
 
 ### Clone the repository
 
@@ -479,13 +479,13 @@ kubectl get ingress -n flashstore
 
 Access Grafana to explore:
 
-* Application metrics
-* Kubernetes metrics
-* Infrastructure metrics
-* Service health
-* Logs
-* Distributed traces
-* HPA activity
+- Application metrics
+- Kubernetes metrics
+- Infrastructure metrics
+- Service health
+- Logs
+- Distributed traces
+- HPA activity
 
 ---
 
@@ -493,36 +493,36 @@ Access Grafana to explore:
 
 ### Completed
 
-* [x] Nx monorepo
-* [x] Microservices architecture
-* [x] Kafka event-driven architecture
-* [x] MongoDB
-* [x] Redis
-* [x] Elasticsearch
-* [x] Docker
-* [x] Kubernetes
-* [x] Kustomize
-* [x] HPA
-* [x] PDB
-* [x] NGINX Ingress
-* [x] GitHub Actions CI/CD
-* [x] Docker Hub
-* [x] Prometheus
-* [x] Grafana
-* [x] Grafana dashboards
-* [x] Loki
-* [x] Alloy
-* [x] OpenTelemetry
-* [x] Tempo
-* [x] Argo CD / GitOps
+- [x] Nx monorepo
+- [x] Microservices architecture
+- [x] Kafka event-driven architecture
+- [x] MongoDB
+- [x] Redis
+- [x] Elasticsearch
+- [x] Docker
+- [x] Kubernetes
+- [x] Kustomize
+- [x] HPA
+- [x] PDB
+- [x] NGINX Ingress
+- [x] GitHub Actions CI/CD
+- [x] Docker Hub
+- [x] Prometheus
+- [x] Grafana
+- [x] Grafana dashboards
+- [x] Loki
+- [x] Alloy
+- [x] OpenTelemetry
+- [x] Tempo
+- [x] Argo CD / GitOps
 
 ### Next
 
-* [ ] Helm
-* [ ] Terraform
-* [ ] Cloud deployment
-* [ ] Production hardening
-* [ ] Additional automated testing
+- [ ] Helm
+- [ ] Terraform
+- [ ] Cloud deployment
+- [ ] Production hardening
+- [ ] Additional automated testing
 
 ---
 
@@ -530,17 +530,17 @@ Access Grafana to explore:
 
 FlashStore was built to demonstrate practical experience with:
 
-* Distributed systems
-* Microservices
-* Event-driven architecture
-* Cloud-native development
-* Kubernetes
-* DevOps
-* CI/CD
-* GitOps
-* Observability
-* Infrastructure automation
-* Scalable application architecture
+- Distributed systems
+- Microservices
+- Event-driven architecture
+- Cloud-native development
+- Kubernetes
+- DevOps
+- CI/CD
+- GitOps
+- Observability
+- Infrastructure automation
+- Scalable application architecture
 
 ---
 

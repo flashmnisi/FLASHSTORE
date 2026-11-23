@@ -22,9 +22,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
 // ====================== PROMETHEUS ======================
-
 app.use(metricsMiddleware('notification-service'));
-
 app.use('/metrics', metricsRouter);
 
 // Health Check
@@ -34,6 +32,17 @@ app.get('/health', (req, res) => {
     service: 'notification-service',
     timestamp: new Date().toISOString(),
     correlationId: (req as any).correlationId,
+  });
+});
+
+// Version endpoint (showcase CI + CD)
+app.get('/version', (req, res) => {
+  res.json({
+    service: 'notification-service',
+    version: process.env.APP_VERSION || '1.0.0',
+    commit: process.env.GIT_COMMIT || 'local',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
   });
 });
 

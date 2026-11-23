@@ -5,10 +5,7 @@ import notificationRoutes from './presentation/routes/notification.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { requestLogger } from './middlewares/requestLogger.middleware';
 
-import {
-  metricsMiddleware,
-  metricsRouter,
-} from '@org/shared-metrics';
+import { metricsMiddleware, metricsRouter } from '@org/shared-metrics';
 
 const app = express();
 

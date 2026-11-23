@@ -91,7 +91,7 @@ jobs:
 
       - name: Check Formatting
         run: |
-          npx nx format:check
+          npx nx format:check --base=${{ needs.setup.outputs.nx-base }} --head=HEAD
 
       - name: Lint Affected Projects
         run: |

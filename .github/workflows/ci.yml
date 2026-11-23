@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "24"
+  NODE_VERSION: '24'
 
 jobs:
   setup:
@@ -91,7 +91,9 @@ jobs:
 
       - name: Check Formatting
         run: |
-          npx nx format:check
+          npx nx format:check \
+            --base=${{ needs.setup.outputs.nx-base }} \
+            --head=HEAD
 
       - name: Lint Affected Projects
         run: |

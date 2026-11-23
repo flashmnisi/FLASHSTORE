@@ -1,6 +1,4 @@
-// apps/catalog-service/src/domain/value-objects/price.vo.ts
-
-export class Price {
+﻿export class Price {
   private readonly _amount: number;
   private readonly _currency: string;
 
@@ -10,13 +8,19 @@ export class Price {
   }
 
   static create(amount: number, currency = 'ZAR'): Price {
+    if (!Number.isFinite(amount)) {
+      throw new Error('Price amount must be a finite number');
+    }
+
     if (amount < 0) {
       throw new Error('Price cannot be negative');
     }
+
     if (!['ZAR', 'USD', 'EUR', 'GBP'].includes(currency)) {
       throw new Error('Unsupported currency');
     }
-    return new Price(Math.round(amount * 100) / 100, currency); // 2 decimal places
+
+    return new Price(Math.round(amount * 100) / 100, currency);
   }
 
   get amount(): number {
@@ -31,11 +35,19 @@ export class Price {
     if (this._currency !== other._currency) {
       throw new Error('Cannot add prices with different currencies');
     }
+
     return Price.create(this._amount + other._amount, this._currency);
   }
 
   multiply(quantity: number): Price {
-    if (quantity < 0) throw new Error('Quantity cannot be negative');
+    if (!Number.isFinite(quantity)) {
+      throw new Error('Quantity must be a finite number');
+    }
+
+    if (quantity < 0) {
+      throw new Error('Quantity cannot be negative');
+    }
+
     return Price.create(this._amount * quantity, this._currency);
   }
 

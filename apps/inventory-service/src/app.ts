@@ -4,10 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 
-import {
-  metricsMiddleware,
-  metricsRouter,
-} from '@org/shared-metrics';
+import { metricsMiddleware, metricsRouter } from '@org/shared-metrics';
 
 import inventoryRoutes from './presentation/routes/inventory.routes';
 

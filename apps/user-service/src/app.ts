@@ -66,6 +66,19 @@ app.use((_req, res) => {
   });
 });
 
+/**
+ * Version endpoint
+ */
+app.get('/version', (req, res) => {
+  res.json({
+    service: 'user-service',
+    version: process.env.APP_VERSION || '1.0.0',
+    commit: process.env.GIT_COMMIT || 'local',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ====================== ERROR HANDLER ======================
 
 app.use(errorMiddleware);

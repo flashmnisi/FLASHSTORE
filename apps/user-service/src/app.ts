@@ -12,10 +12,7 @@ import { errorMiddleware } from './middlewares/error.middleware';
 
 import logger from '@org/shared-logger';
 
-import {
-  metricsMiddleware,
-  metricsRouter,
-} from '@org/shared-metrics';
+import { metricsMiddleware, metricsRouter } from '@org/shared-metrics';
 
 const app = express();
 
@@ -63,6 +60,19 @@ app.use((_req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
+  });
+});
+
+/**
+ * Version endpoint
+ */
+app.get('/version', (req, res) => {
+  res.json({
+    service: 'user-service',
+    version: process.env.APP_VERSION || '1.0.0',
+    commit: process.env.GIT_COMMIT || 'local',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
   });
 });
 

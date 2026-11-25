@@ -12,10 +12,7 @@ import { errorMiddleware } from './middlewares/error.middleware';
 
 import logger from '@org/shared-logger';
 
-import {
-  metricsMiddleware,
-  metricsRouter,
-} from '@org/shared-metrics';
+import { metricsMiddleware, metricsRouter } from '@org/shared-metrics';
 
 const app = express();
 
